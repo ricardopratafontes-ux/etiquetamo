@@ -75,7 +75,7 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
         overflow: "hidden",
       }}
     >
-      {/* ZONA 1: Nome do produto — Arial Bold, CAIXA ALTA, espaco generoso */}
+      {/* ZONA 1: Nome do produto — Arial Bold, CAIXA ALTA, flex:1 para ocupar maximo */}
       <div style={{
         fontFamily: "Arial, sans-serif",
         fontWeight: "bold",
@@ -83,54 +83,48 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
         textAlign: "center",
         textTransform: "uppercase" as const,
         borderBottom: "0.5pt solid #000",
-        paddingBottom: "1mm",
+        paddingBottom: "0.5mm",
         lineHeight: "1.15",
-        maxHeight: "18mm",
+        flex: 1,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
         overflow: "hidden",
       }}>
         {nome}
       </div>
 
-      {/* ZONA 2: FAB + VAL — 14pt bold, caixa alta, juntos, base alinhada com operador */}
+      {/* ZONA 2: FAB linha propria + VAL na mesma linha do operador */}
       <div style={{
-        flex: 1,
         display: "flex",
-        justifyContent: "center",
-        alignItems: "flex-start",
+        flexDirection: "column",
+        alignItems: "center",
+        paddingTop: "0.5mm",
+        paddingBottom: "0.5mm",
       }}>
-        {/* Datas centralizadas */}
-        <div style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          textAlign: "center",
-          height: "100%",
-        }}>
-          <div style={{ fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.15", textTransform: "uppercase" as const }}>
-            FAB {dataCurta(fabricacao)}
-          </div>
-          <div style={{ fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.15", textTransform: "uppercase" as const }}>
-            VAL {dataCurta(validade)}
-          </div>
+        <div style={{ fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.2", textTransform: "uppercase" as const }}>
+          FAB: {dataCurta(fabricacao)}
         </div>
-        {/* Operador — 5mm x 5mm, alinhado a direita, base alinhada com Val */}
-        {operador && (
-          <div style={{
-            alignSelf: "flex-end",
-            width: "5mm",
-            height: "5mm",
-            border: "0.3pt solid #000",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "6pt",
-            fontWeight: "bold",
-          }}>
-            {operador}
+        <div style={{ display: "flex", alignItems: "center", gap: "1mm", width: "100%", justifyContent: "center" }}>
+          <div style={{ fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.2", textTransform: "uppercase" as const }}>
+            VAL: {dataCurta(validade)}
           </div>
-        )}
+          {operador && (
+            <div style={{
+              width: "5mm",
+              height: "5mm",
+              border: "0.3pt solid #000",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "6pt",
+              fontWeight: "bold",
+              marginLeft: "auto",
+            }}>
+              {operador}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ZONA 3: Lote/info a esquerda | QR + logo a direita */}
@@ -202,7 +196,7 @@ function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
   const logo = logoUrl || "/logo-mo.png";
 
   const operadorHTML = dados.operador
-    ? `<div style="align-self:flex-end;width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;">${dados.operador}</div>`
+    ? `<div style="width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;margin-left:auto;">${dados.operador}</div>`
     : "";
 
   const loteHTML = dados.lote
@@ -214,13 +208,13 @@ function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
     : "";
 
   const cell = `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;line-height:1.15;max-height:18mm;overflow:hidden;">${dados.nome}</div>
-    <div style="flex:1;display:flex;justify-content:center;align-items:flex-start;">
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:100%;">
-        <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.15;text-transform:uppercase;">FAB ${dataCurta(dados.fabricacao)}</div>
-        <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.15;text-transform:uppercase;">VAL ${dataCurta(dados.validade)}</div>
+    <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">${dados.nome}</div>
+    <div style="display:flex;flex-direction:column;align-items:center;padding-top:0.5mm;padding-bottom:0.5mm;">
+      <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">FAB: ${dataCurta(dados.fabricacao)}</div>
+      <div style="display:flex;align-items:center;gap:1mm;width:100%;justify-content:center;">
+        <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">VAL: ${dataCurta(dados.validade)}</div>
+        ${operadorHTML}
       </div>
-      ${operadorHTML}
     </div>
     <div style="display:flex;align-items:flex-start;">
       <div style="flex:1;">${loteHTML}${infoHTML}</div>
