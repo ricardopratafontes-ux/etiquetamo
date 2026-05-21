@@ -1,5 +1,0 @@
-[main 113a081] feat: dois operadores na impressão (produtor + impressor), regras operacionais DEC-019
- 4 files changed, 65 insertions(+), 20 deletions(-)
- create mode 100644 _status.txt
-To https://github.com/ricardopratafontes-ux/etiquetamo.git
-   ca5ce51..113a081  main -> main

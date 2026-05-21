@@ -135,6 +135,18 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 - **Motivo**: Muitos itens da gelateria são porcionados na cozinha — produto novo fracionado ou embalagem aberta com nova validade. Identificar esses itens no cadastro é necessário para futuras regras de reimpressão com nova data.
 - **Alternativas descartadas**: Não rastrear fracionamento (perde controle de validade pós-abertura). Campo `expiry_days_portioned` foi considerado mas adiado — será adicionado quando o fluxo de fracionamento for desenhado.
 
+### DEC-021 — Lote do fabricante + validade do pacote como teto
+- **Data**: 2026-05-21
+- **Decisão**: Para itens que NÃO são da família FOOD SERVICE nem PRODUÇÃO e possuem lote (`uses_lot = true`):
+  1. O lote informado na impressão é o **lote do fabricante** (impresso no balde/saco/pacote). O operador digita manualmente. O UI deve deixar claro que é "Lote do Fabricante".
+  2. Ao informar o lote, aparece um **popup perguntando a data de validade** impressa no saco/pacote original.
+  3. **Regra de validade**: a data final da etiqueta é **a menor** entre:
+     - Data calculada pelo sistema (data de fabricação + dias de validade do item)
+     - Data de validade do pacote informada pelo operador
+  4. Quem vencer primeiro prevalece — sempre a menor.
+- **Motivo**: Produtos recebidos de fornecedores já têm validade impressa. Quando a validade do pacote é mais curta que a calculada, ela deve ser o limite. Isso evita imprimir etiquetas com validade maior que a do insumo original.
+- **Alternativas descartadas**: Ignorar validade do pacote (risco de etiqueta com data além do fabricante); usar sempre a validade do pacote (ignora a regra do produto manipulado).
+
 ### DEC-009 — Prova física postergada, avanço paralelo
 - **Data**: 2026-05-21
 - **Decisão**: Avançar com Sprints 2+ sem aguardar a prova física de impressão. O gate continua pendente e será executado quando Ricardo acessar o PC da cozinha (via AnyDesk ou presencialmente).
