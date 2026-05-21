@@ -94,34 +94,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Status */}
         <div className="max-w-4xl mx-auto px-6 mt-8 pb-6">
-          <div className="bg-white rounded-2xl shadow-md border border-[var(--verde)] p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="text-xl">📊</span>
-              <h2 className="font-bold text-[var(--marrom)] text-lg">Status do Sistema</h2>
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="bg-[var(--bege)] rounded-xl p-4 text-center">
-                <span className="text-2xl block mb-1">✅</span>
-                <p className="text-xs font-semibold text-[var(--marrom)]">App Online</p>
-              </div>
-              <div className="bg-[var(--bege)] rounded-xl p-4 text-center">
-                <span className="text-2xl block mb-1">🗄️</span>
-                <p className="text-xs font-semibold text-[var(--marrom)]">Banco Conectado</p>
-              </div>
-              <div className="bg-[var(--bege)] rounded-xl p-4 text-center">
-                <span className="text-2xl block mb-1">🏷️</span>
-                <p className="text-xs font-semibold text-[var(--marrom)]">Sprint 4</p>
-              </div>
-              <div className="bg-orange-50 rounded-xl p-4 text-center border border-orange-200">
-                <span className="text-2xl block mb-1">🖨️</span>
-                <p className="text-xs font-semibold text-orange-700">Impressora Pendente</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center gap-3 mt-6 mb-4">
+          <div className="flex items-center justify-center gap-3 mt-2 mb-4">
             <Image
               src="/logo-mo.png"
               alt="mo!"
@@ -130,7 +104,7 @@ export default function Home() {
               className="opacity-40"
             />
             <p className="text-xs text-[var(--marrom)] opacity-40">
-              EtiquetaMO v0.3.0 — Gelateria Moderna desde 1959
+              EtiquetaMO v0.7.0 — Gelateria Moderna desde 1959
             </p>
           </div>
         </div>
