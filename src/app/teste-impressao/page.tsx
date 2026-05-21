@@ -37,7 +37,7 @@ interface EtiquetaProps {
  */
 function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: EtiquetaProps) {
   const temInfo = !!info;
-  const fontNome = temInfo ? "14pt" : "16pt";
+  const fontNome = temInfo ? "16pt" : "18pt";
   const fontLote = temInfo ? "9pt" : "10pt";
   const fontInfo = "7pt";
 
@@ -105,12 +105,14 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
         <div style={{ fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.2", textTransform: "uppercase" as const }}>
           FAB: {dataCurta(fabricacao)}
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "1mm", width: "100%", justifyContent: "center" }}>
-          <div style={{ fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.2", textTransform: "uppercase" as const }}>
+        <div style={{ display: "flex", alignItems: "center", width: "100%", position: "relative" }}>
+          <div style={{ width: "100%", textAlign: "center", fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.2", textTransform: "uppercase" as const }}>
             VAL: {dataCurta(validade)}
           </div>
           {operador && (
             <div style={{
+              position: "absolute",
+              right: "0",
               width: "5mm",
               height: "5mm",
               border: "0.3pt solid #000",
@@ -119,7 +121,6 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
               justifyContent: "center",
               fontSize: "6pt",
               fontWeight: "bold",
-              marginLeft: "auto",
             }}>
               {operador}
             </div>
@@ -190,13 +191,13 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
  */
 function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
   const temInfo = !!dados.info;
-  const fNome = temInfo ? "14pt" : "16pt";
+  const fNome = temInfo ? "16pt" : "18pt";
   const fLote = temInfo ? "9pt" : "10pt";
   const fInfo = "7pt";
   const logo = logoUrl || "/logo-mo.png";
 
   const operadorHTML = dados.operador
-    ? `<div style="width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;margin-left:auto;">${dados.operador}</div>`
+    ? `<div style="position:absolute;right:0;width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;">${dados.operador}</div>`
     : "";
 
   const loteHTML = dados.lote
@@ -211,8 +212,8 @@ function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
     <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">${dados.nome}</div>
     <div style="display:flex;flex-direction:column;align-items:center;padding-top:0.5mm;padding-bottom:0.5mm;">
       <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">FAB: ${dataCurta(dados.fabricacao)}</div>
-      <div style="display:flex;align-items:center;gap:1mm;width:100%;justify-content:center;">
-        <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">VAL: ${dataCurta(dados.validade)}</div>
+      <div style="display:flex;align-items:center;width:100%;position:relative;">
+        <div style="width:100%;text-align:center;font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">VAL: ${dataCurta(dados.validade)}</div>
         ${operadorHTML}
       </div>
     </div>
