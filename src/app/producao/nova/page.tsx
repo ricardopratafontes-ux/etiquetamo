@@ -52,11 +52,13 @@ export default function NovaOrdemProducao() {
         .order("name");
       if (cats) setCategories(cats);
 
+      // Só itens que imprimem etiqueta (uses_label = true)
       const { data } = await supabase
         .from("items")
         .select("*")
         .eq("organization_id", org.id)
         .eq("active", true)
+        .eq("uses_label", true)
         .order("name");
       if (data) setItems(data);
       setLoading(false);

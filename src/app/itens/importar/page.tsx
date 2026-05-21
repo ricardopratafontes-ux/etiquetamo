@@ -18,6 +18,7 @@ interface LinhaImportada {
   etiquetaComplementar: string;
   tipoArmazenagem: string;
   responsavel: string;
+  etiquetaContagem: string;
 }
 
 interface ResultadoImportacao {
@@ -28,10 +29,11 @@ interface ResultadoImportacao {
 
 const ORG_SLUG = "gelateria";
 
-const MODELO_CSV = `Codigo;Descricao;Familia de Produto;Codigo EAN;Unidade;Peso Liquido;Dias de Validade;Possui Lote;Imprime Etiqueta;Etiqueta Complementar;Tipo de Armazenagem;Responsavel
-SORV-001;Sorvete de Chocolate Belga;Sorvetes;7891234567890;KG;1kg;7;Sim;Sim;Nao;Congelado;Ricardo
-PIC-001;Picole de Morango;Picoles;7891234567891;UN;80g;30;Nao;Sim;Nao;Congelado;Ricardo
-TORTA-001;Torta de Limao;Tortas;7891234567892;UN;1.2kg;5;Sim;Sim;Sim;Refrigerado;Ricardo`;
+const MODELO_CSV = `Codigo;Descricao;Familia de Produto;Codigo EAN;Unidade;Peso Liquido;Dias de Validade;Possui Lote;Imprime Etiqueta;Etiqueta Complementar;Tipo de Armazenagem;Responsavel;Etiqueta de Contagem
+SORV-001;Sorvete de Chocolate Belga;Sorvetes;7891234567890;KG;1kg;7;Sim;Sim;Nao;Congelado;Ricardo;Nao
+PIC-001;Picole de Morango;Picoles;7891234567891;UN;80g;30;Nao;Sim;Nao;Congelado;Ricardo;Nao
+EMB-001;Embalagem Kraft 500ml;Embalagens;7891234567893;UN;;;Nao;Nao;Nao;Ambiente;Ricardo;Sim
+TORTA-001;Torta de Limao;Tortas;7891234567892;UN;1.2kg;NAO PERECIVEL;Sim;Sim;Sim;Refrigerado;Ricardo;Nao`;
 
 // Mapeamento de colunas: aceita variacoes comuns
 const MAPA_COLUNAS: Record<string, keyof LinhaImportada> = {
@@ -77,6 +79,10 @@ const MAPA_COLUNAS: Record<string, keyof LinhaImportada> = {
   responsavel: "responsavel",
   "responsável": "responsavel",
   responsible: "responsavel",
+  "etiqueta de contagem": "etiquetaContagem",
+  "etiqueta contagem": "etiquetaContagem",
+  contagem: "etiquetaContagem",
+  counting: "etiquetaContagem",
 };
 
 function parseCSV(text: string): string[][] {
@@ -155,7 +161,7 @@ export default function ImportarItens() {
     const linhasMapeadas: LinhaImportada[] = [];
     for (let i = 1; i < dados.length; i++) {
       const row = dados[i];
-      const linha: LinhaImportada = { codigo: "", nome: "", familia: "", codigoEan: "", unidade: "UN", pesoLiquido: "", validadeDias: "", possuiLote: "", imprimeEtiqueta: "sim", etiquetaComplementar: "", tipoArmazenagem: "ambiente", responsavel: "" };
+      const linha: LinhaImportada = { codigo: "", nome: "", familia: "", codigoEan: "", unidade: "UN", pesoLiquido: "", validadeDias: "", possuiLote: "", imprimeEtiqueta: "sim", etiquetaComplementar: "", tipoArmazenagem: "ambiente", responsavel: "", etiquetaContagem: "" };
       for (const [idxStr, campo] of Object.entries(mapa)) {
         const idx = parseInt(idxStr);
         if (row[idx] !== undefined) linha[campo] = row[idx];
@@ -199,6 +205,12 @@ export default function ImportarItens() {
         }
       }
 
+      // Tratar "NÃO PERECÍVEL" / "NAO PERECIVEL" na coluna dias de validade
+      const validadeRaw = linha.validadeDias.trim().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+      const isNaoPerecivel = validadeRaw.includes("nao perec") || validadeRaw.includes("não perec") || validadeRaw === "np" || validadeRaw === "n/a";
+      const expiryDays = isNaoPerecivel ? null : (parseInt(linha.validadeDias) || null);
+      const usesExpiry = !isNaoPerecivel && !!expiryDays;
+
       const { error } = await supabase.from("items").insert({
         organization_id: org.id,
         name: linha.nome.trim(),
@@ -211,9 +223,10 @@ export default function ImportarItens() {
         storage_type: normArmazenagem(linha.tipoArmazenagem),
         uses_label: linha.imprimeEtiqueta ? normBool(linha.imprimeEtiqueta) : true,
         uses_lot: linha.possuiLote ? normBool(linha.possuiLote) : false,
-        uses_expiry: !!linha.validadeDias,
+        uses_expiry: usesExpiry,
         uses_complementary_label: linha.etiquetaComplementar ? normBool(linha.etiquetaComplementar) : false,
-        expiry_days: linha.validadeDias ? parseInt(linha.validadeDias) || null : null,
+        expiry_days: expiryDays,
+        uses_counting_label: linha.etiquetaContagem ? normBool(linha.etiquetaContagem) : false,
         additional_info: linha.responsavel.trim() ? `Resp: ${linha.responsavel.trim()}` : null,
       });
 

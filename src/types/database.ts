@@ -78,6 +78,7 @@ export interface Database {
           storage_type: "refrigerado" | "congelado" | "ambiente" | null;
           uses_complementary_label: boolean | null;
           complementary_label_text: string | null;
+          uses_counting_label: boolean | null;
           active: boolean;
           manual_override: boolean;
           created_at: string;
@@ -102,6 +103,7 @@ export interface Database {
           storage_type?: "refrigerado" | "congelado" | "ambiente" | null;
           uses_complementary_label?: boolean | null;
           complementary_label_text?: string | null;
+          uses_counting_label?: boolean | null;
           active?: boolean;
           manual_override?: boolean;
         };
@@ -121,6 +123,7 @@ export interface Database {
           storage_type?: "refrigerado" | "congelado" | "ambiente" | null;
           uses_complementary_label?: boolean | null;
           complementary_label_text?: string | null;
+          uses_counting_label?: boolean | null;
           active?: boolean;
           manual_override?: boolean;
         };
