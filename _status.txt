@@ -1,0 +1,19 @@
+warning: in the working copy of 'DECISIONS.md', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_deploy.sh', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/colaboradores/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/etiqueta-caixa/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/imprimir/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/itens/[id]/editar/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/itens/importar/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/itens/novo/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/itens/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/producao/nova/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/producao/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/NavBar.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/components/PatternStrip.tsx', LF will be replaced by CRLF the next time Git touches it
+[main e95935e] feat: UI compacta, PIN seguranca, Step 3 colorido, pattern strip global, headers vermelho DEC-030/031
+ 14 files changed, 186 insertions(+), 139 deletions(-)
+ create mode 100644 src/components/PatternStrip.tsx
+To https://github.com/ricardopratafontes-ux/etiquetamo.git
+   a38ae55..e95935e  main -> main

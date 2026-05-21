@@ -280,7 +280,15 @@ export default function ImprimirWizard() {
     lote: string, info: string, produtorIniciais: string, logoUrl: string
   ): string {
     const temInfo = !!info;
-    const fNome = temInfo ? "16pt" : "18pt";
+    // Fonte dinâmica: reduz para nomes longos (campos fixos, só nome adapta)
+    const len = nome.length;
+    const baseNome = temInfo ? 16 : 18;
+    const fNome =
+      len <= 15 ? `${baseNome}pt` :
+      len <= 22 ? `${baseNome - 2}pt` :
+      len <= 30 ? `${baseNome - 4}pt` :
+      len <= 40 ? `${baseNome - 6}pt` :
+      `${baseNome - 8}pt`;
     const fLote = temInfo ? "9pt" : "10pt";
     const fInfo = "7pt";
 
@@ -297,7 +305,7 @@ export default function ImprimirWizard() {
       : "";
 
     return `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">${nome}</div>
+      <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;word-break:break-word;">${nome}</div>
       <div style="display:flex;flex-direction:column;align-items:center;padding-top:0.5mm;padding-bottom:0.5mm;">
         <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">FAB: ${dataCurta(fabricacao)}</div>
         <div style="display:flex;align-items:center;width:100%;position:relative;">
