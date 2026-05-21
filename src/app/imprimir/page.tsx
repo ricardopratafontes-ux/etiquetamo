@@ -568,31 +568,38 @@ ${linhas}
                   ) : (
                     itensFiltrados.map((item) => {
                       const noCarrinho = carrinho.some((c) => c.item.id === item.id);
-                      const iconeArm = item.storage_type === "congelado" ? "🧊" : item.storage_type === "refrigerado" ? "❄️" : "";
+                      const armCor = item.storage_type === "congelado" ? "border-l-blue-500 bg-blue-50/40" : item.storage_type === "refrigerado" ? "border-l-cyan-400 bg-cyan-50/30" : "border-l-green-400 bg-green-50/30";
+                      const armIcon = item.storage_type === "congelado" ? "🧊" : item.storage_type === "refrigerado" ? "❄️" : "🌡️";
+                      const armLabel = item.storage_type === "congelado" ? "Congelado" : item.storage_type === "refrigerado" ? "Refrigerado" : "Ambiente";
+                      const catNome = nomeCategoriaPorId(item.category_id);
                       return (
                         <button
                           key={item.id}
                           onClick={() => abrirModalItem(item)}
                           className={
-                            "w-full text-left rounded-xl px-3 py-2 flex items-center gap-2 cursor-pointer transition-all hover:shadow-md " +
-                            (noCarrinho ? "bg-green-50 border-2 border-green-400 shadow-sm" : "bg-white border border-gray-100 hover:border-[var(--vermelho)] shadow-sm")
+                            "w-full text-left rounded-xl px-3 py-2.5 flex items-start gap-2.5 cursor-pointer transition-all hover:shadow-lg border-l-4 " +
+                            (noCarrinho
+                              ? "bg-green-50 border-2 border-green-400 border-l-green-500 shadow-md ring-1 ring-green-200"
+                              : armCor + " border border-gray-100 hover:border-[var(--vermelho)] shadow-sm")
                           }
                         >
-                          {iconeArm && <span className="text-lg shrink-0">{iconeArm}</span>}
+                          <div className="w-8 h-8 rounded-lg bg-white/80 flex items-center justify-center text-lg shrink-0 shadow-sm">{armIcon}</div>
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-[var(--marrom)] text-[13px] leading-tight truncate">{item.name}</p>
-                            {item.additional_info && (
-                              <p className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-0.5 truncate inline-block max-w-full">📝 {item.additional_info}</p>
-                            )}
-                            <div className="flex items-center gap-1 mt-0.5">
-                              {item.expiry_days && <span className="text-[9px] text-gray-400 bg-gray-50 px-1 rounded">{item.expiry_days}d</span>}
-                              {item.uses_lot && <span className="text-[9px] text-gray-400 bg-gray-50 px-1 rounded">Lote</span>}
+                            <div className="flex flex-wrap items-center gap-1 mt-1">
+                              <span className="text-[9px] text-gray-500 bg-white/70 px-1.5 py-0.5 rounded font-medium">{armLabel}</span>
+                              {catNome && <span className="text-[9px] text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded font-medium">{catNome}</span>}
+                              {item.expiry_days && <span className="text-[9px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-medium">📅 {item.expiry_days}d</span>}
+                              {item.uses_lot && <span className="text-[9px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-medium">📦 Lote</span>}
                             </div>
+                            {item.additional_info && (
+                              <p className="text-[10px] text-amber-700 bg-amber-50/80 px-1.5 py-0.5 rounded mt-1 truncate max-w-full">📝 {item.additional_info}</p>
+                            )}
                           </div>
                           {noCarrinho ? (
-                            <span className="text-[10px] font-bold text-green-600 shrink-0">✓</span>
+                            <span className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">✓</span>
                           ) : (
-                            <span className="text-xs font-bold text-[var(--vermelho)] shrink-0">+</span>
+                            <span className="w-6 h-6 rounded-full bg-[var(--vermelho)] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">+</span>
                           )}
                         </button>
                       );
@@ -687,16 +694,45 @@ ${linhas}
             return (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setModalItem(null)}>
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                {/* Header compacto */}
+                {/* Header com nome */}
                 <div className="bg-[var(--vermelho)] px-4 py-3 text-white">
                   <h3 className="font-bold text-base leading-tight">{modalItem.name}</h3>
-                  <div className="flex flex-wrap gap-1.5 mt-1">
-                    {modalItem.expiry_days && <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-full">{modalItem.expiry_days}d val.</span>}
-                    {modalItem.uses_lot && <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-full">Lote</span>}
-                    {modalItem.storage_type && modalItem.storage_type !== "ambiente" && <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-full">{modalItem.storage_type === "congelado" ? "🧊" : "❄️"}</span>}
-                  </div>
+                  {catNome && <p className="text-[10px] text-white/70 mt-0.5">{catNome}</p>}
                 </div>
-                <div className="p-4 space-y-3">
+
+                {/* Ficha do produto — dados do cadastro */}
+                <div className="px-4 pt-3 pb-1">
+                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Dados do cadastro</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <div className="bg-gray-50 rounded-lg px-2 py-1.5 text-center">
+                      <p className="text-[9px] text-gray-400">Armazenagem</p>
+                      <p className="text-xs font-bold text-[var(--marrom)]">
+                        {modalItem.storage_type === "congelado" ? "🧊 Congelado" : modalItem.storage_type === "refrigerado" ? "❄️ Refrigerado" : "🌡️ Ambiente"}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg px-2 py-1.5 text-center">
+                      <p className="text-[9px] text-gray-400">Validade</p>
+                      <p className="text-xs font-bold text-[var(--marrom)]">{modalItem.expiry_days ? `📅 ${modalItem.expiry_days} dias` : "—"}</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg px-2 py-1.5 text-center">
+                      <p className="text-[9px] text-gray-400">Lote</p>
+                      <p className="text-xs font-bold text-[var(--marrom)]">{modalItem.uses_lot ? "📦 Sim" : "Não"}</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg px-2 py-1.5 text-center">
+                      <p className="text-[9px] text-gray-400">Peso/Unidade</p>
+                      <p className="text-xs font-bold text-[var(--marrom)]">{modalItem.net_weight ? `${modalItem.net_weight} ${modalItem.unit || ""}` : "—"}</p>
+                    </div>
+                  </div>
+                  {modalItem.additional_info && (
+                    <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 mt-1.5 border border-amber-100">
+                      <p className="text-[9px] text-amber-600 font-bold">📝 Info cadastrada</p>
+                      <p className="text-[11px] text-amber-800 font-medium">{modalItem.additional_info}</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="px-4 pb-4 pt-2 space-y-3 border-t border-gray-100 mt-2">
+                  <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Configurar impressão</p>
 
                   {/* Tipo de etiqueta (se tem ambos) */}
                   {temAmbosLabels && (
