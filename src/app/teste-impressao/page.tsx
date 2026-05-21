@@ -178,23 +178,40 @@ export default function TesteImpressao() {
   }, [printMode, serverIP, checkServer]);
 
   /**
-   * Impressao local via popup window.
-   * Abre janela com APENAS o HTML das etiquetas, imprime, e fecha.
-   * Isso garante que nenhum elemento da pagina principal gere paginas extras.
+   * Impressao local via iframe oculto.
+   * Cria iframe invisivel com APENAS o HTML das etiquetas, imprime, e remove.
+   * O usuario ve apenas o dialogo Ctrl+P padrao do Chrome, sem popup.
+   * Isso elimina etiquetas em branco (iframe nao tem outros elementos).
    */
   function handleLocalPrint() {
-    setStatus("Abrindo janela de impressao...");
-    const popup = window.open("", "_blank", "width=500,height=300");
-    if (!popup) {
-      setStatus("Erro: popup bloqueado. Permita popups para este site.");
+    setStatus("Preparando impressao...");
+    const existente = document.getElementById("print-iframe");
+    if (existente) existente.remove();
+
+    const iframe = document.createElement("iframe");
+    iframe.id = "print-iframe";
+    iframe.style.position = "fixed";
+    iframe.style.left = "-9999px";
+    iframe.style.top = "-9999px";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!doc) {
+      setStatus("Erro: nao foi possivel criar area de impressao.");
+      iframe.remove();
       return;
     }
-    popup.document.write(gerarPaginaImpressao(etiquetaTeste));
-    popup.document.close();
+    doc.open();
+    doc.write(gerarPaginaImpressao(etiquetaTeste));
+    doc.close();
+
     setTimeout(() => {
-      popup.print();
+      iframe.contentWindow?.print();
       setTimeout(() => {
-        popup.close();
+        iframe.remove();
         setStatus("Impressao enviada via navegador.");
       }, 1000);
     }, 300);
