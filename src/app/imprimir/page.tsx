@@ -611,11 +611,23 @@ ${linhas}
                       <p className="text-center text-gray-400 text-sm py-6">Nenhum item adicionado</p>
                     ) : (
                       <div className="space-y-3">
-                        {carrinho.map((c, idx) => (
+                        {carrinho.map((c, idx) => {
+                          const previewHTML = gerarCelulaEtiqueta(
+                            c.item.name, dataHoje(), calcValidade(c.item.expiry_days),
+                            c.lote, c.item.additional_info || "", iniciaisProdutores(c.produtores),
+                            "/logo-mo.png"
+                          );
+                          return (
                           <div key={idx} className="bg-[var(--bege)] rounded-xl p-3">
                             <div className="flex items-start justify-between gap-2">
                               <p className="font-bold text-[var(--marrom)] text-xs leading-tight flex-1">{c.item.name}</p>
                               <button onClick={() => removerDoCarrinho(idx)} className="text-red-400 hover:text-red-600 text-xs cursor-pointer">✕</button>
+                            </div>
+                            {/* Preview miniatura da etiqueta */}
+                            <div className="mt-2 flex justify-center">
+                              <div className="border border-gray-300 rounded bg-white" style={{ width: "100px", height: "100px", overflow: "hidden" }}>
+                                <div style={{ transform: "scale(0.53)", transformOrigin: "top left", width: "50mm", height: "50mm" }} dangerouslySetInnerHTML={{ __html: previewHTML }} />
+                              </div>
                             </div>
                             <div className="flex items-center justify-between mt-2">
                               <div className="flex items-center gap-2">
@@ -633,7 +645,8 @@ ${linhas}
                               {c.tipoEtiqueta === "contagem" && <span className="ml-1 text-blue-600 font-bold">[Contagem]</span>}
                             </p>
                           </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
