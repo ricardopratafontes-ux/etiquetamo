@@ -9,7 +9,7 @@ const links = [
   { href: "/imprimir", label: "Imprimir", icon: "\u{1F5A8}️" },
   { href: "/itens", label: "Itens", icon: "\u{1F4E6}" },
   { href: "/colaboradores", label: "Equipe", icon: "\u{1F465}" },
-  { href: "/etiqueta-caixa", label: "Caixa", icon: "\u{1F4E6}" },
+  { href: "/etiqueta-caixa", label: "Avulsas", icon: "\u{1F3F7}️" },
 ];
 
 export default function NavBar() {

@@ -37,9 +37,9 @@ const acoes = [
   },
   {
     href: "/etiqueta-caixa",
-    icon: "\u{1F4E6}",
-    titulo: "Etiqueta de Caixa",
-    descricao: "Identificar caixas com nome e quantidade",
+    icon: "\u{1F3F7}️",
+    titulo: "Etiquetas Avulsas",
+    descricao: "Caixas, volumes, identificação livre com modelos salvos",
     cor: "bg-white border-2 border-[var(--vermelho)]",
     corTexto: "text-[var(--vermelho)]",
   },

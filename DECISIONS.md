@@ -196,3 +196,15 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 - **Decisão**: Quando um item possui tanto `uses_label` quanto `uses_counting_label`, a modal exibe toggle para escolher entre etiqueta Normal e Contagem. O card do produto mostra badges indicando quais tipos estão disponíveis.
 - **Motivo**: O cascateamento por tipo no step 1 é o filtro primário, mas itens com ambos os tipos precisam de acesso ao tipo alternativo sem sair do fluxo.
 - **Alternativas descartadas**: Forçar o usuário a voltar ao step 1 para trocar de modo (UX ruim).
+
+### DEC-028 — Etiquetas Avulsas (ex-Caixa) com campos dinâmicos
+- **Data**: 2026-05-21
+- **Decisão**: A antiga "Etiqueta de Caixa" vira "Etiquetas Avulsas" com: nome obrigatório, quantidade toggle, múltiplos campos opcionais (Lote, Fab, Val, Peso, Personalizado), campo extra (texto livre na metade inferior), seletor de qtd de etiquetas, salvar como modelo (localStorage), histórico não-deletável (Supabase `avulsa_history`).
+- **Motivo**: A etiqueta de caixa era limitada a um campo opcional. Na prática, caixas e volumes precisam de identificação flexível.
+- **Alternativas descartadas**: Manter campo único opcional (insuficiente para operação real).
+
+### DEC-029 — Etiqueta Complementar = Etiqueta Avulsa (temporário)
+- **Data**: 2026-05-21
+- **Decisão**: A "Etiqueta Complementar" do wizard de impressão terá as mesmas características da Etiqueta Avulsa. Layout e campos idênticos. Será diferenciada no futuro quando necessário.
+- **Motivo**: Ricardo confirmou que para efeito de continuidade pode ser igual. Evita bloqueio por falta de spec.
+- **Alternativas descartadas**: Esperar spec completa da complementar (atrasaria desenvolvimento).

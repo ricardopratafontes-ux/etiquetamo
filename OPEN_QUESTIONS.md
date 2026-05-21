@@ -56,6 +56,6 @@ Cada dúvida segue: ID | Pergunta | Suposição atual | Status
 - **Status**: TODO VALIDAR (Sprint 6)
 
 ### OQ-010 — Etiqueta complementar: layout e regras
-- **Pergunta**: Ricardo mencionou "etiquetas complementares" no wizard de impressão. Qual é o layout de uma etiqueta complementar? É diferente da normal (com campos específicos)? Quando um item precisa de etiqueta complementar? Existe um campo no cadastro que indica isso?
-- **Suposição atual**: Ainda não existe campo no schema nem layout definido. Atualmente o wizard oferece escolha entre etiqueta "Normal" (produção) e "Contagem". A etiqueta complementar seria um terceiro tipo.
-- **Status**: TODO VALIDAR
+- **Pergunta**: Ricardo mencionou "etiquetas complementares" no wizard de impressão. Qual é o layout de uma etiqueta complementar? É diferente da normal (com campos específicos)?
+- **Resolução temporária (DEC-029)**: Etiqueta complementar usa o mesmo layout/campos da Etiqueta Avulsa (nome, quantidade toggle, campos opcionais múltiplos, campo extra). Será diferenciada quando houver spec própria.
+- **Status**: PARCIALMENTE RESOLVIDO — layout temporário definido, spec completa pendente
