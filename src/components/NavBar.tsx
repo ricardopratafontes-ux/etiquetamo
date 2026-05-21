@@ -11,6 +11,7 @@ const links = [
   { href: "/itens/importar", label: "Importar", icon: "\u{1F4C4}" },
   { href: "/teste-impressao", label: "Etiqueta", icon: "\u{1F5A8}️" },
   { href: "/etiqueta-caixa", label: "Caixa", icon: "\u{1F4E6}" },
+  { href: "/colaboradores", label: "Equipe", icon: "\u{1F465}" },
 ];
 
 export default function NavBar() {

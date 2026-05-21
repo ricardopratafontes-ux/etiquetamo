@@ -147,6 +147,36 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 - **Motivo**: Produtos recebidos de fornecedores já têm validade impressa. Quando a validade do pacote é mais curta que a calculada, ela deve ser o limite. Isso evita imprimir etiquetas com validade maior que a do insumo original.
 - **Alternativas descartadas**: Ignorar validade do pacote (risco de etiqueta com data além do fabricante); usar sempre a validade do pacote (ignora a regra do produto manipulado).
 
+### DEC-022 — Fluxo de impressão por cascateamento (Wizard)
+- **Data**: 2026-05-21
+- **Decisão**: O fluxo de impressão de etiquetas é um wizard de 4 etapas:
+  1. **Tipo**: Produção ou Contagem (2 botões grandes)
+  2. **Emitente**: Quem está emitindo (botões com nome dos colaboradores ativos)
+  3. **Família**: Família de produtos (botões grandes, não dropdown)
+  4. **Produtos**: Lista itens da família selecionada. Operador clica, informa produtores (pode ser mais de 1), quantidade, e o item vai para um "carrinho" lateral com controle de +/- quantidade. Ao finalizar, envia tudo para impressão.
+- **Regra**: Produção NÃO cria ordens no EtiquetaMO. Ordens virão do OMIE (Sprint 5). O wizard é o caminho direto para impressão.
+- **Contagem**: Para itens com `uses_counting_label = true` (não perecíveis e outros que tenham essa flag).
+- **Motivo**: Fluxo operacional real — operador na cozinha precisa de passos claros, botões grandes, sem digitação. Cada etapa filtra a próxima.
+- **Alternativas descartadas**: Lista flat de todos os itens (confuso com 538+ itens); criação de ordens no sistema (duplicaria o OMIE).
+
+### DEC-023 — Regra de impressão par na bobina (atualiza DEC-013)
+- **Data**: 2026-05-21
+- **Decisão**: A bobina imprime 2 etiquetas por linha. A quantidade solicitada sempre arredonda para cima até o par mais próximo. Exemplos: 1→2, 2→2, 3→4, 4→4, 5→6. A etiqueta "extra" (quando ímpar) é uma **cópia idêntica** da anterior — sem numeração, sem diferença.
+- **Motivo**: Nunca sai etiqueta em branco. Cópia idêntica é mais útil que etiqueta vazia (serve como backup).
+- **Alternativas descartadas**: Numeração 1/2, 2/2 (complexidade sem benefício); etiqueta em branco (desperdício).
+
+### DEC-024 — Iniciais do produtor na etiqueta (substitui operador)
+- **Data**: 2026-05-21
+- **Decisão**: Na etiqueta impressa, o campo no canto inferior direito (5mm×5mm) mostra as **iniciais de quem produziu** (2-4 letras, ex: "RP", "JS"). Pode haver mais de um produtor por item — nesse caso concatena (ex: "RP JS"). O **emitente** (quem está operando o sistema) NÃO aparece na etiqueta — fica apenas no registro de histórico (`print_history`).
+- **Motivo**: Na etiqueta o importante é rastreabilidade de quem fabricou. Quem imprimiu é dado administrativo.
+- **Alternativas descartadas**: Emitente + produtor na etiqueta (espaço insuficiente); só emitente (perde rastreabilidade do produtor).
+
+### DEC-025 — CRUD de colaboradores antes do wizard
+- **Data**: 2026-05-21
+- **Decisão**: Criar um CRUD básico de colaboradores/operadores (`/admin/colaboradores`) antes de implementar o wizard de impressão. Usa a tabela `operators` existente. Campos: nome, ativo/inativo. Todos os colaboradores aparecem como opção de emitente e produtor no wizard.
+- **Motivo**: O wizard depende de ter pessoas cadastradas para seleção. Hoje a tabela operators está vazia. São ~5 pessoas inicialmente (2 cozinha + Ricardo + gerente + coordenador).
+- **Alternativas descartadas**: Seed fixo no banco (funcionaria agora mas não escala quando entrar/sair gente).
+
 ### DEC-009 — Prova física postergada, avanço paralelo
 - **Data**: 2026-05-21
 - **Decisão**: Avançar com Sprints 2+ sem aguardar a prova física de impressão. O gate continua pendente e será executado quando Ricardo acessar o PC da cozinha (via AnyDesk ou presencialmente).
