@@ -75,7 +75,7 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
         overflow: "hidden",
       }}
     >
-      {/* ZONA 1: Nome do produto — Arial Bold, CAIXA ALTA, 2 linhas disponiveis */}
+      {/* ZONA 1: Nome do produto — Arial Bold, CAIXA ALTA, espaco generoso */}
       <div style={{
         fontFamily: "Arial, sans-serif",
         fontWeight: "bold",
@@ -85,31 +85,55 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
         borderBottom: "0.5pt solid #000",
         paddingBottom: "1mm",
         lineHeight: "1.15",
-        maxHeight: "16mm",
+        maxHeight: "18mm",
         overflow: "hidden",
       }}>
         {nome}
       </div>
 
-      {/* ZONA 2: Fab + Val — 14pt bold, sem ":", ano curto (dd/mm/aa) */}
+      {/* ZONA 2: FAB + VAL — 14pt bold, caixa alta, juntos, base alinhada com operador */}
       <div style={{
         flex: 1,
         display: "flex",
-        flexDirection: "column",
         justifyContent: "center",
-        alignItems: "center",
-        textAlign: "center",
-        paddingBottom: "1mm",
+        alignItems: "flex-start",
       }}>
-        <div style={{ fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.35" }}>
-          Fab {dataCurta(fabricacao)}
+        {/* Datas centralizadas */}
+        <div style={{
+          flex: 1,
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          textAlign: "center",
+          height: "100%",
+        }}>
+          <div style={{ fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.15", textTransform: "uppercase" as const }}>
+            FAB {dataCurta(fabricacao)}
+          </div>
+          <div style={{ fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.15", textTransform: "uppercase" as const }}>
+            VAL {dataCurta(validade)}
+          </div>
         </div>
-        <div style={{ fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.35" }}>
-          Val {dataCurta(validade)}
-        </div>
+        {/* Operador — 5mm x 5mm, alinhado a direita, base alinhada com Val */}
+        {operador && (
+          <div style={{
+            alignSelf: "flex-end",
+            width: "5mm",
+            height: "5mm",
+            border: "0.3pt solid #000",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "6pt",
+            fontWeight: "bold",
+          }}>
+            {operador}
+          </div>
+        )}
       </div>
 
-      {/* ZONA 3: Lote/info a esquerda | Operador + QR + logo a direita */}
+      {/* ZONA 3: Lote/info a esquerda | QR + logo a direita */}
       <div style={{
         display: "flex",
         alignItems: "flex-start",
@@ -136,29 +160,13 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
             </div>
           )}
         </div>
-        {/* Direita: operador + QR + logo empilhados, alinhados a direita */}
+        {/* Direita: QR + logo empilhados, alinhados a direita */}
         <div style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           marginLeft: "1mm",
         }}>
-          {/* Operador — 5mm x 5mm, 1mm acima do QR */}
-          {operador && (
-            <div style={{
-              width: "5mm",
-              height: "5mm",
-              border: "0.3pt solid #000",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "6pt",
-              fontWeight: "bold",
-              marginBottom: "1mm",
-            }}>
-              {operador}
-            </div>
-          )}
           <div style={{
             width: "10mm",
             height: "10mm",
@@ -194,7 +202,7 @@ function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
   const logo = logoUrl || "/logo-mo.png";
 
   const operadorHTML = dados.operador
-    ? `<div style="width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;margin-bottom:1mm;">${dados.operador}</div>`
+    ? `<div style="align-self:flex-end;width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;">${dados.operador}</div>`
     : "";
 
   const loteHTML = dados.lote
@@ -206,15 +214,17 @@ function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
     : "";
 
   const cell = `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;line-height:1.15;max-height:16mm;overflow:hidden;">${dados.nome}</div>
-    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding-bottom:1mm;">
-      <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.35;">Fab ${dataCurta(dados.fabricacao)}</div>
-      <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.35;">Val ${dataCurta(dados.validade)}</div>
+    <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;line-height:1.15;max-height:18mm;overflow:hidden;">${dados.nome}</div>
+    <div style="flex:1;display:flex;justify-content:center;align-items:flex-start;">
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;height:100%;">
+        <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.15;text-transform:uppercase;">FAB ${dataCurta(dados.fabricacao)}</div>
+        <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.15;text-transform:uppercase;">VAL ${dataCurta(dados.validade)}</div>
+      </div>
+      ${operadorHTML}
     </div>
     <div style="display:flex;align-items:flex-start;">
       <div style="flex:1;">${loteHTML}${infoHTML}</div>
       <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
-        ${operadorHTML}
         <div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>
         <img src="${logo}" style="height:5mm;opacity:0.8;margin-top:0.5mm;" />
       </div>
