@@ -25,6 +25,11 @@ interface ItemCarrinho {
   lote: string;
   tipoEtiqueta: "normal" | "contagem";
   infoComplementar: string; // Override ou complemento da info adicional cadastrada
+  incluirComplementar: boolean; // Incluir etiqueta complementar na impressão
+  complementarTexto: string; // Texto da etiqueta complementar
+  pesoOverride: string; // Peso editado na hora (se zerado no cadastro)
+  unidadeOverride: string; // Unidade editada na hora
+  incluirPeso: boolean; // Flag para incluir peso na etiqueta
 }
 
 // --- Helpers ---
@@ -103,6 +108,11 @@ export default function ImprimirWizard() {
   const [modalLote, setModalLote] = useState("");
   const [modalTipoEtiqueta, setModalTipoEtiqueta] = useState<"normal" | "contagem">("normal");
   const [modalInfoComplementar, setModalInfoComplementar] = useState("");
+  const [modalIncluirComplementar, setModalIncluirComplementar] = useState(false);
+  const [modalComplementarTexto, setModalComplementarTexto] = useState("");
+  const [modalPeso, setModalPeso] = useState("");
+  const [modalUnidade, setModalUnidade] = useState("");
+  const [modalIncluirPeso, setModalIncluirPeso] = useState(false);
 
   // Carrinho
   const [buscaItem, setBuscaItem] = useState("");
@@ -219,8 +229,12 @@ export default function ImprimirWizard() {
     setModalQtd(1);
     setModalLote("");
     setModalInfoComplementar(item.additional_info || "");
-    // Default: tipo selecionado no step 1, mas pode mudar se item tem ambos
     setModalTipoEtiqueta(tipo === "contagem" ? "contagem" : "normal");
+    setModalIncluirComplementar(false);
+    setModalComplementarTexto(item.complementary_label_text || "");
+    setModalPeso(item.net_weight || "");
+    setModalUnidade(item.unit || "");
+    setModalIncluirPeso(!!(item.net_weight && item.net_weight !== "0" && item.net_weight !== "0,00"));
   }
 
   function toggleProdutor(id: string) {
@@ -236,13 +250,19 @@ export default function ImprimirWizard() {
     // Bloqueia só se obrigatório e vazio
     if (regra === "obrigatorio" && modalProdutores.length === 0) return;
 
+    const novoItem: ItemCarrinho = {
+      item: modalItem, quantidade: modalQtd, produtores: modalProdutores, lote: modalLote,
+      tipoEtiqueta: modalTipoEtiqueta, infoComplementar: modalInfoComplementar,
+      incluirComplementar: modalIncluirComplementar, complementarTexto: modalComplementarTexto,
+      pesoOverride: modalPeso, unidadeOverride: modalUnidade, incluirPeso: modalIncluirPeso,
+    };
     const existente = carrinho.findIndex((c) => c.item.id === modalItem.id && c.tipoEtiqueta === modalTipoEtiqueta);
     if (existente >= 0) {
       setCarrinho((prev) => prev.map((c, i) =>
-        i === existente ? { ...c, quantidade: c.quantidade + modalQtd, produtores: modalProdutores, lote: modalLote, infoComplementar: modalInfoComplementar } : c
+        i === existente ? { ...novoItem, quantidade: c.quantidade + modalQtd } : c
       ));
     } else {
-      setCarrinho((prev) => [...prev, { item: modalItem, quantidade: modalQtd, produtores: modalProdutores, lote: modalLote, tipoEtiqueta: modalTipoEtiqueta, infoComplementar: modalInfoComplementar }]);
+      setCarrinho((prev) => [...prev, novoItem]);
     }
     setModalItem(null);
   }
@@ -729,9 +749,15 @@ ${linhas}
                       <p className="text-[9px] text-gray-400">Lote</p>
                       <p className="text-xs font-bold text-[var(--marrom)]">{modalItem.uses_lot ? "📦 Sim" : "Não"}</p>
                     </div>
-                    <div className="bg-gray-50 rounded-lg px-2 py-1.5 text-center">
-                      <p className="text-[9px] text-gray-400">Peso/Unidade</p>
-                      <p className="text-xs font-bold text-[var(--marrom)]">{modalItem.net_weight ? `${modalItem.net_weight} ${modalItem.unit || ""}` : "—"}</p>
+                    <div className={"rounded-lg px-2 py-1.5 text-center cursor-pointer transition-all " + (modalIncluirPeso ? "bg-green-50 ring-1 ring-green-300" : "bg-gray-50")}
+                      onClick={() => setModalIncluirPeso(!modalIncluirPeso)}>
+                      <div className="flex items-center justify-center gap-1">
+                        <p className="text-[9px] text-gray-400">Peso/Unidade</p>
+                        <div className={"w-6 h-3 rounded-full transition-all flex items-center px-0.5 " + (modalIncluirPeso ? "bg-green-500 justify-end" : "bg-gray-300 justify-start")}>
+                          <div className="w-2 h-2 bg-white rounded-full" />
+                        </div>
+                      </div>
+                      <p className="text-xs font-bold text-[var(--marrom)]">{modalPeso && modalPeso !== "0" && modalPeso !== "0,00" ? `${modalPeso} ${modalUnidade}` : "—"}</p>
                     </div>
                   </div>
                   {modalItem.additional_info && (
@@ -741,10 +767,23 @@ ${linhas}
                     </div>
                   )}
                   {modalItem.uses_complementary_label && (
-                    <div className="bg-purple-50 rounded-lg px-2.5 py-1.5 mt-1.5 border border-purple-100">
-                      <p className="text-[9px] text-purple-600 font-bold">🏷️ Etiqueta complementar habilitada</p>
-                      {modalItem.complementary_label_text && (
-                        <p className="text-[11px] text-purple-800 font-medium">{modalItem.complementary_label_text}</p>
+                    <div className={"rounded-lg px-2.5 py-1.5 mt-1.5 border cursor-pointer transition-all " + (modalIncluirComplementar ? "bg-purple-100 border-purple-400" : "bg-purple-50 border-purple-100")}
+                      onClick={() => setModalIncluirComplementar(!modalIncluirComplementar)}>
+                      <div className="flex items-center justify-between">
+                        <p className="text-[9px] text-purple-600 font-bold">🏷️ Incluir etiqueta complementar</p>
+                        <div className={"w-8 h-4 rounded-full transition-all flex items-center px-0.5 " + (modalIncluirComplementar ? "bg-purple-500 justify-end" : "bg-gray-300 justify-start")}>
+                          <div className="w-3 h-3 bg-white rounded-full shadow-sm" />
+                        </div>
+                      </div>
+                      {modalIncluirComplementar && (
+                        <input
+                          type="text"
+                          value={modalComplementarTexto}
+                          onChange={(e) => { e.stopPropagation(); setModalComplementarTexto(e.target.value.slice(0, 80)); }}
+                          onClick={(e) => e.stopPropagation()}
+                          placeholder="Texto da etiqueta complementar..."
+                          className="w-full mt-1.5 px-2 py-1.5 text-[11px] bg-white border border-purple-200 rounded-lg focus:outline-none focus:border-purple-400"
+                        />
                       )}
                     </div>
                   )}
@@ -827,6 +866,33 @@ ${linhas}
                         placeholder="Ex: LT2026-05A"
                         className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all"
                       />
+                    </div>
+                  )}
+
+                  {/* Peso editável (quando toggle ativo) */}
+                  {modalIncluirPeso && (
+                    <div>
+                      <label className="text-xs font-semibold text-[var(--marrom)] mb-1 block">⚖️ Peso / Unidade na etiqueta</label>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={modalPeso}
+                          onChange={(e) => setModalPeso(e.target.value)}
+                          placeholder="0,00"
+                          className="flex-1 px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all"
+                        />
+                        <select
+                          value={modalUnidade}
+                          onChange={(e) => setModalUnidade(e.target.value)}
+                          className="px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all"
+                        >
+                          <option value="KG">KG</option>
+                          <option value="G">G</option>
+                          <option value="ML">ML</option>
+                          <option value="L">L</option>
+                          <option value="UN">UN</option>
+                        </select>
+                      </div>
                     </div>
                   )}
 
