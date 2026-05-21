@@ -20,12 +20,12 @@ export default function NavBar() {
     <nav className="bg-gradient-to-r from-[var(--marrom)] to-[#7a3520] text-[var(--branco)] px-6 py-0 shadow-lg">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 py-2.5 group">
+        <Link href="/" className="flex items-center gap-2.5 py-2 group">
           <Image
-            src="/logo-mo.png"
-            alt="mo!"
-            width={36}
-            height={36}
+            src="/logomarca.png"
+            alt="Gelateria Moderna - mo!"
+            width={48}
+            height={32}
             className="drop-shadow-md"
           />
           <span className="text-xl font-extrabold tracking-tight">

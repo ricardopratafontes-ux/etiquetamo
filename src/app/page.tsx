@@ -57,16 +57,18 @@ export default function Home() {
             background: "linear-gradient(135deg, var(--marrom) 0%, #7a3520 100%)",
           }}
         >
-          {/* Pattern como textura sutil */}
+          {/* Pattern como textura — 300% zoom, 60% transparencia, atras de tudo */}
           <div
-            className="absolute inset-0 opacity-[0.06]"
+            className="absolute inset-0"
             style={{
               backgroundImage: "url(/pattern.jpg)",
-              backgroundSize: "200px",
+              backgroundSize: "600px",
               backgroundRepeat: "repeat",
+              opacity: 0.4,
+              zIndex: 0,
             }}
           />
-          <div className="relative max-w-4xl mx-auto text-center">
+          <div className="relative max-w-4xl mx-auto text-center" style={{ zIndex: 1 }}>
             <Image
               src="/logomarca.png"
               alt="Gelateria Moderna - mo!"
@@ -84,8 +86,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Cards de acao */}
-        <div className="max-w-4xl mx-auto px-6 -mt-8">
+        {/* Cards de acao — z-10 para ficar na frente do pattern do hero */}
+        <div className="max-w-4xl mx-auto px-6 -mt-8 relative" style={{ zIndex: 10 }}>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {acoes.map((acao) => (
               <Link
