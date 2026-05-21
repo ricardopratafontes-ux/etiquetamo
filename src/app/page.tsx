@@ -48,46 +48,43 @@ const acoes = [
 export default function Home() {
   return (
     <>
+      {/* Faixa de triangulos — TOPO */}
+      <div
+        className="w-full h-[40px]"
+        style={{
+          backgroundImage: "url(/pattern-strip.jpg)",
+          backgroundSize: "auto 100%",
+          backgroundRepeat: "repeat-x",
+        }}
+      />
+
       <NavBar />
+
       <main className="min-h-screen bg-[var(--bege)]">
-        {/* Hero com pattern de fundo */}
-        <div
-          className="relative text-white px-6 py-12 overflow-hidden"
-          style={{
-            background: "linear-gradient(135deg, var(--marrom) 0%, #7a3520 100%)",
-          }}
-        >
-          {/* Pattern como textura — 300% zoom, 60% transparencia, atras de tudo */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: "url(/pattern.jpg)",
-              backgroundSize: "600px",
-              backgroundRepeat: "repeat",
-              opacity: 0.4,
-              zIndex: 0,
-            }}
-          />
-          <div className="relative max-w-4xl mx-auto text-center" style={{ zIndex: 1 }}>
+        {/* Hero — logomarca grande a esquerda */}
+        <div className="bg-gradient-to-br from-[var(--marrom)] to-[#7a3520] text-white px-6 py-10">
+          <div className="max-w-4xl mx-auto flex items-center gap-8">
             <Image
               src="/logomarca.png"
               alt="Gelateria Moderna - mo!"
-              width={180}
-              height={180}
-              className="mx-auto mb-4 drop-shadow-lg"
+              width={280}
+              height={170}
+              className="drop-shadow-lg shrink-0"
               priority
             />
-            <h1 className="text-3xl font-extrabold tracking-tight mb-1">
-              Etiqueta<span className="text-[var(--vermelho)]">MO</span>
-            </h1>
-            <p className="text-base opacity-80 font-medium">
-              Sistema de etiquetas da Gelateria Moderna
-            </p>
+            <div>
+              <h1 className="text-4xl font-extrabold tracking-tight mb-1">
+                Etiqueta<span className="text-[var(--vermelho)]">MO</span>
+              </h1>
+              <p className="text-base opacity-80 font-medium">
+                Sistema de etiquetas da Gelateria Moderna
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Cards de acao — z-10 para ficar na frente do pattern do hero */}
-        <div className="max-w-4xl mx-auto px-6 -mt-8 relative" style={{ zIndex: 10 }}>
+        {/* Cards de acao */}
+        <div className="max-w-4xl mx-auto px-6 -mt-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {acoes.map((acao) => (
               <Link
@@ -113,7 +110,7 @@ export default function Home() {
         </div>
 
         {/* Status */}
-        <div className="max-w-4xl mx-auto px-6 mt-8 pb-12">
+        <div className="max-w-4xl mx-auto px-6 mt-8 pb-6">
           <div className="bg-white rounded-2xl shadow-md border border-[var(--verde)] p-6">
             <div className="flex items-center gap-3 mb-4">
               <span className="text-xl">📊</span>
@@ -139,7 +136,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-3 mt-6">
+          <div className="flex items-center justify-center gap-3 mt-6 mb-4">
             <Image
               src="/logo-mo.png"
               alt="mo!"
@@ -153,6 +150,16 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* Faixa de triangulos — RODAPE */}
+      <div
+        className="w-full h-[40px]"
+        style={{
+          backgroundImage: "url(/pattern-strip.jpg)",
+          backgroundSize: "auto 100%",
+          backgroundRepeat: "repeat-x",
+        }}
+      />
     </>
   );
 }
