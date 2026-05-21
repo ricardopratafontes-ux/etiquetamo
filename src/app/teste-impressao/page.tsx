@@ -32,8 +32,8 @@ interface EtiquetaProps {
 function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
   const temInfo = !!info;
   /* Tamanhos dinamicos: sem info = fontes maiores (mais espaco disponivel) */
-  const fontNome = temInfo ? "15pt" : "16pt";
-  const fontDatas = temInfo ? "9.5pt" : "11pt";
+  const fontNome = temInfo ? "14pt" : "16pt";
+  const fontDatas = temInfo ? "11pt" : "13pt";
   const fontLote = temInfo ? "8pt" : "9pt";
   const fontInfo = "7pt";
 
@@ -66,44 +66,58 @@ function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
         {nome}
       </div>
 
-      {/* Datas e lote — fontes maiores e mais legiveis */}
-      <div style={{ flex: 1, fontSize: fontDatas, lineHeight: "1.5" }}>
-        <div><strong>Fab:</strong> {fabricacao}</div>
-        <div><strong>Val:</strong> {validade}</div>
-        {lote && (
-          <div style={{ fontSize: fontLote, marginTop: "0.5mm" }}><strong>Lote:</strong> {lote}</div>
-        )}
-        {temInfo && (
-          <div style={{ marginTop: "1mm", fontSize: fontInfo, fontStyle: "italic", lineHeight: "1.2" }}>
-            {info}
-          </div>
-        )}
-      </div>
-
-      {/* Footer: QR + logo mo! */}
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-end",
-        marginTop: "1mm",
-      }}>
+      {/* Area central: datas centralizadas + info | Coluna direita: QR + logo */}
+      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+        {/* Coluna esquerda: datas, lote, info — centralizado */}
         <div style={{
-          width: "10mm",
-          height: "10mm",
-          border: "0.5pt solid #000",
+          flex: 1,
           display: "flex",
-          alignItems: "center",
+          flexDirection: "column",
           justifyContent: "center",
-          fontSize: "4pt",
+          fontSize: fontDatas,
+          lineHeight: "1.6",
+          textAlign: "center",
         }}>
-          QR
+          <div><strong>Fab:</strong> {fabricacao}</div>
+          <div><strong>Val:</strong> {validade}</div>
+          {lote && (
+            <div style={{ fontSize: fontLote, marginTop: "0.5mm" }}><strong>Lote:</strong> {lote}</div>
+          )}
+          {temInfo && (
+            <div style={{ marginTop: "1mm", fontSize: fontInfo, fontStyle: "italic", lineHeight: "1.2" }}>
+              {info}
+            </div>
+          )}
         </div>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo-mo.png"
-          alt="mo!"
-          style={{ height: "6mm", opacity: 0.6 }}
-        />
+
+        {/* Coluna direita: QR em cima, logo embaixo */}
+        <div style={{
+          width: "12mm",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "flex-end",
+          gap: "1mm",
+          marginLeft: "1.5mm",
+        }}>
+          <div style={{
+            width: "10mm",
+            height: "10mm",
+            border: "0.5pt solid #000",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "4pt",
+          }}>
+            QR
+          </div>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-mo.png"
+            alt="mo!"
+            style={{ height: "5mm", opacity: 0.6 }}
+          />
+        </div>
       </div>
     </div>
   );
@@ -115,8 +129,8 @@ function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
  */
 function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
   const temInfo = !!dados.info;
-  const fNome = temInfo ? "15pt" : "16pt";
-  const fDatas = temInfo ? "9.5pt" : "11pt";
+  const fNome = temInfo ? "14pt" : "16pt";
+  const fDatas = temInfo ? "11pt" : "13pt";
   const fLote = temInfo ? "8pt" : "9pt";
   const fInfo = "7pt";
   const logo = logoUrl || "/logo-mo.png";
@@ -125,8 +139,10 @@ function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
 
   const cell = `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
     <div style="font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;margin-bottom:1.5mm;line-height:1.15;max-height:14mm;overflow:hidden;">${dados.nome}</div>
-    <div style="flex:1;font-size:${fDatas};line-height:1.5;"><div><strong>Fab:</strong> ${dados.fabricacao}</div><div><strong>Val:</strong> ${dados.validade}</div>${loteHTML}${infoHTML}</div>
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:1mm;"><div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div><img src="${logo}" style="height:6mm;opacity:0.6;" /></div>
+    <div style="flex:1;display:flex;overflow:hidden;">
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;font-size:${fDatas};line-height:1.6;text-align:center;"><div><strong>Fab:</strong> ${dados.fabricacao}</div><div><strong>Val:</strong> ${dados.validade}</div>${loteHTML}${infoHTML}</div>
+      <div style="width:12mm;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:1mm;margin-left:1.5mm;"><div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div><img src="${logo}" style="height:5mm;opacity:0.6;" /></div>
+    </div>
   </div>`;
   return `<div style="width:107mm;display:flex;padding-left:2mm;padding-right:2mm;gap:3mm;">${cell}${cell}</div>`;
 }
@@ -370,11 +386,18 @@ export default function TesteImpressao() {
             }}
           >
             {/* DEC-013: segunda etiqueta SEMPRE repete a primeira, nunca sai em branco */}
-            <Etiqueta {...etiquetaTeste} />
-            <Etiqueta {...etiquetaTeste} />
+            {/* Borda roxa apenas no preview para demarcar limites — nao imprime */}
+            <div style={{ border: "1px dashed #7c3aed" }}>
+              <Etiqueta {...etiquetaTeste} />
+            </div>
+            <div style={{ border: "1px dashed #7c3aed" }}>
+              <Etiqueta {...etiquetaTeste} />
+            </div>
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-2">Tamanho real: 107mm x 50mm (bordas 2mm + gap 3mm incluso)</p>
+        <p className="text-xs text-gray-500 mt-2">
+          Tamanho real: 107mm x 50mm &#x2014; <span style={{ color: "#7c3aed" }}>linha roxa</span> = limite da etiqueta (nao imprime)
+        </p>
       </div>
 
       {/* Botao de impressao */}

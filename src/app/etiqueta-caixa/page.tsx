@@ -266,11 +266,17 @@ export default function EtiquetaCaixaPage() {
             <h2 className="font-bold text-[var(--marrom)] mb-3">Preview (2 etiquetas por linha)</h2>
             <div className="bg-white rounded-xl p-4 shadow inline-block">
               <div style={{ width: "107mm", display: "flex", paddingLeft: "2mm", paddingRight: "2mm", gap: "3mm" }}>
-                <EtiquetaCaixa {...dadosEtiqueta} />
-                <EtiquetaCaixa {...dadosEtiqueta} />
+                <div style={{ border: "1px dashed #7c3aed" }}>
+                  <EtiquetaCaixa {...dadosEtiqueta} />
+                </div>
+                <div style={{ border: "1px dashed #7c3aed" }}>
+                  <EtiquetaCaixa {...dadosEtiqueta} />
+                </div>
               </div>
             </div>
-            <p className="text-xs text-gray-500 mt-2">DEC-013: segunda etiqueta sempre repete a primeira</p>
+            <p className="text-xs text-gray-500 mt-2">
+              DEC-013: segunda etiqueta sempre repete a primeira &#x2014; <span style={{ color: "#7c3aed" }}>linha roxa</span> = limite (nao imprime)
+            </p>
           </div>
 
           {/* Botao */}
