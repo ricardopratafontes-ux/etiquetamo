@@ -101,6 +101,17 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 - **Motivo**: Driver não tem opção de "2 etiquetas por linha". Configuração no driver: largura 103mm (printável) + margens 2mm esquerda/direita = 107mm total. Altura 50mm (ou 52.5mm se sensor de gap precisar).
 - **Alternativas descartadas**: Nenhuma — é limitação do hardware/driver.
 
+### DEC-018 — Sprint 3: Impressão via Ordem de Produção (não direto do cadastro)
+- **Data**: 2026-05-21
+- **Decisão**: Etiquetas NÃO são impressas diretamente da tela de itens. O fluxo é: (1) Gestor ou operador cria uma Ordem de Produção com itens + quantidades + lote; (2) ao mover para "em produção", as etiquetas aparecem no site prontas para o operador revisar (lote, iniciais) e enviar para impressão.
+- **Motivo**: Produtos são cadastrados via planilha e raramente mudam. A impressão está ligada à produção diária, não ao cadastro. Separar os dois evita impressões acidentais e conecta a etiqueta ao contexto real de fabricação.
+- **Regras operacionais**:
+  - Gestor E operador podem criar ordens de produção
+  - Quantidade e lote são definidos na criação da ordem
+  - Na tela de impressão, operador pode revalidar lote e informar iniciais
+  - Cadastro de novos itens continua sendo raro e feito via planilha/manual
+- **Alternativas descartadas**: Impressão direta da lista de itens (desconectada da produção real, sem contexto de lote/quantidade do dia).
+
 ### DEC-009 — Prova física postergada, avanço paralelo
 - **Data**: 2026-05-21
 - **Decisão**: Avançar com Sprints 2+ sem aguardar a prova física de impressão. O gate continua pendente e será executado quando Ricardo acessar o PC da cozinha (via AnyDesk ou presencialmente).

@@ -4,10 +4,10 @@ import NavBar from "@/components/NavBar";
 
 const acoes = [
   {
-    href: "/itens/novo",
-    icon: "\u{2795}",
-    titulo: "Novo Item",
-    descricao: "Cadastre um produto manualmente",
+    href: "/producao",
+    icon: "\u{1F3ED}",
+    titulo: "Produção",
+    descricao: "Ordens de produção e impressão de etiquetas",
     cor: "bg-[var(--vermelho)]",
     corTexto: "text-white",
   },
@@ -28,10 +28,18 @@ const acoes = [
     corTexto: "text-[var(--marrom)]",
   },
   {
+    href: "/itens/novo",
+    icon: "\u{2795}",
+    titulo: "Novo Item",
+    descricao: "Cadastre um produto manualmente",
+    cor: "bg-white border-2 border-[var(--marrom)]",
+    corTexto: "text-[var(--marrom)]",
+  },
+  {
     href: "/teste-impressao",
     icon: "\u{1F5A8}️",
-    titulo: "Etiqueta de Produto",
-    descricao: "Imprimir etiquetas na Elgin L42",
+    titulo: "Etiqueta Avulsa",
+    descricao: "Impressão rápida de teste",
     cor: "bg-white border-2 border-[var(--marrom)]",
     corTexto: "text-[var(--marrom)]",
   },
