@@ -30,6 +30,13 @@ interface EtiquetaProps {
  * DEC-014: divisao em 2 colunas e controlada pelo CSS, nao pelo driver
  */
 function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
+  const temInfo = !!info;
+  /* Tamanhos dinamicos: sem info = fontes maiores (mais espaco disponivel) */
+  const fontNome = temInfo ? "15pt" : "16pt";
+  const fontDatas = temInfo ? "9.5pt" : "11pt";
+  const fontLote = temInfo ? "8pt" : "9pt";
+  const fontInfo = "7pt";
+
   return (
     <div
       style={{
@@ -40,19 +47,18 @@ function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
         fontFamily: "Arial, sans-serif",
         display: "flex",
         flexDirection: "column",
-        justifyContent: "space-between",
         overflow: "hidden",
       }}
     >
-      {/* Nome do produto - CAIXA ALTA, 2 linhas, fonte grande */}
+      {/* Nome do produto - CAIXA ALTA, ate 2 linhas, fonte grande */}
       <div style={{
         fontWeight: "bold",
-        fontSize: "16pt",
+        fontSize: fontNome,
         textAlign: "center",
         textTransform: "uppercase" as const,
         borderBottom: "0.5pt solid #000",
         paddingBottom: "1mm",
-        marginBottom: "1mm",
+        marginBottom: "1.5mm",
         lineHeight: "1.15",
         maxHeight: "14mm",
         overflow: "hidden",
@@ -60,19 +66,21 @@ function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
         {nome}
       </div>
 
-      {/* Datas e lote */}
-      <div style={{ flex: 1, fontSize: "8pt", lineHeight: "1.4" }}>
+      {/* Datas e lote — fontes maiores e mais legiveis */}
+      <div style={{ flex: 1, fontSize: fontDatas, lineHeight: "1.5" }}>
         <div><strong>Fab:</strong> {fabricacao}</div>
         <div><strong>Val:</strong> {validade}</div>
-        <div style={{ fontSize: "7pt", marginTop: "0.5mm" }}><strong>Lote:</strong> {lote}</div>
-        {info && (
-          <div style={{ marginTop: "1mm", fontSize: "6pt", fontStyle: "italic", lineHeight: "1.2" }}>
+        {lote && (
+          <div style={{ fontSize: fontLote, marginTop: "0.5mm" }}><strong>Lote:</strong> {lote}</div>
+        )}
+        {temInfo && (
+          <div style={{ marginTop: "1mm", fontSize: fontInfo, fontStyle: "italic", lineHeight: "1.2" }}>
             {info}
           </div>
         )}
       </div>
 
-      {/* Footer: QR + versao */}
+      {/* Footer: QR + logo mo! */}
       <div style={{
         display: "flex",
         justifyContent: "space-between",
@@ -90,9 +98,12 @@ function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
         }}>
           QR
         </div>
-        <div style={{ fontSize: "4.5pt", textAlign: "right", opacity: 0.5 }}>
-          EtiquetaMO
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-mo.png"
+          alt="mo!"
+          style={{ height: "6mm", opacity: 0.6 }}
+        />
       </div>
     </div>
   );
@@ -102,11 +113,20 @@ function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
  * Gera HTML puro da linha de etiquetas (2 iguais lado a lado).
  * Usado tanto na impressao local (popup) quanto na remota (print server).
  */
-function gerarHTMLEtiqueta(dados: EtiquetaProps): string {
-  const cell = `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;">
-    <div style="font-weight:bold;font-size:16pt;text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;margin-bottom:1mm;line-height:1.15;max-height:14mm;overflow:hidden;">${dados.nome}</div>
-    <div style="flex:1;font-size:8pt;line-height:1.4;"><div><strong>Fab:</strong> ${dados.fabricacao}</div><div><strong>Val:</strong> ${dados.validade}</div><div style="font-size:7pt;margin-top:0.5mm;"><strong>Lote:</strong> ${dados.lote}</div>${dados.info ? '<div style="margin-top:1mm;font-size:6pt;font-style:italic;line-height:1.2;">' + dados.info + '</div>' : ''}</div>
-    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:1mm;"><div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div><div style="font-size:4.5pt;text-align:right;opacity:0.5;">EtiquetaMO</div></div>
+function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
+  const temInfo = !!dados.info;
+  const fNome = temInfo ? "15pt" : "16pt";
+  const fDatas = temInfo ? "9.5pt" : "11pt";
+  const fLote = temInfo ? "8pt" : "9pt";
+  const fInfo = "7pt";
+  const logo = logoUrl || "/logo-mo.png";
+  const loteHTML = dados.lote ? `<div style="font-size:${fLote};margin-top:0.5mm;"><strong>Lote:</strong> ${dados.lote}</div>` : "";
+  const infoHTML = temInfo ? `<div style="margin-top:1mm;font-size:${fInfo};font-style:italic;line-height:1.2;">${dados.info}</div>` : "";
+
+  const cell = `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
+    <div style="font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;margin-bottom:1.5mm;line-height:1.15;max-height:14mm;overflow:hidden;">${dados.nome}</div>
+    <div style="flex:1;font-size:${fDatas};line-height:1.5;"><div><strong>Fab:</strong> ${dados.fabricacao}</div><div><strong>Val:</strong> ${dados.validade}</div>${loteHTML}${infoHTML}</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:1mm;"><div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div><img src="${logo}" style="height:6mm;opacity:0.6;" /></div>
   </div>`;
   return `<div style="width:107mm;display:flex;padding-left:2mm;padding-right:2mm;gap:3mm;">${cell}${cell}</div>`;
 }
@@ -117,7 +137,8 @@ function gerarHTMLEtiqueta(dados: EtiquetaProps): string {
  * Isso elimina etiquetas em branco causadas por elementos ocultos.
  */
 function gerarPaginaImpressao(dados: EtiquetaProps): string {
-  const conteudo = gerarHTMLEtiqueta(dados);
+  const logoAbsoluta = typeof window !== "undefined" ? window.location.origin + "/logo-mo.png" : "/logo-mo.png";
+  const conteudo = gerarHTMLEtiqueta(dados, logoAbsoluta);
   return `<!DOCTYPE html>
 <html>
 <head>

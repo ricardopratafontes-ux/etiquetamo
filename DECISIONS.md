@@ -71,6 +71,24 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 - **Motivo**: O espaço na etiqueta 50mm × 50mm é limitado. Textos longos ficariam ilegíveis ou cortados na impressão.
 - **Alternativas descartadas**: Sem limite (risco de quebra de layout na etiqueta), limite menor de 40 chars (muito restritivo para alergênicos compostos).
 
+### DEC-015 — Logo "mo!" na etiqueta (substituir texto ilegível)
+- **Data**: 2026-05-21
+- **Decisão**: O texto "EtiquetaMO" no canto inferior direito da etiqueta é ilegível na impressão térmica. Substituído por imagem da logo "mo!" reduzida (LOGO_REDUZIDA.png → /public/logo-mo.png) com opacity 0.6 e height 6mm.
+- **Motivo**: Feedback da prova física — texto em 4.5pt é ilegível na Elgin L42 Pro. Logo visual funciona melhor.
+- **Alternativas descartadas**: Aumentar fonte do texto (ocuparia muito espaço); remover marca completamente (perde identidade).
+
+### DEC-016 — Layout dinâmico: espaço redistribuído quando info está vazia
+- **Data**: 2026-05-21
+- **Decisão**: Quando o campo "info adicional" está vazio, as fontes de nome e datas aumentam (nome 16pt, datas 11pt, lote 9pt). Com info, encolhem levemente (nome 15pt, datas 9.5pt, lote 8pt, info 7pt). O espaço disponível é sempre maximizado.
+- **Motivo**: Feedback do Ricardo — datas precisam ser mais legíveis, e quando não há informação extra o espaço deve ser aproveitado.
+- **Alternativas descartadas**: Tamanho fixo sempre (desperdício de espaço quando sem info).
+
+### DEC-017 — Etiqueta de caixa: tipo separado com fluxo próprio
+- **Data**: 2026-05-21
+- **Decisão**: Criar um segundo tipo de etiqueta exclusivo para identificar caixas. Campos: nome do produto (grande), quantidade, campo opcional (lote ou fabricação). Fluxo e rota separados das etiquetas de produto.
+- **Motivo**: Caixas têm finalidade diferente (identificação de volume, não de unidade). Misturar os fluxos geraria confusão operacional.
+- **Alternativas descartadas**: Usar a mesma etiqueta de produto para caixas (campos diferentes, propósito diferente).
+
 ### DEC-013 — Segunda etiqueta nunca sai em branco
 - **Data**: 2026-05-21
 - **Decisão**: Na bobina de 2 etiquetas por linha, a segunda posição SEMPRE repete o conteúdo da primeira. Nunca sai etiqueta em branco. Isso vale para impressão unitária, em lote, e reimpressão.
