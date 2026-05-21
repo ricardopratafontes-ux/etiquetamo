@@ -227,7 +227,7 @@ export default function ImportarItens() {
         uses_complementary_label: linha.etiquetaComplementar ? normBool(linha.etiquetaComplementar) : false,
         expiry_days: expiryDays,
         uses_counting_label: linha.etiquetaContagem ? normBool(linha.etiquetaContagem) : false,
-        additional_info: linha.responsavel.trim() ? `Resp: ${linha.responsavel.trim()}` : null,
+        additional_info: null, // Responsável agora é preenchido na hora da impressão
       });
 
       if (error) { erros.push(`Linha ${numLinha} ("${linha.nome}"): ${error.message}`); }

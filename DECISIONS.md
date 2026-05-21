@@ -112,6 +112,23 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
   - Cadastro de novos itens continua sendo raro e feito via planilha/manual
 - **Alternativas descartadas**: Impressão direta da lista de itens (desconectada da produção real, sem contexto de lote/quantidade do dia).
 
+### DEC-019 — Regras operacionais de impressão e importação
+- **Data**: 2026-05-21
+- **Decisão**: Conjunto de regras de negócio definidas pelo Ricardo durante o preenchimento da planilha de importação:
+- **Peso**:
+  - Peso = 0,00 → perguntar ao usuário (implementar em futuro review de importação)
+  - Peso preenchido → aceitar e imprimir na etiqueta (zona de info, junto com lote)
+  - NÃO PERECÍVEL → nunca perguntar peso, não exigir armazenagem
+  - Categoria FOOD SERVICE → nunca mostrar peso na etiqueta
+- **Dois operadores na impressão** (obrigatórios):
+  - "Quem fez a produção" → iniciais vão na etiqueta (quadrado 5mm×5mm)
+  - "Quem está imprimindo" → registrado no histórico, NÃO vai na etiqueta
+  - Formato no banco: `produtor|impressor` no campo operator_initials
+- **Etiqueta complementar** = Sim apenas habilita o recurso; o conteúdo é preenchido sob demanda
+- **Responsável** removido da importação CSV; o responsável é definido na hora da impressão (produtor + impressor)
+- **Motivo**: Regras derivadas da operação real da cozinha. Dois operadores existem porque nem sempre quem fabrica é quem imprime.
+- **Alternativas descartadas**: Campo único de operador (não distingue produtor de impressor).
+
 ### DEC-009 — Prova física postergada, avanço paralelo
 - **Data**: 2026-05-21
 - **Decisão**: Avançar com Sprints 2+ sem aguardar a prova física de impressão. O gate continua pendente e será executado quando Ricardo acessar o PC da cozinha (via AnyDesk ou presencialmente).

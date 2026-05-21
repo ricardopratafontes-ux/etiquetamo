@@ -106,7 +106,8 @@ export default function ImprimirOrdem() {
   const [imprimindo, setImprimindo] = useState(false);
 
   // Campos editáveis pelo operador
-  const [operador, setOperador] = useState("");
+  const [produtor, setProdutor] = useState("");       // quem fez a produção (vai na etiqueta)
+  const [impressor, setImpressor] = useState("");     // quem está imprimindo (vai no histórico)
   const [lotesEditados, setLotesEditados] = useState<Record<string, string>>({});
 
   const carregar = useCallback(async () => {
@@ -168,8 +169,12 @@ export default function ImprimirOrdem() {
   }
 
   async function imprimirTodos() {
-    if (!operador.trim()) {
-      alert("Informe as iniciais do operador");
+    if (!produtor.trim()) {
+      alert("Informe as iniciais de quem fez a produção");
+      return;
+    }
+    if (!impressor.trim()) {
+      alert("Informe as iniciais de quem está imprimindo");
       return;
     }
 
@@ -190,7 +195,7 @@ export default function ImprimirOrdem() {
           validade,
           lote,
           info: item.item_additional_info || "",
-          operador: operador.trim().toUpperCase(),
+          operador: produtor.trim().toUpperCase(), // iniciais do produtor vão na etiqueta
         });
       }
     }
@@ -212,14 +217,14 @@ export default function ImprimirOrdem() {
       };
     }
 
-    // Marcar itens como impressos
+    // Marcar itens como impressos (operator_initials guarda produtor + impressor)
     const idsNaoImpressos = itens.filter((i) => !i.printed).map((i) => i.id);
     await supabase
       .from("production_order_items")
       .update({
         printed: true,
         printed_at: new Date().toISOString(),
-        operator_initials: operador.trim().toUpperCase(),
+        operator_initials: `${produtor.trim().toUpperCase()}|${impressor.trim().toUpperCase()}`,
         lot: null, // será atualizado abaixo individualmente
       })
       .in("id", idsNaoImpressos);
@@ -241,8 +246,12 @@ export default function ImprimirOrdem() {
   }
 
   async function imprimirItem(item: ItemComDetalhes) {
-    if (!operador.trim()) {
-      alert("Informe as iniciais do operador");
+    if (!produtor.trim()) {
+      alert("Informe as iniciais de quem fez a produção");
+      return;
+    }
+    if (!impressor.trim()) {
+      alert("Informe as iniciais de quem está imprimindo");
       return;
     }
 
@@ -258,7 +267,7 @@ export default function ImprimirOrdem() {
         validade,
         lote,
         info: item.item_additional_info || "",
-        operador: operador.trim().toUpperCase(),
+        operador: produtor.trim().toUpperCase(),
       });
     }
 
@@ -276,7 +285,7 @@ export default function ImprimirOrdem() {
       .update({
         printed: true,
         printed_at: new Date().toISOString(),
-        operator_initials: operador.trim().toUpperCase(),
+        operator_initials: `${produtor.trim().toUpperCase()}|${impressor.trim().toUpperCase()}`,
         lot: lote.trim() || null,
       })
       .eq("id", item.id);
@@ -344,16 +353,27 @@ export default function ImprimirOrdem() {
         </div>
 
         <div className="max-w-5xl mx-auto px-6 -mt-4">
-          {/* Campo do operador */}
+          {/* Campos obrigatórios: produtor + impressor */}
           <div className="bg-white rounded-2xl shadow-lg border border-[var(--verde)] p-5 mb-6">
             <div className="flex items-center gap-4">
               <div className="flex-1">
-                <label className="block text-xs font-semibold text-gray-500 mb-1">Iniciais do Operador *</label>
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Quem fez a produção? * (vai na etiqueta)</label>
                 <input
                   type="text"
-                  value={operador}
-                  onChange={(e) => setOperador(e.target.value.slice(0, 3))}
+                  value={produtor}
+                  onChange={(e) => setProdutor(e.target.value.slice(0, 3))}
                   placeholder="Ex: RP"
+                  maxLength={3}
+                  className="w-full px-4 py-3 bg-[var(--bege)] border-none rounded-xl text-lg font-bold text-center uppercase focus:outline-none focus:ring-2 focus:ring-[var(--vermelho)]"
+                />
+              </div>
+              <div className="flex-1">
+                <label className="block text-xs font-semibold text-gray-500 mb-1">Quem está imprimindo? *</label>
+                <input
+                  type="text"
+                  value={impressor}
+                  onChange={(e) => setImpressor(e.target.value.slice(0, 3))}
+                  placeholder="Ex: JC"
                   maxLength={3}
                   className="w-full px-4 py-3 bg-[var(--bege)] border-none rounded-xl text-lg font-bold text-center uppercase focus:outline-none focus:ring-2 focus:ring-[var(--vermelho)]"
                 />
@@ -361,10 +381,10 @@ export default function ImprimirOrdem() {
               <button
                 type="button"
                 onClick={imprimirTodos}
-                disabled={imprimindo || itensNaoImpressos.length === 0 || !operador.trim()}
+                disabled={imprimindo || itensNaoImpressos.length === 0 || !produtor.trim() || !impressor.trim()}
                 className={
                   "flex items-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold transition-all " +
-                  (itensNaoImpressos.length === 0 || !operador.trim()
+                  (itensNaoImpressos.length === 0 || !produtor.trim() || !impressor.trim()
                     ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                     : "bg-[var(--vermelho)] text-white shadow-lg hover:bg-red-600 cursor-pointer")
                 }
@@ -411,10 +431,10 @@ export default function ImprimirOrdem() {
                         <button
                           type="button"
                           onClick={() => imprimirItem(item)}
-                          disabled={!operador.trim()}
+                          disabled={!produtor.trim() || !impressor.trim()}
                           className={
                             "px-4 py-2 rounded-lg text-xs font-bold transition-all " +
-                            (!operador.trim()
+                            (!produtor.trim() || !impressor.trim()
                               ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                               : "bg-[var(--vermelho)] text-white hover:bg-red-600 cursor-pointer")
                           }
@@ -445,7 +465,10 @@ export default function ImprimirOrdem() {
                       {item.lot && <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded">Lote: {item.lot}</span>}
                     </div>
                     <span className="text-xs text-gray-400">
-                      {item.operator_initials} · {item.printed_at ? new Date(item.printed_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}
+                      {item.operator_initials?.includes("|")
+                        ? `Prod: ${item.operator_initials.split("|")[0]} · Imp: ${item.operator_initials.split("|")[1]}`
+                        : item.operator_initials
+                      } · {item.printed_at ? new Date(item.printed_at).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : ""}
                     </span>
                   </div>
                 ))}
