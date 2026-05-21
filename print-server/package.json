@@ -1,0 +1,16 @@
+{
+  "name": "etiquetamo-print-server",
+  "version": "1.0.0",
+  "description": "Print server local para EtiquetaMO — roda no PC da impressora Elgin L42 Pro",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "build": "pkg src/server.js --targets node18-win-x64 --output dist/etiquetamo-print.exe"
+  },
+  "dependencies": {
+    "pdf-to-printer": "^5.6.0"
+  },
+  "devDependencies": {
+    "@yao-pkg/pkg": "^6.0.0"
+  }
+}
