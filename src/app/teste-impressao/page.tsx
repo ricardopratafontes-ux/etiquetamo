@@ -33,9 +33,27 @@ interface EtiquetaProps {
 function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: EtiquetaProps) {
   const temInfo = !!info;
   const fontNome = temInfo ? "14pt" : "16pt";
-  const fontDatas = temInfo ? "13pt" : "15pt";
   const fontLote = temInfo ? "9pt" : "10pt";
   const fontInfo = "7pt";
+
+  /*
+   * Layout da etiqueta 50mm x 50mm (area util 46mm x 46mm com padding 2mm):
+   *
+   * ┌──────────────────────────────────────────────┐
+   * │         NOME DO PRODUTO (max 14mm)           │
+   * ├──────────────────────────────────────────────┤
+   * │                                    │  [OP]   │  ← operador 5x5 canto direito
+   * │        Fab: 21/05/2026             │         │
+   * │                                    │         │
+   * │        Val: 28/05/2026             │         │
+   * │                                    │         │
+   * ├─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─(2mm gap)─ ─ ┼─────────┤  ← linha do topo do QR
+   * │  Lote: TESTE-001                   │  ┌────┐ │
+   * │  Contém leite e derivados          │  │ QR │ │
+   * │                                    │  └────┘ │
+   * │                                    │  [mo!]  │
+   * └──────────────────────────────────────────────┘
+   */
 
   return (
     <div
@@ -50,7 +68,7 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
         overflow: "hidden",
       }}
     >
-      {/* Nome do produto - CAIXA ALTA */}
+      {/* ZONA 1: Nome do produto — CAIXA ALTA, topo */}
       <div style={{
         fontWeight: "bold",
         fontSize: fontNome,
@@ -65,81 +83,85 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
         {nome}
       </div>
 
-      {/* Corpo: coluna esquerda (datas/lote/info) + coluna direita (operador/QR/logo) */}
-      <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-
-        {/* Coluna esquerda */}
+      {/* ZONA 2: Fab + Val — fonte maxima, centralizado, vai ate 2mm acima do QR */}
+      <div style={{
+        flex: 1,
+        display: "flex",
+        position: "relative",
+        paddingBottom: "2mm",
+      }}>
+        {/* Fab e Val — ocupam toda a largura, centralizados, fonte maxima */}
         <div style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          textAlign: "center",
+          paddingRight: "7mm",
         }}>
-          {/* Fab e Val — cada um em linha completa, destaque, centralizados */}
-          <div style={{
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            alignItems: "center",
-            textAlign: "center",
-          }}>
-            <div style={{ fontSize: fontDatas, fontWeight: "bold", whiteSpace: "nowrap" }}>
-              Fab: {fabricacao}
-            </div>
-            <div style={{ fontSize: fontDatas, fontWeight: "bold", whiteSpace: "nowrap", marginTop: "1mm" }}>
-              Val: {validade}
-            </div>
+          <div style={{ fontSize: "16pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.4" }}>
+            Fab: {fabricacao}
           </div>
-          {/* Lote — alinhado com topo do QR */}
+          <div style={{ fontSize: "16pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.4" }}>
+            Val: {validade}
+          </div>
+        </div>
+        {/* Operador — 5mm x 5mm, canto superior direito, sem transparencia */}
+        {operador && (
+          <div style={{
+            position: "absolute",
+            top: "1mm",
+            right: "0",
+            width: "5mm",
+            height: "5mm",
+            border: "0.3pt solid #000",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "6pt",
+            fontWeight: "bold",
+          }}>
+            {operador}
+          </div>
+        )}
+      </div>
+
+      {/* ZONA 3: Lote/info a esquerda | QR + logo a direita — alinhados pela linha do topo do QR */}
+      <div style={{
+        display: "flex",
+        alignItems: "flex-start",
+      }}>
+        {/* Esquerda: lote + info */}
+        <div style={{ flex: 1 }}>
           {lote && (
             <div style={{
               fontSize: fontLote,
               fontWeight: "bold",
-              textAlign: "center",
-              paddingBottom: "0.5mm",
+              lineHeight: "1.4",
             }}>
               Lote: {lote}
             </div>
           )}
-          {/* Info — area abaixo disponivel */}
           {temInfo && (
             <div style={{
               fontSize: fontInfo,
               fontStyle: "italic",
-              lineHeight: "1.2",
-              textAlign: "center",
-              paddingBottom: "0.5mm",
+              lineHeight: "1.3",
+              marginTop: "0.5mm",
             }}>
               {info}
             </div>
           )}
         </div>
-
-        {/* Coluna direita: iniciais operador + QR + logo mo! */}
+        {/* Direita: QR + logo empilhados */}
         <div style={{
-          width: "12mm",
           display: "flex",
           flexDirection: "column",
-          alignItems: "flex-end",
-          justifyContent: "flex-end",
+          alignItems: "center",
           gap: "0.5mm",
           marginLeft: "1mm",
         }}>
-          {/* Iniciais do operador — 1/4 do QR (5mm x 5mm), alinhado a direita */}
-          {operador && (
-            <div style={{
-              width: "5mm",
-              height: "5mm",
-              border: "0.3pt solid #000",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "6pt",
-              fontWeight: "bold",
-            }}>
-              {operador}
-            </div>
-          )}
           <div style={{
             width: "10mm",
             height: "10mm",
@@ -170,23 +192,34 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
 function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
   const temInfo = !!dados.info;
   const fNome = temInfo ? "14pt" : "16pt";
-  const fDatas = temInfo ? "13pt" : "15pt";
   const fLote = temInfo ? "9pt" : "10pt";
   const fInfo = "7pt";
   const logo = logoUrl || "/logo-mo.png";
-  const loteHTML = dados.lote ? `<div style="font-size:${fLote};font-weight:bold;text-align:center;padding-bottom:0.5mm;">Lote: ${dados.lote}</div>` : "";
-  const infoHTML = temInfo ? `<div style="font-size:${fInfo};font-style:italic;line-height:1.2;text-align:center;padding-bottom:0.5mm;">${dados.info}</div>` : "";
-  const operadorHTML = dados.operador ? `<div style="width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;">${dados.operador}</div>` : "";
+
+  const operadorHTML = dados.operador
+    ? `<div style="position:absolute;top:1mm;right:0;width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;">${dados.operador}</div>`
+    : "";
+
+  const loteHTML = dados.lote
+    ? `<div style="font-size:${fLote};font-weight:bold;line-height:1.4;">Lote: ${dados.lote}</div>`
+    : "";
+
+  const infoHTML = temInfo
+    ? `<div style="font-size:${fInfo};font-style:italic;line-height:1.3;margin-top:0.5mm;">${dados.info}</div>`
+    : "";
 
   const cell = `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
     <div style="font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;line-height:1.15;max-height:14mm;overflow:hidden;">${dados.nome}</div>
-    <div style="flex:1;display:flex;overflow:hidden;">
-      <div style="flex:1;display:flex;flex-direction:column;">
-        <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;"><div style="font-size:${fDatas};font-weight:bold;white-space:nowrap;">Fab: ${dados.fabricacao}</div><div style="font-size:${fDatas};font-weight:bold;white-space:nowrap;margin-top:1mm;">Val: ${dados.validade}</div></div>
-        ${loteHTML}${infoHTML}
+    <div style="flex:1;display:flex;position:relative;padding-bottom:2mm;">
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding-right:7mm;">
+        <div style="font-size:16pt;font-weight:bold;white-space:nowrap;line-height:1.4;">Fab: ${dados.fabricacao}</div>
+        <div style="font-size:16pt;font-weight:bold;white-space:nowrap;line-height:1.4;">Val: ${dados.validade}</div>
       </div>
-      <div style="width:12mm;display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-end;gap:0.5mm;margin-left:1mm;">
-        ${operadorHTML}
+      ${operadorHTML}
+    </div>
+    <div style="display:flex;align-items:flex-start;">
+      <div style="flex:1;">${loteHTML}${infoHTML}</div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:0.5mm;margin-left:1mm;">
         <div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>
         <img src="${logo}" style="height:5mm;opacity:0.8;" />
       </div>
