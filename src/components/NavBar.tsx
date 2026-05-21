@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 const links = [
@@ -8,7 +9,8 @@ const links = [
   { href: "/itens", label: "Itens", icon: "\u{1F4E6}" },
   { href: "/itens/novo", label: "Novo Item", icon: "\u{2795}" },
   { href: "/itens/importar", label: "Importar", icon: "\u{1F4C4}" },
-  { href: "/teste-impressao", label: "Impressao", icon: "\u{1F5A8}️" },
+  { href: "/teste-impressao", label: "Etiqueta", icon: "\u{1F5A8}️" },
+  { href: "/etiqueta-caixa", label: "Caixa", icon: "\u{1F4E6}" },
 ];
 
 export default function NavBar() {
@@ -18,9 +20,15 @@ export default function NavBar() {
     <nav className="bg-gradient-to-r from-[var(--marrom)] to-[#7a3520] text-[var(--branco)] px-6 py-0 shadow-lg">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2 py-3 group">
-          <span className="text-2xl">🍦</span>
-          <span className="text-2xl font-extrabold tracking-tight">
+        <Link href="/" className="flex items-center gap-2.5 py-2.5 group">
+          <Image
+            src="/logo-mo.png"
+            alt="mo!"
+            width={36}
+            height={36}
+            className="drop-shadow-md"
+          />
+          <span className="text-xl font-extrabold tracking-tight">
             Etiqueta<span className="text-[var(--vermelho)]">MO</span>
           </span>
         </Link>
@@ -36,7 +44,7 @@ export default function NavBar() {
                 key={link.href}
                 href={link.href}
                 className={
-                  "flex items-center gap-1.5 px-4 py-3 text-sm font-semibold transition-all border-b-3 " +
+                  "flex items-center gap-1.5 px-3 py-3 text-sm font-semibold transition-all border-b-3 " +
                   (isActive
                     ? "border-[var(--vermelho)] bg-white/10 text-white"
                     : "border-transparent text-white/75 hover:text-white hover:bg-white/5")

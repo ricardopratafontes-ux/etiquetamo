@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import NavBar from "@/components/NavBar";
 
 const acoes = [
@@ -29,10 +30,18 @@ const acoes = [
   {
     href: "/teste-impressao",
     icon: "\u{1F5A8}️",
-    titulo: "Imprimir Etiqueta",
-    descricao: "Teste de impressao na Elgin L42",
+    titulo: "Etiqueta de Produto",
+    descricao: "Imprimir etiquetas na Elgin L42",
     cor: "bg-white border-2 border-[var(--marrom)]",
     corTexto: "text-[var(--marrom)]",
+  },
+  {
+    href: "/etiqueta-caixa",
+    icon: "\u{1F4E6}",
+    titulo: "Etiqueta de Caixa",
+    descricao: "Identificar caixas com nome e quantidade",
+    cor: "bg-white border-2 border-[var(--vermelho)]",
+    corTexto: "text-[var(--vermelho)]",
   },
 ];
 
@@ -41,15 +50,36 @@ export default function Home() {
     <>
       <NavBar />
       <main className="min-h-screen bg-[var(--bege)]">
-        {/* Hero */}
-        <div className="bg-gradient-to-br from-[var(--marrom)] to-[#7a3520] text-white px-6 py-12">
-          <div className="max-w-4xl mx-auto text-center">
-            <span className="text-5xl mb-4 block">🍦</span>
-            <h1 className="text-4xl font-extrabold tracking-tight mb-2">
+        {/* Hero com pattern de fundo */}
+        <div
+          className="relative text-white px-6 py-12 overflow-hidden"
+          style={{
+            background: "linear-gradient(135deg, var(--marrom) 0%, #7a3520 100%)",
+          }}
+        >
+          {/* Pattern como textura sutil */}
+          <div
+            className="absolute inset-0 opacity-[0.06]"
+            style={{
+              backgroundImage: "url(/pattern.jpg)",
+              backgroundSize: "200px",
+              backgroundRepeat: "repeat",
+            }}
+          />
+          <div className="relative max-w-4xl mx-auto text-center">
+            <Image
+              src="/logomarca.png"
+              alt="Gelateria Moderna - mo!"
+              width={180}
+              height={180}
+              className="mx-auto mb-4 drop-shadow-lg"
+              priority
+            />
+            <h1 className="text-3xl font-extrabold tracking-tight mb-1">
               Etiqueta<span className="text-[var(--vermelho)]">MO</span>
             </h1>
-            <p className="text-lg opacity-80 font-medium">
-              Sistema de etiquetas da sua gelateria
+            <p className="text-base opacity-80 font-medium">
+              Sistema de etiquetas da Gelateria Moderna
             </p>
           </div>
         </div>
@@ -107,9 +137,18 @@ export default function Home() {
             </div>
           </div>
 
-          <p className="text-center mt-6 text-xs text-[var(--marrom)] opacity-40">
-            EtiquetaMO v0.2.0 — Sprint 2 Completo
-          </p>
+          <div className="flex items-center justify-center gap-3 mt-6">
+            <Image
+              src="/logo-mo.png"
+              alt="mo!"
+              width={20}
+              height={20}
+              className="opacity-40"
+            />
+            <p className="text-xs text-[var(--marrom)] opacity-40">
+              EtiquetaMO v0.3.0 — Gelateria Moderna desde 1959
+            </p>
+          </div>
         </div>
       </main>
     </>
