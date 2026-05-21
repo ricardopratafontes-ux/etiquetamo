@@ -182,3 +182,17 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 - **Decisão**: Avançar com Sprints 2+ sem aguardar a prova física de impressão. O gate continua pendente e será executado quando Ricardo acessar o PC da cozinha (via AnyDesk ou presencialmente).
 - **Motivo**: PC da impressora está na cozinha, Ricardo está na sala. Não faz sentido bloquear o desenvolvimento. A página de teste já está pronta e funcional.
 - **Alternativas descartadas**: Bloquear todo o desenvolvimento até a prova física (improdutivo).
+
+### DEC-026 — Regras de produtor por modo e família
+- **Data**: 2026-05-21
+- **Decisão**: O campo "Quem produziu?" na modal do wizard segue regras condicionais:
+  - **Contagem**: oculto por padrão. Opcional apenas para famílias "Barra de Gelatos" e "Food Service".
+  - **Produção**: oculto para família "Uso e Consumo". Opcional para "Insumos". Obrigatório para todas as demais.
+- **Motivo**: Nem todo item precisa de rastreabilidade de produtor. Itens de uso/consumo e contagem geral não são fabricados na cozinha.
+- **Alternativas descartadas**: Produtor obrigatório para tudo (impraticável para contagem e materiais).
+
+### DEC-027 — Escolha de tipo de etiqueta na modal do wizard
+- **Data**: 2026-05-21
+- **Decisão**: Quando um item possui tanto `uses_label` quanto `uses_counting_label`, a modal exibe toggle para escolher entre etiqueta Normal e Contagem. O card do produto mostra badges indicando quais tipos estão disponíveis.
+- **Motivo**: O cascateamento por tipo no step 1 é o filtro primário, mas itens com ambos os tipos precisam de acesso ao tipo alternativo sem sair do fluxo.
+- **Alternativas descartadas**: Forçar o usuário a voltar ao step 1 para trocar de modo (UX ruim).

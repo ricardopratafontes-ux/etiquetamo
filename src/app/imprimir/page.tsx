@@ -21,6 +21,7 @@ interface ItemCarrinho {
   quantidade: number;
   produtores: string[]; // IDs dos colaboradores que produziram
   lote: string;
+  tipoEtiqueta: "normal" | "contagem";
 }
 
 // --- Helpers ---
@@ -51,6 +52,29 @@ function dataCurta(data: string): string {
   return data.replace(/\/(\d{4})$/, (_, ano: string) => "/" + ano.slice(2));
 }
 
+/** Famílias com regras especiais (comparação case-insensitive) */
+const FAMILIAS_CONTAGEM_OPCIONAL = ["barra de gelatos", "food service"];
+const FAMILIA_USO_CONSUMO = "uso e consumo";
+const FAMILIA_INSUMOS = "insumos";
+
+/**
+ * Determina se o campo "produtor" é obrigatório, opcional ou oculto.
+ * Regras:
+ *   Contagem → oculto por padrão; opcional para Barra de Gelatos e Food Service
+ *   Produção → oculto para Uso e Consumo; opcional para Insumos; obrigatório para o resto
+ */
+function regrasProdutor(modo: "producao" | "contagem" | null, categoriaNome: string): "obrigatorio" | "opcional" | "oculto" {
+  const cat = categoriaNome.toLowerCase().trim();
+  if (modo === "contagem") {
+    if (FAMILIAS_CONTAGEM_OPCIONAL.some((f) => cat === f)) return "opcional";
+    return "oculto";
+  }
+  // Produção
+  if (cat === FAMILIA_USO_CONSUMO) return "oculto";
+  if (cat === FAMILIA_INSUMOS) return "opcional";
+  return "obrigatorio";
+}
+
 // --- Steps ---
 type StepTipo = "producao" | "contagem" | null;
 type Step = 1 | 2 | 3 | 4;
@@ -74,6 +98,7 @@ export default function ImprimirWizard() {
   const [modalProdutores, setModalProdutores] = useState<string[]>([]);
   const [modalQtd, setModalQtd] = useState(1);
   const [modalLote, setModalLote] = useState("");
+  const [modalTipoEtiqueta, setModalTipoEtiqueta] = useState<"normal" | "contagem">("normal");
 
   // Carrinho
   const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([]);
@@ -146,11 +171,20 @@ export default function ImprimirWizard() {
     setStep(4);
   }
 
+  // Nome da categoria pelo ID (para regras de produtor)
+  function nomeCategoriaPorId(catId: string | null): string {
+    if (!catId) return "";
+    const cat = categorias.find((c) => c.id === catId);
+    return cat ? cat.name : "";
+  }
+
   function abrirModalItem(item: ItemDB) {
     setModalItem(item);
     setModalProdutores([]);
     setModalQtd(1);
     setModalLote("");
+    // Default: tipo selecionado no step 1, mas pode mudar se item tem ambos
+    setModalTipoEtiqueta(tipo === "contagem" ? "contagem" : "normal");
   }
 
   function toggleProdutor(id: string) {
@@ -160,14 +194,19 @@ export default function ImprimirWizard() {
   }
 
   function adicionarAoCarrinho() {
-    if (!modalItem || modalProdutores.length === 0) return;
-    const existente = carrinho.findIndex((c) => c.item.id === modalItem.id);
+    if (!modalItem) return;
+    const catNome = nomeCategoriaPorId(modalItem.category_id);
+    const regra = regrasProdutor(tipo, catNome);
+    // Bloqueia só se obrigatório e vazio
+    if (regra === "obrigatorio" && modalProdutores.length === 0) return;
+
+    const existente = carrinho.findIndex((c) => c.item.id === modalItem.id && c.tipoEtiqueta === modalTipoEtiqueta);
     if (existente >= 0) {
       setCarrinho((prev) => prev.map((c, i) =>
         i === existente ? { ...c, quantidade: c.quantidade + modalQtd, produtores: modalProdutores, lote: modalLote } : c
       ));
     } else {
-      setCarrinho((prev) => [...prev, { item: modalItem, quantidade: modalQtd, produtores: modalProdutores, lote: modalLote }]);
+      setCarrinho((prev) => [...prev, { item: modalItem, quantidade: modalQtd, produtores: modalProdutores, lote: modalLote, tipoEtiqueta: modalTipoEtiqueta }]);
     }
     setModalItem(null);
   }
@@ -475,11 +514,15 @@ ${linhas}
                         >
                           <div className="flex-1 min-w-0">
                             <p className="font-bold text-[var(--marrom)] text-sm truncate">{item.name}</p>
-                            <p className="text-[10px] text-gray-400">
-                              {item.expiry_days ? `${item.expiry_days}d validade` : "Sem validade"}
-                              {item.uses_lot ? " · Lote" : ""}
-                              {item.storage_type && item.storage_type !== "ambiente" ? ` · ${item.storage_type === "congelado" ? "🧊" : "❄️"}` : ""}
-                            </p>
+                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                              <span className="text-[10px] text-gray-400">
+                                {item.expiry_days ? `${item.expiry_days}d` : "Sem val."}
+                                {item.uses_lot ? " · Lote" : ""}
+                                {item.storage_type && item.storage_type !== "ambiente" ? ` · ${item.storage_type === "congelado" ? "🧊" : "❄️"}` : ""}
+                              </span>
+                              {item.uses_label && <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">Normal</span>}
+                              {item.uses_counting_label && <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">Contagem</span>}
+                            </div>
                           </div>
                           {noCarrinho ? (
                             <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-lg">✓ No carrinho</span>
@@ -523,8 +566,9 @@ ${linhas}
                               </span>
                             </div>
                             <p className="text-[10px] text-gray-400 mt-1">
-                              Prod: <span className="font-bold text-[var(--marrom)]">{iniciaisProdutores(c.produtores)}</span>
-                              {c.lote && <> · Lote: {c.lote}</>}
+                              {c.produtores.length > 0 && <>Prod: <span className="font-bold text-[var(--marrom)]">{iniciaisProdutores(c.produtores)}</span></>}
+                              {c.lote && <>{c.produtores.length > 0 ? " · " : ""}Lote: {c.lote}</>}
+                              {c.tipoEtiqueta === "contagem" && <span className="ml-1 text-blue-600 font-bold">[Contagem]</span>}
                             </p>
                           </div>
                         ))}
@@ -556,44 +600,95 @@ ${linhas}
           )}
 
           {/* ===== Modal: Adicionar ao Carrinho ===== */}
-          {modalItem && (
+          {modalItem && (() => {
+            const catNome = nomeCategoriaPorId(modalItem.category_id);
+            const regraProdutor = regrasProdutor(tipo, catNome);
+            const temAmbosLabels = modalItem.uses_label && modalItem.uses_counting_label;
+            const podeSalvar = regraProdutor === "obrigatorio" ? modalProdutores.length > 0 : true;
+
+            return (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setModalItem(null)}>
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                {/* Header com info do produto */}
                 <div className="bg-[var(--marrom)] px-5 py-4 text-white">
                   <h3 className="font-bold text-lg">{modalItem.name}</h3>
-                  <p className="text-xs opacity-70">
-                    {modalItem.expiry_days ? `Validade: ${modalItem.expiry_days} dias` : "Sem validade definida"}
-                    {modalItem.uses_lot ? " · Precisa de lote" : ""}
-                  </p>
+                  <div className="flex flex-wrap gap-2 mt-1.5">
+                    {modalItem.expiry_days && <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">⏱ {modalItem.expiry_days}d validade</span>}
+                    {!modalItem.expiry_days && <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">Sem validade</span>}
+                    {modalItem.uses_lot && <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">📋 Lote</span>}
+                    {modalItem.storage_type && <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">{modalItem.storage_type === "congelado" ? "🧊 Congelado" : modalItem.storage_type === "refrigerado" ? "❄️ Refrigerado" : "☀️ Ambiente"}</span>}
+                    {modalItem.net_weight && <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">⚖️ {modalItem.net_weight}{modalItem.unit || "g"}</span>}
+                    {modalItem.uses_label && <span className="text-[10px] bg-green-400/30 px-2 py-0.5 rounded-full">🏷️ Normal</span>}
+                    {modalItem.uses_counting_label && <span className="text-[10px] bg-blue-400/30 px-2 py-0.5 rounded-full">📋 Contagem</span>}
+                  </div>
+                  {modalItem.additional_info && (
+                    <p className="text-[10px] text-white/70 mt-1.5 italic">{modalItem.additional_info}</p>
+                  )}
                 </div>
                 <div className="p-5 space-y-4">
-                  {/* Quem produziu */}
-                  <div>
-                    <label className="text-sm font-semibold text-[var(--marrom)] mb-2 block">Quem produziu? <span className="text-[var(--vermelho)]">*</span></label>
-                    <div className="flex flex-wrap gap-2">
-                      {colaboradores.map((c) => (
+
+                  {/* Tipo de etiqueta (se tem ambos) */}
+                  {temAmbosLabels && (
+                    <div>
+                      <label className="text-sm font-semibold text-[var(--marrom)] mb-2 block">Tipo de etiqueta</label>
+                      <div className="flex gap-2">
                         <button
-                          key={c.id}
                           type="button"
-                          onClick={() => toggleProdutor(c.id)}
-                          className={
-                            "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold cursor-pointer transition-all " +
-                            (modalProdutores.includes(c.id)
-                              ? "bg-[var(--vermelho)] text-white shadow-md"
-                              : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")
-                          }
+                          onClick={() => setModalTipoEtiqueta("normal")}
+                          className={"flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all border-2 " +
+                            (modalTipoEtiqueta === "normal"
+                              ? "bg-[var(--vermelho)] text-white border-[var(--vermelho)] shadow-md"
+                              : "bg-white text-[var(--marrom)] border-gray-200 hover:border-[var(--vermelho)]")}
                         >
-                          <span className="w-7 h-7 flex items-center justify-center bg-white/20 rounded-lg text-xs font-extrabold">
-                            {iniciais(c.name)}
-                          </span>
-                          {c.name.split(" ")[0]}
+                          🏷️ Normal
                         </button>
-                      ))}
+                        <button
+                          type="button"
+                          onClick={() => setModalTipoEtiqueta("contagem")}
+                          className={"flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all border-2 " +
+                            (modalTipoEtiqueta === "contagem"
+                              ? "bg-blue-600 text-white border-blue-600 shadow-md"
+                              : "bg-white text-[var(--marrom)] border-gray-200 hover:border-blue-600")}
+                        >
+                          📋 Contagem
+                        </button>
+                      </div>
                     </div>
-                    {modalProdutores.length === 0 && (
-                      <p className="text-xs text-[var(--vermelho)] mt-1">Selecione pelo menos um produtor</p>
-                    )}
-                  </div>
+                  )}
+
+                  {/* Quem produziu — condicional */}
+                  {regraProdutor !== "oculto" && (
+                    <div>
+                      <label className="text-sm font-semibold text-[var(--marrom)] mb-2 block">
+                        Quem produziu?
+                        {regraProdutor === "obrigatorio" && <span className="text-[var(--vermelho)]"> *</span>}
+                        {regraProdutor === "opcional" && <span className="text-gray-400 text-xs ml-1">(opcional)</span>}
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {colaboradores.map((c) => (
+                          <button
+                            key={c.id}
+                            type="button"
+                            onClick={() => toggleProdutor(c.id)}
+                            className={
+                              "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold cursor-pointer transition-all " +
+                              (modalProdutores.includes(c.id)
+                                ? "bg-[var(--vermelho)] text-white shadow-md"
+                                : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")
+                            }
+                          >
+                            <span className="w-7 h-7 flex items-center justify-center bg-white/20 rounded-lg text-xs font-extrabold">
+                              {iniciais(c.name)}
+                            </span>
+                            {c.name.split(" ")[0]}
+                          </button>
+                        ))}
+                      </div>
+                      {regraProdutor === "obrigatorio" && modalProdutores.length === 0 && (
+                        <p className="text-xs text-[var(--vermelho)] mt-1">Selecione pelo menos um produtor</p>
+                      )}
+                    </div>
+                  )}
 
                   {/* Lote (se necessário) */}
                   {modalItem.uses_lot && (
@@ -627,8 +722,8 @@ ${linhas}
                 <div className="border-t border-gray-200 px-5 py-4 flex gap-3">
                   <button
                     onClick={adicionarAoCarrinho}
-                    disabled={modalProdutores.length === 0}
-                    className={"flex-1 py-3 rounded-xl font-bold text-sm cursor-pointer transition-all " + (modalProdutores.length === 0 ? "bg-gray-200 text-gray-400" : "bg-[var(--vermelho)] text-white hover:bg-red-600 shadow-lg")}
+                    disabled={!podeSalvar}
+                    className={"flex-1 py-3 rounded-xl font-bold text-sm cursor-pointer transition-all " + (!podeSalvar ? "bg-gray-200 text-gray-400" : "bg-[var(--vermelho)] text-white hover:bg-red-600 shadow-lg")}
                   >
                     🛒 Adicionar ao Carrinho
                   </button>
@@ -638,7 +733,8 @@ ${linhas}
                 </div>
               </div>
             </div>
-          )}
+            );
+          })()}
         </div>
       </main>
     </>

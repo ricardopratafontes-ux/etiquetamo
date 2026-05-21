@@ -54,3 +54,8 @@ Cada dúvida segue: ID | Pergunta | Suposição atual | Status
 - **Pergunta**: Quais IPs da cozinha/escritório devem ter acesso ao modo operação?
 - **Suposição atual**: Será configurado pelo admin no painel. Implementar no Sprint 6.
 - **Status**: TODO VALIDAR (Sprint 6)
+
+### OQ-010 — Etiqueta complementar: layout e regras
+- **Pergunta**: Ricardo mencionou "etiquetas complementares" no wizard de impressão. Qual é o layout de uma etiqueta complementar? É diferente da normal (com campos específicos)? Quando um item precisa de etiqueta complementar? Existe um campo no cadastro que indica isso?
+- **Suposição atual**: Ainda não existe campo no schema nem layout definido. Atualmente o wizard oferece escolha entre etiqueta "Normal" (produção) e "Contagem". A etiqueta complementar seria um terceiro tipo.
+- **Status**: TODO VALIDAR
