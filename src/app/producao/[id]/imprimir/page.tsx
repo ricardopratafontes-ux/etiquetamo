@@ -35,6 +35,27 @@ interface ItemComDetalhes extends ProductionOrderItem {
   item_expiry_days: number | null;
   item_uses_lot: boolean | null;
   item_additional_info: string | null;
+  item_category_name: string | null;
+}
+
+/** Categorias excluídas da regra de validade do pacote (DEC-021) */
+const CATEGORIAS_SEM_VALIDADE_PACOTE = ["food service", "producao", "produção"];
+
+function parseDateBR(str: string): Date | null {
+  const parts = str.split("/");
+  if (parts.length !== 3) return null;
+  const d = parseInt(parts[0]), m = parseInt(parts[1]);
+  let y = parseInt(parts[2]);
+  if (y < 100) y += 2000;
+  if (isNaN(d) || isNaN(m) || isNaN(y)) return null;
+  return new Date(y, m - 1, d);
+}
+
+function menorData(dataCalcStr: string, dataPacoteStr: string): string {
+  const calc = parseDateBR(dataCalcStr);
+  const pacote = parseDateBR(dataPacoteStr);
+  if (!calc || !pacote) return dataCalcStr;
+  return pacote < calc ? dataPacoteStr : dataCalcStr;
 }
 
 function gerarHTMLEtiqueta(dados: EtiquetaDados, logoUrl?: string): string {
@@ -110,6 +131,11 @@ export default function ImprimirOrdem() {
   const [impressor, setImpressor] = useState("");     // quem está imprimindo (vai no histórico)
   const [lotesEditados, setLotesEditados] = useState<Record<string, string>>({});
 
+  // DEC-021: validade do pacote (por item)
+  const [validadesPacote, setValidadesPacote] = useState<Record<string, string>>({});
+  const [modalValidade, setModalValidade] = useState<{ itemId: string; itemName: string } | null>(null);
+  const [modalValInput, setModalValInput] = useState("");
+
   const carregar = useCallback(async () => {
     setLoading(true);
 
@@ -130,12 +156,23 @@ export default function ImprimirOrdem() {
 
     if (!orderItems) { setLoading(false); return; }
 
-    // Buscar detalhes dos itens
+    // Buscar detalhes dos itens com categoria
     const itemIds = orderItems.map((oi) => oi.item_id);
     const { data: itemsData } = await supabase
       .from("items")
-      .select("id, name, expiry_days, uses_lot, additional_info")
+      .select("id, name, expiry_days, uses_lot, additional_info, category_id")
       .in("id", itemIds);
+
+    // Buscar categorias para saber o nome
+    const catIds = [...new Set(itemsData?.map((i) => i.category_id).filter(Boolean) || [])];
+    let catsMap = new Map<string, string>();
+    if (catIds.length > 0) {
+      const { data: catsData } = await supabase
+        .from("categories")
+        .select("id, name")
+        .in("id", catIds);
+      catsMap = new Map(catsData?.map((c) => [c.id, c.name]) || []);
+    }
 
     const itemsMap = new Map(itemsData?.map((i) => [i.id, i]) || []);
 
@@ -147,6 +184,7 @@ export default function ImprimirOrdem() {
         item_expiry_days: item?.expiry_days || null,
         item_uses_lot: item?.uses_lot || null,
         item_additional_info: item?.additional_info || null,
+        item_category_name: item?.category_id ? (catsMap.get(item.category_id) || null) : null,
       };
     });
 
@@ -168,6 +206,35 @@ export default function ImprimirOrdem() {
     setLotesEditados((prev) => ({ ...prev, [itemId]: valor }));
   }
 
+  /** DEC-021: verifica se item precisa de validade do pacote e abre modal */
+  function precisaValidadePacote(item: ItemComDetalhes): boolean {
+    if (!item.item_uses_lot) return false;
+    if (!item.item_category_name) return false;
+    const cat = item.item_category_name.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+    return !CATEGORIAS_SEM_VALIDADE_PACOTE.some((c) => cat.includes(c.normalize("NFD").replace(/[̀-ͯ]/g, "")));
+  }
+
+  function pedirValidadePacote(item: ItemComDetalhes) {
+    setModalValInput(validadesPacote[item.id] || "");
+    setModalValidade({ itemId: item.id, itemName: item.item_name });
+  }
+
+  function confirmarValidadePacote() {
+    if (!modalValidade) return;
+    setValidadesPacote((prev) => ({ ...prev, [modalValidade.itemId]: modalValInput }));
+    setModalValidade(null);
+    setModalValInput("");
+  }
+
+  /** Calcula validade final considerando a do pacote (DEC-021) */
+  function validadeFinal(item: ItemComDetalhes): string {
+    const valCalc = item.item_expiry_days ? dataValidade(item.item_expiry_days) : "";
+    if (!valCalc) return valCalc;
+    const valPacote = validadesPacote[item.id];
+    if (!valPacote) return valCalc;
+    return menorData(valCalc, valPacote);
+  }
+
   async function imprimirTodos() {
     if (!produtor.trim()) {
       alert("Informe as iniciais de quem fez a produção");
@@ -181,11 +248,22 @@ export default function ImprimirOrdem() {
     setImprimindo(true);
     const fabricacao = dataHoje();
 
+    // DEC-021: verificar se itens que precisam de validade do pacote já foram preenchidos
+    for (const item of itens) {
+      if (item.printed) continue;
+      const lote = lotesEditados[item.id] || "";
+      if (lote && precisaValidadePacote(item) && !validadesPacote[item.id]) {
+        pedirValidadePacote(item);
+        setImprimindo(false);
+        return;
+      }
+    }
+
     // Gerar etiquetas (1 por quantidade)
     const etiquetas: EtiquetaDados[] = [];
     for (const item of itens) {
       if (item.printed) continue;
-      const validade = item.item_expiry_days ? dataValidade(item.item_expiry_days) : "";
+      const validade = validadeFinal(item);
       const lote = lotesEditados[item.id] || "";
 
       for (let i = 0; i < item.quantity; i++) {
@@ -195,7 +273,7 @@ export default function ImprimirOrdem() {
           validade,
           lote,
           info: item.item_additional_info || "",
-          operador: produtor.trim().toUpperCase(), // iniciais do produtor vão na etiqueta
+          operador: produtor.trim().toUpperCase(),
         });
       }
     }
@@ -255,9 +333,15 @@ export default function ImprimirOrdem() {
       return;
     }
 
-    const fabricacao = dataHoje();
-    const validade = item.item_expiry_days ? dataValidade(item.item_expiry_days) : "";
+    // DEC-021: verificar validade do pacote
     const lote = lotesEditados[item.id] || "";
+    if (lote && precisaValidadePacote(item) && !validadesPacote[item.id]) {
+      pedirValidadePacote(item);
+      return;
+    }
+
+    const fabricacao = dataHoje();
+    const validade = validadeFinal(item);
 
     const etiquetas: EtiquetaDados[] = [];
     for (let i = 0; i < item.quantity; i++) {
@@ -419,15 +503,34 @@ export default function ImprimirOrdem() {
                       </div>
                       <div className="flex items-center gap-3">
                         <div>
-                          <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">Lote</label>
+                          <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">
+                            {precisaValidadePacote(item) ? "Lote do Fabricante" : "Lote"}
+                          </label>
                           <input
                             type="text"
                             value={lotesEditados[item.id] || ""}
                             onChange={(e) => atualizarLote(item.id, e.target.value)}
-                            placeholder="Lote"
-                            className="w-24 px-3 py-1.5 bg-[var(--bege)] border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--vermelho)]"
+                            placeholder={precisaValidadePacote(item) ? "Lote do balde/saco" : "Lote"}
+                            className="w-28 px-3 py-1.5 bg-[var(--bege)] border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-[var(--vermelho)]"
                           />
                         </div>
+                        {precisaValidadePacote(item) && (
+                          <div>
+                            <label className="block text-[10px] font-semibold text-gray-400 mb-0.5">Val. Pacote</label>
+                            <button
+                              type="button"
+                              onClick={() => pedirValidadePacote(item)}
+                              className={
+                                "px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer " +
+                                (validadesPacote[item.id]
+                                  ? "bg-green-100 text-green-700 border border-green-300"
+                                  : "bg-amber-100 text-amber-700 border border-amber-300 animate-pulse")
+                              }
+                            >
+                              {validadesPacote[item.id] || "Informar"}
+                            </button>
+                          </div>
+                        )}
                         <button
                           type="button"
                           onClick={() => imprimirItem(item)}
@@ -448,6 +551,8 @@ export default function ImprimirOrdem() {
               </div>
             </div>
           )}
+
+          {/* Indicadores de validade do pacote nos itens pendentes */}
 
           {/* Itens já impressos */}
           {itensImpressos.length > 0 && (
@@ -476,6 +581,61 @@ export default function ImprimirOrdem() {
             </div>
           )}
         </div>
+
+        {/* Modal: Validade do Pacote (DEC-021) */}
+        {modalValidade && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-2xl p-6 w-[90%] max-w-sm mx-auto">
+              <h3 className="font-bold text-[var(--marrom)] text-lg mb-2 flex items-center gap-2">
+                <span>📦</span> Validade do Pacote
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                Informe a data de validade impressa no pacote/balde de <strong>{modalValidade.itemName}</strong>.
+                A etiqueta usará a menor data entre esta e a calculada.
+              </p>
+              <input
+                type="text"
+                value={modalValInput}
+                onChange={(e) => setModalValInput(e.target.value)}
+                placeholder="DD/MM/AAAA"
+                maxLength={10}
+                className="w-full px-4 py-3 bg-[var(--bege)] border-none rounded-xl text-lg font-bold text-center focus:outline-none focus:ring-2 focus:ring-[var(--vermelho)] mb-4"
+                autoFocus
+                onKeyDown={(e) => {
+                  // Auto-format: insere / após DD e MM
+                  if (e.key !== "Backspace" && e.key !== "Delete") {
+                    const v = modalValInput.replace(/\D/g, "");
+                    if (v.length === 2 || v.length === 4) {
+                      setModalValInput(modalValInput + "/");
+                    }
+                  }
+                }}
+              />
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => { setModalValidade(null); setModalValInput(""); }}
+                  className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold text-sm hover:bg-gray-200 cursor-pointer transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmarValidadePacote}
+                  disabled={!modalValInput.trim() || !parseDateBR(modalValInput)}
+                  className={
+                    "flex-1 py-3 rounded-xl font-bold text-sm transition-all " +
+                    (modalValInput.trim() && parseDateBR(modalValInput)
+                      ? "bg-[var(--vermelho)] text-white hover:bg-red-600 cursor-pointer"
+                      : "bg-gray-200 text-gray-400 cursor-not-allowed")
+                  }
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </>
   );
