@@ -129,6 +129,12 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 - **Motivo**: Regras derivadas da operação real da cozinha. Dois operadores existem porque nem sempre quem fabrica é quem imprime.
 - **Alternativas descartadas**: Campo único de operador (não distingue produtor de impressor).
 
+### DEC-020 — Campo "Item Fraciona" (fracionamento/porcionamento)
+- **Data**: 2026-05-21
+- **Decisão**: Adicionado campo booleano `is_portioned` na tabela items. Indica que o item pode ser fracionado/porcionado (aberto), gerando nova data de validade. Coluna na planilha: "ITEM FRACIONA" (última posição).
+- **Motivo**: Muitos itens da gelateria são porcionados na cozinha — produto novo fracionado ou embalagem aberta com nova validade. Identificar esses itens no cadastro é necessário para futuras regras de reimpressão com nova data.
+- **Alternativas descartadas**: Não rastrear fracionamento (perde controle de validade pós-abertura). Campo `expiry_days_portioned` foi considerado mas adiado — será adicionado quando o fluxo de fracionamento for desenhado.
+
 ### DEC-009 — Prova física postergada, avanço paralelo
 - **Data**: 2026-05-21
 - **Decisão**: Avançar com Sprints 2+ sem aguardar a prova física de impressão. O gate continua pendente e será executado quando Ricardo acessar o PC da cozinha (via AnyDesk ou presencialmente).

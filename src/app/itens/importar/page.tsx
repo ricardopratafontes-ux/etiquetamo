@@ -19,6 +19,7 @@ interface LinhaImportada {
   tipoArmazenagem: string;
   responsavel: string;
   etiquetaContagem: string;
+  itemFraciona: string;
 }
 
 interface ResultadoImportacao {
@@ -29,11 +30,11 @@ interface ResultadoImportacao {
 
 const ORG_SLUG = "gelateria";
 
-const MODELO_CSV = `Codigo;Descricao;Familia de Produto;Codigo EAN;Unidade;Peso Liquido;Dias de Validade;Possui Lote;Imprime Etiqueta;Etiqueta Complementar;Tipo de Armazenagem;Responsavel;Etiqueta de Contagem
-SORV-001;Sorvete de Chocolate Belga;Sorvetes;7891234567890;KG;1kg;7;Sim;Sim;Nao;Congelado;Ricardo;Nao
-PIC-001;Picole de Morango;Picoles;7891234567891;UN;80g;30;Nao;Sim;Nao;Congelado;Ricardo;Nao
-EMB-001;Embalagem Kraft 500ml;Embalagens;7891234567893;UN;;;Nao;Nao;Nao;Ambiente;Ricardo;Sim
-TORTA-001;Torta de Limao;Tortas;7891234567892;UN;1.2kg;NAO PERECIVEL;Sim;Sim;Sim;Refrigerado;Ricardo;Nao`;
+const MODELO_CSV = `Codigo;Descricao;Familia de Produto;Codigo EAN;Unidade;Peso Liquido;Dias de Validade;Possui Lote;Imprime Etiqueta;Etiqueta Complementar;Tipo de Armazenagem;Responsavel;Etiqueta de Contagem;Item Fraciona
+SORV-001;Sorvete de Chocolate Belga;Sorvetes;7891234567890;KG;1kg;7;Sim;Sim;Nao;Congelado;Ricardo;Nao;Sim
+PIC-001;Picole de Morango;Picoles;7891234567891;UN;80g;30;Nao;Sim;Nao;Congelado;Ricardo;Nao;Nao
+EMB-001;Embalagem Kraft 500ml;Embalagens;7891234567893;UN;;;Nao;Nao;Nao;Ambiente;Ricardo;Sim;Nao
+TORTA-001;Torta de Limao;Tortas;7891234567892;UN;1.2kg;NAO PERECIVEL;Sim;Sim;Sim;Refrigerado;Ricardo;Nao;Sim`;
 
 // Mapeamento de colunas: aceita variacoes comuns
 const MAPA_COLUNAS: Record<string, keyof LinhaImportada> = {
@@ -83,6 +84,11 @@ const MAPA_COLUNAS: Record<string, keyof LinhaImportada> = {
   "etiqueta contagem": "etiquetaContagem",
   contagem: "etiquetaContagem",
   counting: "etiquetaContagem",
+  "item fraciona": "itemFraciona",
+  fraciona: "itemFraciona",
+  fracionamento: "itemFraciona",
+  "fracionavel": "itemFraciona",
+  portioned: "itemFraciona",
 };
 
 function parseCSV(text: string): string[][] {
@@ -161,7 +167,7 @@ export default function ImportarItens() {
     const linhasMapeadas: LinhaImportada[] = [];
     for (let i = 1; i < dados.length; i++) {
       const row = dados[i];
-      const linha: LinhaImportada = { codigo: "", nome: "", familia: "", codigoEan: "", unidade: "UN", pesoLiquido: "", validadeDias: "", possuiLote: "", imprimeEtiqueta: "sim", etiquetaComplementar: "", tipoArmazenagem: "ambiente", responsavel: "", etiquetaContagem: "" };
+      const linha: LinhaImportada = { codigo: "", nome: "", familia: "", codigoEan: "", unidade: "UN", pesoLiquido: "", validadeDias: "", possuiLote: "", imprimeEtiqueta: "sim", etiquetaComplementar: "", tipoArmazenagem: "ambiente", responsavel: "", etiquetaContagem: "", itemFraciona: "" };
       for (const [idxStr, campo] of Object.entries(mapa)) {
         const idx = parseInt(idxStr);
         if (row[idx] !== undefined) linha[campo] = row[idx];
@@ -227,6 +233,7 @@ export default function ImportarItens() {
         uses_complementary_label: linha.etiquetaComplementar ? normBool(linha.etiquetaComplementar) : false,
         expiry_days: expiryDays,
         uses_counting_label: linha.etiquetaContagem ? normBool(linha.etiquetaContagem) : false,
+        is_portioned: linha.itemFraciona ? normBool(linha.itemFraciona) : false,
         additional_info: null, // Responsável agora é preenchido na hora da impressão
       });
 
@@ -270,7 +277,7 @@ export default function ImportarItens() {
               </button>
               <div className="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
                 <p className="text-xs text-gray-500 font-mono leading-relaxed">
-                  Colunas: Codigo ; Descricao ; Familia de Produto ; Codigo EAN ; Unidade ; Peso Liquido ; Dias de Validade ; Possui Lote ; Imprime Etiqueta ; Etiqueta Complementar ; Tipo de Armazenagem ; Responsavel
+                  Colunas: Codigo ; Descricao ; Familia de Produto ; Codigo EAN ; Unidade ; Peso Liquido ; Dias de Validade ; Possui Lote ; Imprime Etiqueta ; Etiqueta Complementar ; Tipo de Armazenagem ; Responsavel ; Etiqueta de Contagem ; Item Fraciona
                 </p>
               </div>
             </div>

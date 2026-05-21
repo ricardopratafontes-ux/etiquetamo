@@ -79,6 +79,7 @@ export interface Database {
           uses_complementary_label: boolean | null;
           complementary_label_text: string | null;
           uses_counting_label: boolean | null;
+          is_portioned: boolean | null;
           active: boolean;
           manual_override: boolean;
           created_at: string;
@@ -104,6 +105,7 @@ export interface Database {
           uses_complementary_label?: boolean | null;
           complementary_label_text?: string | null;
           uses_counting_label?: boolean | null;
+          is_portioned?: boolean | null;
           active?: boolean;
           manual_override?: boolean;
         };
@@ -124,6 +126,7 @@ export interface Database {
           uses_complementary_label?: boolean | null;
           complementary_label_text?: string | null;
           uses_counting_label?: boolean | null;
+          is_portioned?: boolean | null;
           active?: boolean;
           manual_override?: boolean;
         };
