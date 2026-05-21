@@ -117,47 +117,51 @@ export default function ListaItens() {
 
         <div className="max-w-5xl mx-auto px-6 -mt-4">
           {/* Barra de filtros */}
-          <div className="bg-white rounded-2xl shadow-lg border border-[var(--verde)] p-4 mb-6">
-            <div className="flex flex-wrap gap-3 items-center">
-              {/* Busca */}
-              <div className="flex-1 min-w-[220px] relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-                <input
-                  type="text"
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                  placeholder="Buscar por descricao, codigo, EAN..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-[var(--bege)] border-none rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--vermelho)]"
-                />
+          <div className="bg-white rounded-2xl shadow-lg border border-[var(--verde)] p-4 mb-5">
+            <div className="flex flex-col gap-3">
+              {/* Linha 1: Família (destaque) */}
+              <div className="relative">
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-lg">🏷️</span>
+                <select
+                  value={filtroCategoria}
+                  onChange={(e) => setFiltroCategoria(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3.5 bg-[var(--bege)] border-2 border-[var(--verde)] rounded-xl text-base font-semibold text-[var(--marrom)] focus:outline-none focus:ring-2 focus:ring-[var(--vermelho)] cursor-pointer"
+                >
+                  <option value="">Todas as famílias</option>
+                  {categories.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
               </div>
-              {/* Filtro categoria */}
-              <select
-                value={filtroCategoria}
-                onChange={(e) => setFiltroCategoria(e.target.value)}
-                className="px-4 py-2.5 bg-[var(--bege)] border-none rounded-xl text-sm font-medium text-[var(--marrom)] focus:outline-none focus:ring-2 focus:ring-[var(--vermelho)] cursor-pointer"
-              >
-                <option value="">🏷️ Todas familias</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}</option>
-                ))}
-              </select>
-              {/* Filtro status */}
-              <div className="flex bg-[var(--bege)] rounded-xl overflow-hidden">
-                {(["ativos", "inativos", "todos"] as const).map((f) => (
-                  <button
-                    key={f}
-                    type="button"
-                    onClick={() => setFiltroAtivo(f)}
-                    className={
-                      "px-4 py-2.5 text-sm font-semibold transition-all cursor-pointer " +
-                      (filtroAtivo === f
-                        ? "bg-[var(--vermelho)] text-white shadow-inner"
-                        : "text-[var(--marrom)] hover:bg-white/80")
-                    }
-                  >
-                    {f === "ativos" ? "✅ Ativos" : f === "inativos" ? "⛔ Inativos" : "📋 Todos"}
-                  </button>
-                ))}
+              {/* Linha 2: Busca + Status */}
+              <div className="flex flex-wrap gap-2 items-center">
+                <div className="flex-1 min-w-[180px] relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+                  <input
+                    type="text"
+                    value={busca}
+                    onChange={(e) => setBusca(e.target.value)}
+                    placeholder="Buscar por descrição, código, EAN..."
+                    className="w-full pl-9 pr-4 py-2 bg-[var(--bege)] border-none rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--vermelho)]"
+                  />
+                </div>
+                <div className="flex bg-[var(--bege)] rounded-xl overflow-hidden">
+                  {(["ativos", "inativos", "todos"] as const).map((f) => (
+                    <button
+                      key={f}
+                      type="button"
+                      onClick={() => setFiltroAtivo(f)}
+                      className={
+                        "px-3 py-2 text-xs font-semibold transition-all cursor-pointer " +
+                        (filtroAtivo === f
+                          ? "bg-[var(--vermelho)] text-white shadow-inner"
+                          : "text-[var(--marrom)] hover:bg-white/80")
+                      }
+                    >
+                      {f === "ativos" ? "✅ Ativos" : f === "inativos" ? "⛔ Inativos" : "📋 Todos"}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -199,97 +203,74 @@ export default function ListaItens() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pb-8">
               {itensFiltrados.map((item) => {
                 const catNome = nomeCategoria(item.category_id);
                 return (
                   <div
                     key={item.id}
                     className={
-                      "bg-white rounded-2xl shadow-md border-l-4 overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5 " +
+                      "bg-white rounded-xl shadow-sm border-l-4 overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 " +
                       (item.active ? "border-l-[var(--verde)]" : "border-l-gray-300 opacity-60")
                     }
                   >
-                    {/* Cabecalho do card */}
-                    <div className="p-4 pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-[var(--marrom)] text-base truncate">
-                            {item.name}
-                          </h3>
-                          {(item.code || item.barcode) && (
-                            <p className="text-xs text-gray-400 font-mono mt-0.5">
-                              {item.code}{item.code && item.barcode ? " · " : ""}{item.barcode ? `EAN ${item.barcode}` : ""}
-                            </p>
-                          )}
-                        </div>
+                    {/* Cabeçalho compacto */}
+                    <div className="px-3 pt-3 pb-2">
+                      <div className="flex items-start justify-between gap-1">
+                        <h3 className="font-bold text-[var(--marrom)] text-sm leading-tight truncate flex-1 min-w-0">
+                          {item.name}
+                        </h3>
                         <button
                           onClick={() => toggleAtivo(item)}
                           className={
-                            "shrink-0 px-2.5 py-1 rounded-full text-xs font-bold cursor-pointer transition-all " +
-                            (item.active
-                              ? "bg-green-100 text-green-700 hover:bg-green-200"
-                              : "bg-gray-100 text-gray-500 hover:bg-gray-200")
+                            "shrink-0 w-2 h-2 rounded-full mt-1.5 cursor-pointer " +
+                            (item.active ? "bg-green-500" : "bg-gray-300")
                           }
-                        >
-                          {item.active ? "Ativo" : "Inativo"}
-                        </button>
+                          title={item.active ? "Ativo" : "Inativo"}
+                        />
                       </div>
+                      {item.code && (
+                        <p className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">{item.code}</p>
+                      )}
                     </div>
 
-                    {/* Badges */}
-                    <div className="px-4 pb-3 flex flex-wrap gap-1.5">
+                    {/* Badges compactos */}
+                    <div className="px-3 pb-2 flex flex-wrap gap-1">
                       {catNome && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 text-amber-700 text-xs font-medium rounded-full border border-amber-200">
-                          🏷️ {catNome}
+                        <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-medium rounded-full border border-amber-200 truncate max-w-[120px]">
+                          {catNome}
                         </span>
                       )}
                       {item.uses_expiry && item.expiry_days && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-200">
-                          ⏱️ {item.expiry_days}d
-                        </span>
-                      )}
-                      {item.uses_label && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-50 text-green-700 text-xs font-medium rounded-full border border-green-200">
-                          🏷️ Etiqueta
-                        </span>
-                      )}
-                      {item.uses_lot && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-50 text-purple-700 text-xs font-medium rounded-full border border-purple-200">
-                          📋 Lote
+                        <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-medium rounded-full border border-blue-200">
+                          {item.expiry_days}d
                         </span>
                       )}
                       {item.storage_type && item.storage_type !== "ambiente" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-cyan-50 text-cyan-700 text-xs font-medium rounded-full border border-cyan-200">
-                          {item.storage_type === "congelado" ? "🧊" : "❄️"} {item.storage_type === "congelado" ? "Congelado" : "Refrigerado"}
+                        <span className="px-1.5 py-0.5 bg-cyan-50 text-cyan-700 text-[10px] font-medium rounded-full border border-cyan-200">
+                          {item.storage_type === "congelado" ? "🧊" : "❄️"}
                         </span>
                       )}
-                      {item.unit && item.unit !== "UN" && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-50 text-gray-600 text-xs font-medium rounded-full border border-gray-200">
-                          ⚖️ {item.unit}{item.net_weight ? ` · ${item.net_weight}` : ""}
+                      {item.uses_lot && (
+                        <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-medium rounded-full border border-purple-200">
+                          Lote
                         </span>
                       )}
                     </div>
 
-                    {/* Info adicional */}
-                    {item.additional_info && (
-                      <div className="px-4 pb-3">
-                        <p className="text-xs text-gray-500 italic truncate">
-                          💬 {item.additional_info}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Footer do card */}
-                    <div className="bg-gray-50 px-4 py-2.5 flex items-center justify-between border-t border-gray-100">
-                      <span className="text-xs text-gray-400">
-                        {item.source === "manual" ? "✏️ Manual" : item.source === "spreadsheet" ? "📄 Planilha" : "🔗 OMIE"}
-                      </span>
+                    {/* Footer compacto com Editar + Imprimir */}
+                    <div className="bg-gray-50 px-3 py-2 flex items-center justify-end gap-1.5 border-t border-gray-100">
                       <Link
                         href={`/itens/${item.id}/editar`}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-[var(--vermelho)] text-white text-xs font-bold rounded-lg hover:bg-red-600 transition-all"
+                        className="flex items-center gap-1 px-2.5 py-1 bg-[var(--marrom)] text-white text-[11px] font-bold rounded-lg hover:opacity-90 transition-all"
                       >
                         ✏️ Editar
+                      </Link>
+                      <Link
+                        href={`/producao/${item.id}/imprimir`}
+                        className="flex items-center gap-1 px-2.5 py-1 bg-[var(--vermelho)] text-white text-[11px] font-bold rounded-lg hover:bg-red-600 transition-all"
+                      >
+                        🖨️ Imprimir
                       </Link>
                     </div>
                   </div>

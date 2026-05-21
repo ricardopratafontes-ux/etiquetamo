@@ -23,8 +23,8 @@ export default function EditarItem() {
   const [newCategoryName, setNewCategoryName] = useState("");
 
   const [descricao, setDescricao] = useState("");
-  const [codigo, setCodigo] = useState("");
-  const [codigoEan, setCodigoEan] = useState("");
+  const [codigo, setCódigo] = useState("");
+  const [codigoEan, setCódigoEan] = useState("");
   const [categoriaId, setCategoriaId] = useState("");
   const [unidade, setUnidade] = useState("UN");
   const [pesoLiquido, setPesoLiquido] = useState("");
@@ -43,11 +43,11 @@ export default function EditarItem() {
     async function load() {
       const { data: item, error } = await supabase
         .from("items").select("*").eq("id", itemId).single();
-      if (error || !item) { setMessage("Item nao encontrado."); setLoading(false); return; }
+      if (error || !item) { setMessage("Item não encontrado."); setLoading(false); return; }
 
       setDescricao(item.name);
-      setCodigo(item.code || "");
-      setCodigoEan(item.barcode || "");
+      setCódigo(item.code || "");
+      setCódigoEan(item.barcode || "");
       setCategoriaId(item.category_id || "");
       setUnidade(item.unit || "UN");
       setPesoLiquido(item.net_weight || "");
@@ -86,7 +86,7 @@ export default function EditarItem() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!descricao.trim()) { setMessage("Descricao e obrigatoria."); return; }
+    if (!descricao.trim()) { setMessage("Descrição é obrigatória."); return; }
     setSaving(true);
     setMessage("");
 
@@ -141,45 +141,45 @@ export default function EditarItem() {
                 {/* Descricao */}
                 <div>
                   <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">
-                    Descricao <span className="text-[var(--vermelho)]">*</span>
+                    Descrição <span className="text-[var(--vermelho)]">*</span>
                   </label>
                   <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex: Sorvete de Chocolate Belga" className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm font-medium text-center focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" required />
                 </div>
 
-                {/* Codigo + EAN */}
+                {/* Código + EAN */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Codigo</label>
-                    <input type="text" value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Ex: SORV-001" className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm text-center focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" />
+                    <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Código</label>
+                    <input type="text" value={codigo} onChange={(e) => setCódigo(e.target.value)} placeholder="Ex: SORV-001" className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm text-center focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" />
                   </div>
                   <div>
-                    <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Codigo EAN (GTIN)</label>
-                    <input type="text" value={codigoEan} onChange={(e) => setCodigoEan(e.target.value)} placeholder="EAN / GTIN" className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm text-center focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" />
+                    <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Código EAN (GTIN)</label>
+                    <input type="text" value={codigoEan} onChange={(e) => setCódigoEan(e.target.value)} placeholder="EAN / GTIN" className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm text-center focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" />
                   </div>
                 </div>
 
-                {/* Familia de Produto */}
+                {/* Família de Produto */}
                 <div>
-                  <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Familia de Produto</label>
+                  <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Família de Produto</label>
                   <div className="flex gap-2">
                     <select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} className="flex-1 px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all cursor-pointer">
-                      <option value="">Sem familia</option>
+                      <option value="">Sem família</option>
                       {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
                     </select>
                     <button type="button" onClick={() => setShowNewCategory(!showNewCategory)} className="px-4 py-3 bg-[var(--verde)] text-[var(--marrom)] rounded-xl text-sm font-bold hover:opacity-90 cursor-pointer transition-all shadow-sm">+ Nova</button>
                   </div>
                   {showNewCategory && (
                     <div className="flex gap-2 mt-2">
-                      <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Nome da nova familia" className="flex-1 px-4 py-2.5 bg-yellow-50 border-2 border-yellow-200 rounded-xl text-sm focus:outline-none focus:border-[var(--vermelho)]" autoFocus />
+                      <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)} placeholder="Nome da nova família" className="flex-1 px-4 py-2.5 bg-yellow-50 border-2 border-yellow-200 rounded-xl text-sm focus:outline-none focus:border-[var(--vermelho)]" autoFocus />
                       <button type="button" onClick={handleCreateCategory} className="px-4 py-2.5 bg-[var(--marrom)] text-white rounded-xl text-sm font-bold cursor-pointer hover:opacity-90">Criar</button>
                     </div>
                   )}
                 </div>
 
-                {/* Peso Liquido (esquerda) + Unidade (direita) */}
+                {/* Peso Líquido (esquerda) + Unidade (direita) */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Peso Liquido</label>
+                    <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Peso Líquido</label>
                     <input type="text" value={pesoLiquido} onChange={(e) => setPesoLiquido(e.target.value)} placeholder="Ex: 500g, 1.5kg" className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm text-center focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" />
                   </div>
                   <div>
@@ -196,16 +196,20 @@ export default function EditarItem() {
                 <div>
                   <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Tipo de Armazenagem</label>
                   <div className="grid grid-cols-3 gap-2">
-                    <button type="button" onClick={() => setTipoArmazenagem("ambiente")} className={"flex flex-col items-center gap-1 py-3 rounded-xl text-sm font-bold cursor-pointer transition-all " + (tipoArmazenagem === "ambiente" ? "bg-[var(--vermelho)] text-white shadow-md" : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")}>
-                      <span>Ambiente</span>
+                    <button type="button" onClick={() => setTipoArmazenagem("ambiente")} className={"flex flex-col items-center gap-1 py-3 rounded-xl cursor-pointer transition-all " + (tipoArmazenagem === "ambiente" ? "bg-[var(--vermelho)] text-white shadow-md" : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")}>
+                      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="14" cy="14" r="5" stroke="currentColor" strokeWidth="2"/><path d="M14 3v3M14 22v3M3 14h3M22 14h3M6.3 6.3l2.1 2.1M19.6 19.6l2.1 2.1M6.3 21.7l2.1-2.1M19.6 8.4l2.1-2.1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                      <span className="text-sm font-bold">Ambiente</span>
+                      <span className={"text-[10px] " + (tipoArmazenagem === "ambiente" ? "text-white/80" : "text-gray-500")}>Temp. natural</span>
                     </button>
-                    <button type="button" onClick={() => setTipoArmazenagem("refrigerado")} className={"flex flex-col items-center gap-0.5 py-2 rounded-xl cursor-pointer transition-all " + (tipoArmazenagem === "refrigerado" ? "bg-[var(--vermelho)] text-white shadow-md" : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")}>
+                    <button type="button" onClick={() => setTipoArmazenagem("refrigerado")} className={"flex flex-col items-center gap-1 py-3 rounded-xl cursor-pointer transition-all " + (tipoArmazenagem === "refrigerado" ? "bg-[var(--vermelho)] text-white shadow-md" : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")}>
+                      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2v24M14 2l-4 4M14 2l4 4M14 26l-4-4M14 26l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.4 8l18.2 10.5M3.4 8l1.4 5.2M3.4 8l5.2 1.4M24.6 20l-1.4-5.2M24.6 20l-5.2-1.4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.4 20l18.2-10.5M3.4 20l5.2-1.4M3.4 20l1.4-5.2M24.6 8l-5.2 1.4M24.6 8l-1.4 5.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                       <span className="text-sm font-bold">Refrigerado</span>
-                      <span className={"text-[10px] " + (tipoArmazenagem === "refrigerado" ? "text-white/80" : "text-gray-500")}>Manter em 5&#xB0;C</span>
+                      <span className={"text-[10px] " + (tipoArmazenagem === "refrigerado" ? "text-white/80" : "text-gray-500")}>Manter em 5°C</span>
                     </button>
-                    <button type="button" onClick={() => setTipoArmazenagem("congelado")} className={"flex flex-col items-center gap-0.5 py-2 rounded-xl cursor-pointer transition-all " + (tipoArmazenagem === "congelado" ? "bg-[var(--vermelho)] text-white shadow-md" : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")}>
+                    <button type="button" onClick={() => setTipoArmazenagem("congelado")} className={"flex flex-col items-center gap-1 py-3 rounded-xl cursor-pointer transition-all " + (tipoArmazenagem === "congelado" ? "bg-[var(--vermelho)] text-white shadow-md" : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")}>
+                      <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2v24M14 2l-4 4M14 2l4 4M14 26l-4-4M14 26l4-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.4 8l18.2 10.5M3.4 8l1.4 5.2M3.4 8l5.2 1.4M24.6 20l-1.4-5.2M24.6 20l-5.2-1.4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.4 20l18.2-10.5M3.4 20l5.2-1.4M3.4 20l1.4-5.2M24.6 8l-5.2 1.4M24.6 8l-1.4 5.2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="14" cy="14" r="3" fill="currentColor"/></svg>
                       <span className="text-sm font-bold">Congelado</span>
-                      <span className={"text-[10px] " + (tipoArmazenagem === "congelado" ? "text-white/80" : "text-gray-500")}>Manter entre -14 e -22&#xB0;C</span>
+                      <span className={"text-[10px] " + (tipoArmazenagem === "congelado" ? "text-white/80" : "text-gray-500")}>-14 a -22°C</span>
                     </button>
                   </div>
                 </div>
@@ -243,7 +247,7 @@ export default function EditarItem() {
 
                 {usaValidade && (
                   <div className="bg-[var(--bege)] rounded-xl p-4 mb-3">
-                    <p className="text-sm font-semibold text-[var(--marrom)] mb-3 text-center">Validade padrao (em dias)</p>
+                    <p className="text-sm font-semibold text-[var(--marrom)] mb-3 text-center">Validade padrão (em dias)</p>
                     <div className="flex flex-wrap gap-2 justify-center">
                       {PRESETS_VALIDADE.map((d) => (
                         <button key={d} type="button" onClick={() => { setValidadeDias(d); setValidadeCustom(false); }} className={"px-4 py-2 rounded-xl text-sm font-bold cursor-pointer transition-all shadow-sm " + (validadeDias === d && !validadeCustom ? "bg-[var(--vermelho)] text-white shadow-md scale-105" : "bg-white text-[var(--marrom)] hover:bg-gray-100 border border-gray-200")}>{d}d</button>
@@ -260,9 +264,9 @@ export default function EditarItem() {
 
                 {usaEtiquetaComplementar && (
                   <div className="bg-blue-50 rounded-xl p-4 border border-blue-200">
-                    <p className="text-sm font-semibold text-blue-800 mb-2 text-center">Texto padrao da etiqueta complementar</p>
+                    <p className="text-sm font-semibold text-blue-800 mb-2 text-center">Texto padrão da etiqueta complementar</p>
                     <input type="text" value={textoComplementar} onChange={(e) => setTextoComplementar(e.target.value)} placeholder="Ex: Cliente VIP / Evento Casamento / Produto em teste" className="w-full px-4 py-2.5 bg-white border-2 border-blue-200 rounded-xl text-sm focus:outline-none focus:border-[var(--vermelho)]" />
-                    <p className="text-xs text-blue-600 mt-2 text-center">A 2a etiqueta da linha sera usada para esta informacao. Pode ser alterado na impressao.</p>
+                    <p className="text-xs text-blue-600 mt-2 text-center">A 2ª etiqueta da linha será usada para esta informação. Pode ser alterado na impressão.</p>
                   </div>
                 )}
               </div>
@@ -271,13 +275,13 @@ export default function EditarItem() {
             {/* Card 3: Info adicional */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="bg-[var(--verde)] px-5 py-3 text-center">
-                <h2 className="font-bold text-[var(--marrom)] text-sm uppercase tracking-wide">&#x1F4AC; Informacao Adicional</h2>
+                <h2 className="font-bold text-[var(--marrom)] text-sm uppercase tracking-wide">&#x1F4AC; Informação Adicional</h2>
               </div>
               <div className="p-5">
                 <textarea
                   value={infoAdicional}
                   onChange={(e) => { if (e.target.value.length <= LIMITE_INFO) setInfoAdicional(e.target.value); }}
-                  placeholder='Ex: "Contem gluten" / "Sem lactose"'
+                  placeholder='Ex: "Contém glúten" / "Sem lactose"'
                   rows={2}
                   className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all resize-none"
                 />
@@ -293,7 +297,7 @@ export default function EditarItem() {
             {/* Botoes */}
             <div className="flex gap-3 pt-2">
               <button type="submit" disabled={saving} className={"flex-1 py-4 rounded-2xl font-extrabold text-lg shadow-xl transition-all cursor-pointer " + (saving ? "bg-gray-300 text-gray-500" : "bg-[var(--vermelho)] text-white hover:shadow-2xl hover:-translate-y-0.5 active:translate-y-0")}>
-                {saving ? "Salvando..." : "Salvar Alteracoes"}
+                {saving ? "Salvando..." : "Salvar Alterações"}
               </button>
               <button type="button" onClick={() => router.push("/itens")} className="px-8 py-4 rounded-2xl font-bold text-lg bg-white text-[var(--marrom)] border-2 border-gray-200 hover:bg-gray-50 cursor-pointer transition-all">
                 Cancelar
