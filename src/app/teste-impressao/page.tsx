@@ -13,6 +13,11 @@ function dataValidade(dias: number): string {
   return d.toLocaleDateString("pt-BR");
 }
 
+/** Encurta data de dd/mm/aaaa para dd/mm/aa */
+function dataCurta(data: string): string {
+  return data.replace(/\/(\d{4})$/, (_, ano: string) => "/" + ano.slice(2));
+}
+
 interface EtiquetaProps {
   nome: string;
   fabricacao: string;
@@ -70,7 +75,7 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
         overflow: "hidden",
       }}
     >
-      {/* ZONA 1: Nome do produto — Arial Bold, CAIXA ALTA */}
+      {/* ZONA 1: Nome do produto — Arial Bold, CAIXA ALTA, 2 linhas disponiveis */}
       <div style={{
         fontFamily: "Arial, sans-serif",
         fontWeight: "bold",
@@ -80,13 +85,13 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
         borderBottom: "0.5pt solid #000",
         paddingBottom: "1mm",
         lineHeight: "1.15",
-        maxHeight: "14mm",
+        maxHeight: "16mm",
         overflow: "hidden",
       }}>
         {nome}
       </div>
 
-      {/* ZONA 2: Fab + Val — 18pt bold, centralizado, Val pode chegar a 1mm do operador */}
+      {/* ZONA 2: Fab + Val — 14pt bold, sem ":", ano curto (dd/mm/aa) */}
       <div style={{
         flex: 1,
         display: "flex",
@@ -96,11 +101,11 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
         textAlign: "center",
         paddingBottom: "1mm",
       }}>
-        <div style={{ fontSize: "18pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.35" }}>
-          Fab: {fabricacao}
+        <div style={{ fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.35" }}>
+          Fab {dataCurta(fabricacao)}
         </div>
-        <div style={{ fontSize: "18pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.35" }}>
-          Val: {validade}
+        <div style={{ fontSize: "14pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.35" }}>
+          Val {dataCurta(validade)}
         </div>
       </div>
 
@@ -201,10 +206,10 @@ function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
     : "";
 
   const cell = `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;line-height:1.15;max-height:14mm;overflow:hidden;">${dados.nome}</div>
+    <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;line-height:1.15;max-height:16mm;overflow:hidden;">${dados.nome}</div>
     <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding-bottom:1mm;">
-      <div style="font-size:18pt;font-weight:bold;white-space:nowrap;line-height:1.35;">Fab: ${dados.fabricacao}</div>
-      <div style="font-size:18pt;font-weight:bold;white-space:nowrap;line-height:1.35;">Val: ${dados.validade}</div>
+      <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.35;">Fab ${dataCurta(dados.fabricacao)}</div>
+      <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.35;">Val ${dataCurta(dados.validade)}</div>
     </div>
     <div style="display:flex;align-items:flex-start;">
       <div style="flex:1;">${loteHTML}${infoHTML}</div>
