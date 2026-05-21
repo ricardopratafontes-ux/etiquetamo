@@ -5,6 +5,11 @@ Data | Mudança | Motivo | Impacto
 
 ---
 
+### 2026-05-21 — Deploy automático via Vercel + GitHub
+- **Mudança**: (1) Repositório Git inicializado e pushado para GitHub (ricardopratafontes-ux/etiquetamo). (2) Vercel conectada ao repositório com deploy automático a cada push. (3) Variáveis de ambiente configuradas na Vercel. (4) URL de produção: https://etiquetamo.vercel.app/
+- **Motivo**: Deploy manual é frágil. CI/CD automático garante que a versão em produção está sempre sincronizada com o código.
+- **Impacto**: Todo git push faz deploy automático em ~1 min. Ricardo pode testar em produção a qualquer momento.
+
 ### 2026-05-21 — Início do projeto (estado zero)
 - **Mudança**: Criação dos arquivos de governança (CLAUDE.md, DECISIONS.md, OPEN_QUESTIONS.md, CHANGELOG_PROJETO.md).
 - **Motivo**: Estabelecer base documental antes de qualquer código.

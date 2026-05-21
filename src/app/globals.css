@@ -28,30 +28,8 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* ===== ESTILOS DE IMPRESSÃO ===== */
-@media print {
-  /* Esconder tudo exceto a área de impressão */
-  body * {
-    visibility: hidden;
-  }
-  .print-area,
-  .print-area * {
-    visibility: visible;
-  }
-  .print-area {
-    position: absolute;
-    left: 0;
-    top: 0;
-  }
-
-  /* Remover margens do navegador */
-  @page {
-    margin: 0;
-    size: 100mm 50mm; /* Largura da bobina × altura da etiqueta */
-  }
-
-  body {
-    margin: 0;
-    padding: 0;
-  }
-}
+/* ===== IMPRESSAO =====
+ * Etiquetas sao impressas via popup window (gerarPaginaImpressao em teste-impressao).
+ * O popup contem APENAS o HTML das etiquetas com @page inline.
+ * Isso elimina etiquetas em branco causadas por elementos ocultos da pagina.
+ */

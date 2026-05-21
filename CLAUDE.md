@@ -5,6 +5,8 @@
 - **Tipo**: Sistema web para impressão de etiquetas térmicas em gelateria artesanal
 - **Stack**: Next.js App Router, TypeScript (strict), Tailwind CSS, Supabase, Vercel
 - **Impressora**: Elgin L42 Pro (térmica, etiquetas 50mm × 50mm, 2 por linha na bobina)
+- **Produção**: https://etiquetamo.vercel.app/
+- **Repositório**: https://github.com/ricardopratafontes-ux/etiquetamo
 
 ## Regras de Conduta
 1. **Estado zero**: o projeto começou do zero absoluto. Nunca assuma artefatos pré-existentes.

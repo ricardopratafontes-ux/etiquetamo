@@ -71,6 +71,18 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 - **Motivo**: O espaço na etiqueta 50mm × 50mm é limitado. Textos longos ficariam ilegíveis ou cortados na impressão.
 - **Alternativas descartadas**: Sem limite (risco de quebra de layout na etiqueta), limite menor de 40 chars (muito restritivo para alergênicos compostos).
 
+### DEC-013 — Segunda etiqueta nunca sai em branco
+- **Data**: 2026-05-21
+- **Decisão**: Na bobina de 2 etiquetas por linha, a segunda posição SEMPRE repete o conteúdo da primeira. Nunca sai etiqueta em branco. Isso vale para impressão unitária, em lote, e reimpressão.
+- **Motivo**: Decisão do Ricardo. Etiqueta em branco é desperdício de bobina e confusão operacional.
+- **Alternativas descartadas**: Deixar segunda posição vazia quando só 1 item (desperdiça bobina); permitir dois itens diferentes na mesma linha (complexidade sem benefício real no fluxo da cozinha).
+
+### DEC-014 — Layout de impressão: driver não controla colunas
+- **Data**: 2026-05-21
+- **Decisão**: O driver da Elgin L42 Pro trata a bobina como papel contínuo de largura única. A divisão em 2 colunas de 50mm com gap de 3mm é 100% controlada pelo CSS/HTML do EtiquetaMO, não pelo driver.
+- **Motivo**: Driver não tem opção de "2 etiquetas por linha". Configuração no driver: largura 103mm (printável) + margens 2mm esquerda/direita = 107mm total. Altura 50mm (ou 52.5mm se sensor de gap precisar).
+- **Alternativas descartadas**: Nenhuma — é limitação do hardware/driver.
+
 ### DEC-009 — Prova física postergada, avanço paralelo
 - **Data**: 2026-05-21
 - **Decisão**: Avançar com Sprints 2+ sem aguardar a prova física de impressão. O gate continua pendente e será executado quando Ricardo acessar o PC da cozinha (via AnyDesk ou presencialmente).
