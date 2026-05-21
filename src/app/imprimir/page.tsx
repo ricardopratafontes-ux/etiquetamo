@@ -15,6 +15,8 @@ interface ItemDB {
   expiry_days: number | null; additional_info: string | null;
   uses_counting_label: boolean | null; storage_type: string | null;
   net_weight: string | null; unit: string | null;
+  uses_complementary_label: boolean | null; complementary_label_text: string | null;
+  is_portioned: boolean | null;
 }
 interface ItemCarrinho {
   item: ItemDB;
@@ -560,50 +562,46 @@ ${linhas}
                     🏷️ Trocar família
                   </button>
                 </div>
-                <div className="space-y-2">
+                <div>
                   {itensFiltrados.length === 0 ? (
                     <div className="text-center py-12 bg-white rounded-xl">
                       <p className="text-gray-500">Nenhum item nesta família para {tipo}.</p>
                     </div>
                   ) : (
-                    itensFiltrados.map((item) => {
+                    <div className="grid grid-cols-2 gap-1.5">
+                    {itensFiltrados.map((item) => {
                       const noCarrinho = carrinho.some((c) => c.item.id === item.id);
-                      const armCor = item.storage_type === "congelado" ? "border-l-blue-500 bg-blue-50/40" : item.storage_type === "refrigerado" ? "border-l-cyan-400 bg-cyan-50/30" : "border-l-green-400 bg-green-50/30";
                       const armIcon = item.storage_type === "congelado" ? "🧊" : item.storage_type === "refrigerado" ? "❄️" : "🌡️";
-                      const armLabel = item.storage_type === "congelado" ? "Congelado" : item.storage_type === "refrigerado" ? "Refrigerado" : "Ambiente";
-                      const catNome = nomeCategoriaPorId(item.category_id);
                       return (
                         <button
                           key={item.id}
                           onClick={() => abrirModalItem(item)}
                           className={
-                            "w-full text-left rounded-xl px-3 py-2.5 flex items-start gap-2.5 cursor-pointer transition-all hover:shadow-lg border-l-4 " +
+                            "text-left rounded-lg px-2 py-1.5 cursor-pointer transition-all hover:shadow-md relative " +
                             (noCarrinho
-                              ? "bg-green-50 border-2 border-green-400 border-l-green-500 shadow-md ring-1 ring-green-200"
-                              : armCor + " border border-gray-100 hover:border-[var(--vermelho)] shadow-sm")
+                              ? "bg-green-50 border-2 border-green-400 shadow-sm"
+                              : "bg-white border border-gray-200 hover:border-[var(--vermelho)] shadow-sm")
                           }
                         >
-                          <div className="w-8 h-8 rounded-lg bg-white/80 flex items-center justify-center text-lg shrink-0 shadow-sm">{armIcon}</div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-bold text-[var(--marrom)] text-[13px] leading-tight truncate">{item.name}</p>
-                            <div className="flex flex-wrap items-center gap-1 mt-1">
-                              <span className="text-[9px] text-gray-500 bg-white/70 px-1.5 py-0.5 rounded font-medium">{armLabel}</span>
-                              {catNome && <span className="text-[9px] text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded font-medium">{catNome}</span>}
-                              {item.expiry_days && <span className="text-[9px] text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded font-medium">📅 {item.expiry_days}d</span>}
-                              {item.uses_lot && <span className="text-[9px] text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded font-medium">📦 Lote</span>}
-                            </div>
-                            {item.additional_info && (
-                              <p className="text-[10px] text-amber-700 bg-amber-50/80 px-1.5 py-0.5 rounded mt-1 truncate max-w-full">📝 {item.additional_info}</p>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-sm shrink-0">{armIcon}</span>
+                            <p className="font-bold text-[var(--marrom)] text-[11px] leading-tight truncate flex-1">{item.name}</p>
+                            {noCarrinho ? (
+                              <span className="w-4 h-4 rounded-full bg-green-500 text-white flex items-center justify-center text-[8px] font-bold shrink-0">✓</span>
+                            ) : (
+                              <span className="w-4 h-4 rounded-full bg-[var(--vermelho)] text-white flex items-center justify-center text-[8px] font-bold shrink-0">+</span>
                             )}
                           </div>
-                          {noCarrinho ? (
-                            <span className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">✓</span>
-                          ) : (
-                            <span className="w-6 h-6 rounded-full bg-[var(--vermelho)] text-white flex items-center justify-center text-xs font-bold shrink-0 shadow-sm">+</span>
-                          )}
+                          <div className="flex flex-wrap items-center gap-0.5 mt-0.5 pl-5">
+                            {item.expiry_days && <span className="text-[8px] text-orange-600 bg-orange-50 px-1 rounded">{item.expiry_days}d</span>}
+                            {item.uses_lot && <span className="text-[8px] text-blue-600 bg-blue-50 px-1 rounded">Lote</span>}
+                            {item.uses_complementary_label && <span className="text-[8px] text-purple-600 bg-purple-50 px-1 rounded">🏷️ Compl.</span>}
+                            {item.additional_info && <span className="text-[8px] text-amber-600 bg-amber-50 px-1 rounded truncate max-w-[80px]">📝</span>}
+                          </div>
                         </button>
                       );
-                    })
+                    })}
+                    </div>
                   )}
                 </div>
               </div>
@@ -727,6 +725,14 @@ ${linhas}
                     <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 mt-1.5 border border-amber-100">
                       <p className="text-[9px] text-amber-600 font-bold">📝 Info cadastrada</p>
                       <p className="text-[11px] text-amber-800 font-medium">{modalItem.additional_info}</p>
+                    </div>
+                  )}
+                  {modalItem.uses_complementary_label && (
+                    <div className="bg-purple-50 rounded-lg px-2.5 py-1.5 mt-1.5 border border-purple-100">
+                      <p className="text-[9px] text-purple-600 font-bold">🏷️ Etiqueta complementar habilitada</p>
+                      {modalItem.complementary_label_text && (
+                        <p className="text-[11px] text-purple-800 font-medium">{modalItem.complementary_label_text}</p>
+                      )}
                     </div>
                   )}
                 </div>

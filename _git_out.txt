@@ -1,9 +1,0 @@
-c1ad2fe feat: info complementar editavel no modal, botoes Step4 redesenhados com info visivel
-6f9e4df feat: preview miniatura da etiqueta inline no carrinho (Step 4)
-3d2f771 fix: fonte dinamica etiqueta + limpeza encoding 8 itens corrompidos
-e95935e feat: UI compacta, PIN seguranca, Step 3 colorido, pattern strip global, headers vermelho DEC-030/031
-a38ae55 feat: Etiquetas Avulsas (ex-Caixa) com campos dinamicos, modelos, historico, DEC-028/029
----STATUS---
-?? _git_log.txt
-?? _git_out.txt
----REMOTE---
