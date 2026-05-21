@@ -12,6 +12,7 @@ const links = [
   { href: "/colaboradores", label: "Equipe", icon: "\u{1F465}" },
   { href: "/etiqueta-caixa", label: "Avulsas", icon: "\u{1F3F7}️" },
   { href: "/historico", label: "Histórico", icon: "\u{1F4CB}" },
+  { href: "/relatorios", label: "Relatórios", icon: "\u{1F4CA}" },
 ];
 
 export default function NavBar() {

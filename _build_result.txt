@@ -2,15 +2,15 @@
 - Environments: .env.local
 
   Creating an optimized production build ...
-✓ Compiled successfully in 5.0s
+✓ Compiled successfully in 5.9s
   Running TypeScript ...
-  Finished TypeScript in 5.5s ...
+  Finished TypeScript in 7.1s ...
   Collecting page data using 11 workers ...
-  Generating static pages using 11 workers (0/14) ...
-  Generating static pages using 11 workers (3/14) 
-  Generating static pages using 11 workers (6/14) 
-  Generating static pages using 11 workers (10/14) 
-✓ Generating static pages using 11 workers (14/14) in 560ms
+  Generating static pages using 11 workers (0/15) ...
+  Generating static pages using 11 workers (3/15) 
+  Generating static pages using 11 workers (7/15) 
+  Generating static pages using 11 workers (11/15) 
+✓ Generating static pages using 11 workers (15/15) in 675ms
   Finalizing page optimization ...
 
 Route (app)
@@ -27,6 +27,7 @@ Route (app)
 ├ ○ /producao
 ├ ƒ /producao/[id]/imprimir
 ├ ○ /producao/nova
+├ ○ /relatorios
 └ ○ /teste-impressao
 
 

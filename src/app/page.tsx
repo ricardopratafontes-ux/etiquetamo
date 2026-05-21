@@ -52,6 +52,14 @@ const acoes = [
     cor: "bg-white border-2 border-[var(--marrom)]",
     corTexto: "text-[var(--marrom)]",
   },
+  {
+    href: "/relatorios",
+    icon: "\u{1F4CA}",
+    titulo: "Relatórios",
+    descricao: "Dashboard de produção, ranking, consumo e equipe",
+    cor: "bg-gradient-to-br from-[var(--vermelho)] to-[var(--marrom)]",
+    corTexto: "text-white",
+  },
 ];
 
 export default function Home() {
