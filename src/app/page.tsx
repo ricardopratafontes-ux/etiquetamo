@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import NavBar from "@/components/NavBar";
+import PatternStrip from "@/components/PatternStrip";
 
 const acoes = [
   {
@@ -48,16 +49,6 @@ const acoes = [
 export default function Home() {
   return (
     <>
-      {/* Faixa de triangulos — TOPO */}
-      <div
-        className="w-full h-[40px]"
-        style={{
-          backgroundImage: "url(/pattern-strip.jpg)",
-          backgroundSize: "auto 100%",
-          backgroundRepeat: "repeat-x",
-        }}
-      />
-
       <NavBar />
 
       <main className="min-h-screen bg-[var(--bege)]">
@@ -130,14 +121,7 @@ export default function Home() {
       </main>
 
       {/* Faixa de triangulos — RODAPE */}
-      <div
-        className="w-full h-[40px]"
-        style={{
-          backgroundImage: "url(/pattern-strip.jpg)",
-          backgroundSize: "auto 100%",
-          backgroundRepeat: "repeat-x",
-        }}
-      />
+      <PatternStrip />
     </>
   );
 }

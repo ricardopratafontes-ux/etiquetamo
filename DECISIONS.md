@@ -208,3 +208,15 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 - **Decisão**: A "Etiqueta Complementar" do wizard de impressão terá as mesmas características da Etiqueta Avulsa. Layout e campos idênticos. Será diferenciada no futuro quando necessário.
 - **Motivo**: Ricardo confirmou que para efeito de continuidade pode ser igual. Evita bloqueio por falta de spec.
 - **Alternativas descartadas**: Esperar spec completa da complementar (atrasaria desenvolvimento).
+
+### DEC-030 — PIN de segurança para emitentes específicos
+- **Data**: 2026-05-21
+- **Decisão**: Operadores "Ricardo" e "Maria Silvania" exigem PIN (4109) ao se identificar no Step 2 do wizard de impressão. Demais operadores selecionam livremente.
+- **Motivo**: Ricardo solicitou segurança extra para esses dois operadores. PIN fixo nesta fase, poderá evoluir para PIN individual no futuro.
+- **Alternativas descartadas**: PIN para todos (desnecessário, atrasa operação).
+
+### DEC-031 — Headers vermelho, NavBar marrom, pattern strip global
+- **Data**: 2026-05-21
+- **Decisão**: Headers de página usam gradiente vermelho (#f31c40 → #d41636) em vez de marrom. NavBar mantém marrom (identidade). PatternStrip (faixa de triângulos) aparece em todas as páginas via componente reutilizável na NavBar.
+- **Motivo**: Ricardo relatou excesso de marrom nas páginas. Vermelho nos headers dá mais energia e diferencia da NavBar.
+- **Alternativas descartadas**: Manter tudo marrom (cansativo visualmente).

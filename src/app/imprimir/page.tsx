@@ -103,6 +103,11 @@ export default function ImprimirWizard() {
   // Carrinho
   const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([]);
 
+  // PIN de segurança
+  const [pinModal, setPinModal] = useState<Colaborador | null>(null);
+  const [pinInput, setPinInput] = useState("");
+  const [pinErro, setPinErro] = useState(false);
+
   // Impressão
   const [imprimindo, setImprimindo] = useState(false);
 
@@ -161,9 +166,31 @@ export default function ImprimirWizard() {
     setStep(2);
   }
 
+  const EMITENTES_COM_PIN = ["ricardo", "maria silvania"];
+  const PIN_CORRETO = "4109";
+
   function selecionarEmitente(c: Colaborador) {
+    const nomeNorm = c.name.toLowerCase().trim();
+    if (EMITENTES_COM_PIN.some((n) => nomeNorm.includes(n))) {
+      setPinModal(c);
+      setPinInput("");
+      setPinErro(false);
+      return;
+    }
     setEmitente(c);
     setStep(3);
+  }
+
+  function confirmarPin() {
+    if (pinInput === PIN_CORRETO && pinModal) {
+      setEmitente(pinModal);
+      setPinModal(null);
+      setPinInput("");
+      setPinErro(false);
+      setStep(3);
+    } else {
+      setPinErro(true);
+    }
   }
 
   function selecionarFamilia(catId: string | null) {
@@ -377,7 +404,7 @@ ${linhas}
       <NavBar />
       <main className="min-h-screen bg-[var(--bege)]">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[var(--marrom)] to-[#7a3520] text-white px-6 py-6">
+        <div className="bg-gradient-to-r from-[var(--vermelho)] to-[#d41636] text-white px-6 py-6">
           <div className="max-w-6xl mx-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -456,33 +483,60 @@ ${linhas}
           )}
 
           {/* ===== STEP 3: Família ===== */}
-          {step === 3 && (
+          {step === 3 && (() => {
+            // Ícones e cores por nome de família (case-insensitive)
+            const FAMILIA_VISUAL: Record<string, { icon: string; bg: string; border: string }> = {
+              "gelatos": { icon: "🍨", bg: "bg-pink-50", border: "border-pink-200 hover:border-pink-400" },
+              "sorvetes": { icon: "🍦", bg: "bg-purple-50", border: "border-purple-200 hover:border-purple-400" },
+              "picolés": { icon: "🧊", bg: "bg-cyan-50", border: "border-cyan-200 hover:border-cyan-400" },
+              "barra de gelatos": { icon: "🍫", bg: "bg-amber-50", border: "border-amber-200 hover:border-amber-400" },
+              "food service": { icon: "🍽️", bg: "bg-blue-50", border: "border-blue-200 hover:border-blue-400" },
+              "uso e consumo": { icon: "🏠", bg: "bg-green-50", border: "border-green-200 hover:border-green-400" },
+              "insumos": { icon: "🧪", bg: "bg-orange-50", border: "border-orange-200 hover:border-orange-400" },
+              "coberturas": { icon: "🫕", bg: "bg-rose-50", border: "border-rose-200 hover:border-rose-400" },
+              "tortas": { icon: "🎂", bg: "bg-fuchsia-50", border: "border-fuchsia-200 hover:border-fuchsia-400" },
+              "bolos": { icon: "🍰", bg: "bg-yellow-50", border: "border-yellow-200 hover:border-yellow-400" },
+              "açaí": { icon: "🫐", bg: "bg-violet-50", border: "border-violet-200 hover:border-violet-400" },
+              "cafeteria": { icon: "☕", bg: "bg-stone-50", border: "border-stone-200 hover:border-stone-400" },
+            };
+            const FALLBACK_ICONS = ["🏷️", "📦", "🧁", "🥄", "🍮", "✨"];
+            function familiaVisual(nome: string, idx: number) {
+              const lower = nome.toLowerCase().trim();
+              for (const [key, val] of Object.entries(FAMILIA_VISUAL)) {
+                if (lower.includes(key)) return val;
+              }
+              return { icon: FALLBACK_ICONS[idx % FALLBACK_ICONS.length], bg: "bg-gray-50", border: "border-gray-200 hover:border-[var(--vermelho)]" };
+            }
+
+            return (
             <div className="max-w-4xl mx-auto mt-4">
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                {familiasComItens.cats.map((cat) => {
+                {familiasComItens.cats.map((cat, idx) => {
                   const count = todosItens.filter((i) =>
                     i.category_id === cat.id && (tipo === "contagem" ? i.uses_counting_label : i.uses_label)
                   ).length;
+                  const vis = familiaVisual(cat.name, idx);
                   return (
-                    <button key={cat.id} onClick={() => selecionarFamilia(cat.id)} className="bg-white rounded-2xl shadow-md border-2 border-transparent hover:border-[var(--vermelho)] p-5 flex flex-col items-center gap-2 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5">
-                      <span className="text-3xl">🏷️</span>
-                      <span className="text-base font-bold text-[var(--marrom)] text-center leading-tight">{cat.name}</span>
-                      <span className="text-xs text-gray-400">{count} {count === 1 ? "item" : "itens"}</span>
+                    <button key={cat.id} onClick={() => selecionarFamilia(cat.id)} className={`${vis.bg} rounded-2xl shadow-md border-2 ${vis.border} p-5 flex flex-col items-center gap-2 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1`}>
+                      <span className="text-4xl drop-shadow-sm">{vis.icon}</span>
+                      <span className="text-sm font-bold text-gray-700 text-center leading-tight">{cat.name}</span>
+                      <span className="text-[10px] text-gray-400 font-medium">{count} {count === 1 ? "item" : "itens"}</span>
                     </button>
                   );
                 })}
                 {familiasComItens.temSemFamilia && (
-                  <button onClick={() => selecionarFamilia("__sem_familia__")} className="bg-white rounded-2xl shadow-md border-2 border-transparent hover:border-[var(--vermelho)] p-5 flex flex-col items-center gap-2 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5">
-                    <span className="text-3xl">📦</span>
-                    <span className="text-base font-bold text-[var(--marrom)]">Sem família</span>
-                    <span className="text-xs text-gray-400">
+                  <button onClick={() => selecionarFamilia("__sem_familia__")} className="bg-gray-50 rounded-2xl shadow-md border-2 border-gray-200 hover:border-[var(--vermelho)] p-5 flex flex-col items-center gap-2 cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1">
+                    <span className="text-4xl drop-shadow-sm">📦</span>
+                    <span className="text-sm font-bold text-gray-700">Sem família</span>
+                    <span className="text-[10px] text-gray-400 font-medium">
                       {todosItens.filter((i) => !i.category_id && (tipo === "contagem" ? i.uses_counting_label : i.uses_label)).length} itens
                     </span>
                   </button>
                 )}
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* ===== STEP 4: Produtos + Carrinho ===== */}
           {step === 4 && (
@@ -608,34 +662,27 @@ ${linhas}
 
             return (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setModalItem(null)}>
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                {/* Header com info do produto */}
-                <div className="bg-[var(--marrom)] px-5 py-4 text-white">
-                  <h3 className="font-bold text-lg">{modalItem.name}</h3>
-                  <div className="flex flex-wrap gap-2 mt-1.5">
-                    {modalItem.expiry_days && <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">⏱ {modalItem.expiry_days}d validade</span>}
-                    {!modalItem.expiry_days && <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">Sem validade</span>}
-                    {modalItem.uses_lot && <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">📋 Lote</span>}
-                    {modalItem.storage_type && <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">{modalItem.storage_type === "congelado" ? "🧊 Congelado" : modalItem.storage_type === "refrigerado" ? "❄️ Refrigerado" : "☀️ Ambiente"}</span>}
-                    {modalItem.net_weight && <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">⚖️ {modalItem.net_weight}{modalItem.unit || "g"}</span>}
-                    {modalItem.uses_label && <span className="text-[10px] bg-green-400/30 px-2 py-0.5 rounded-full">🏷️ Normal</span>}
-                    {modalItem.uses_counting_label && <span className="text-[10px] bg-blue-400/30 px-2 py-0.5 rounded-full">📋 Contagem</span>}
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                {/* Header compacto */}
+                <div className="bg-[var(--vermelho)] px-4 py-3 text-white">
+                  <h3 className="font-bold text-base leading-tight">{modalItem.name}</h3>
+                  <div className="flex flex-wrap gap-1.5 mt-1">
+                    {modalItem.expiry_days && <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-full">{modalItem.expiry_days}d val.</span>}
+                    {modalItem.uses_lot && <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-full">Lote</span>}
+                    {modalItem.storage_type && modalItem.storage_type !== "ambiente" && <span className="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-full">{modalItem.storage_type === "congelado" ? "🧊" : "❄️"}</span>}
                   </div>
-                  {modalItem.additional_info && (
-                    <p className="text-[10px] text-white/70 mt-1.5 italic">{modalItem.additional_info}</p>
-                  )}
                 </div>
-                <div className="p-5 space-y-4">
+                <div className="p-4 space-y-3">
 
                   {/* Tipo de etiqueta (se tem ambos) */}
                   {temAmbosLabels && (
                     <div>
-                      <label className="text-sm font-semibold text-[var(--marrom)] mb-2 block">Tipo de etiqueta</label>
+                      <label className="text-xs font-semibold text-[var(--marrom)] mb-1 block">Tipo de etiqueta</label>
                       <div className="flex gap-2">
                         <button
                           type="button"
                           onClick={() => setModalTipoEtiqueta("normal")}
-                          className={"flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all border-2 " +
+                          className={"flex-1 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all border-2 " +
                             (modalTipoEtiqueta === "normal"
                               ? "bg-[var(--vermelho)] text-white border-[var(--vermelho)] shadow-md"
                               : "bg-white text-[var(--marrom)] border-gray-200 hover:border-[var(--vermelho)]")}
@@ -645,7 +692,7 @@ ${linhas}
                         <button
                           type="button"
                           onClick={() => setModalTipoEtiqueta("contagem")}
-                          className={"flex-1 py-2.5 rounded-xl text-sm font-bold cursor-pointer transition-all border-2 " +
+                          className={"flex-1 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all border-2 " +
                             (modalTipoEtiqueta === "contagem"
                               ? "bg-blue-600 text-white border-blue-600 shadow-md"
                               : "bg-white text-[var(--marrom)] border-gray-200 hover:border-blue-600")}
@@ -659,25 +706,25 @@ ${linhas}
                   {/* Quem produziu — condicional */}
                   {regraProdutor !== "oculto" && (
                     <div>
-                      <label className="text-sm font-semibold text-[var(--marrom)] mb-2 block">
+                      <label className="text-xs font-semibold text-[var(--marrom)] mb-1 block">
                         Quem produziu?
                         {regraProdutor === "obrigatorio" && <span className="text-[var(--vermelho)]"> *</span>}
-                        {regraProdutor === "opcional" && <span className="text-gray-400 text-xs ml-1">(opcional)</span>}
+                        {regraProdutor === "opcional" && <span className="text-gray-400 text-[10px] ml-1">(opcional)</span>}
                       </label>
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {colaboradores.map((c) => (
                           <button
                             key={c.id}
                             type="button"
                             onClick={() => toggleProdutor(c.id)}
                             className={
-                              "flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-bold cursor-pointer transition-all " +
+                              "flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold cursor-pointer transition-all " +
                               (modalProdutores.includes(c.id)
-                                ? "bg-[var(--vermelho)] text-white shadow-md"
+                                ? "bg-[var(--vermelho)] text-white shadow-sm"
                                 : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")
                             }
                           >
-                            <span className="w-7 h-7 flex items-center justify-center bg-white/20 rounded-lg text-xs font-extrabold">
+                            <span className="w-5 h-5 flex items-center justify-center bg-white/20 rounded text-[10px] font-extrabold">
                               {iniciais(c.name)}
                             </span>
                             {c.name.split(" ")[0]}
@@ -685,7 +732,7 @@ ${linhas}
                         ))}
                       </div>
                       {regraProdutor === "obrigatorio" && modalProdutores.length === 0 && (
-                        <p className="text-xs text-[var(--vermelho)] mt-1">Selecione pelo menos um produtor</p>
+                        <p className="text-[10px] text-[var(--vermelho)] mt-0.5">Selecione pelo menos um produtor</p>
                       )}
                     </div>
                   )}
@@ -693,41 +740,39 @@ ${linhas}
                   {/* Lote (se necessário) */}
                   {modalItem.uses_lot && (
                     <div>
-                      <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block">Lote do fabricante</label>
+                      <label className="text-xs font-semibold text-[var(--marrom)] mb-1 block">Lote</label>
                       <input
                         type="text"
                         value={modalLote}
                         onChange={(e) => setModalLote(e.target.value)}
                         placeholder="Ex: LT2026-05A"
-                        className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all"
+                        className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all"
                       />
                     </div>
                   )}
 
-                  {/* Quantidade */}
-                  <div>
-                    <label className="text-sm font-semibold text-[var(--marrom)] mb-2 block">Quantidade</label>
-                    <div className="flex items-center gap-4 justify-center">
-                      <button onClick={() => setModalQtd(Math.max(1, modalQtd - 1))} className="w-12 h-12 flex items-center justify-center bg-[var(--bege)] rounded-xl text-xl font-bold text-[var(--marrom)] cursor-pointer hover:bg-gray-200 transition-all">−</button>
-                      <span className="text-3xl font-extrabold text-[var(--marrom)] w-16 text-center">{modalQtd}</span>
-                      <button onClick={() => setModalQtd(modalQtd + 1)} className="w-12 h-12 flex items-center justify-center bg-[var(--bege)] rounded-xl text-xl font-bold text-[var(--marrom)] cursor-pointer hover:bg-gray-200 transition-all">+</button>
+                  {/* Quantidade — compacto inline */}
+                  <div className="flex items-center justify-between bg-[var(--bege)] rounded-xl px-4 py-2.5">
+                    <span className="text-xs font-semibold text-[var(--marrom)]">Quantidade</span>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setModalQtd(Math.max(1, modalQtd - 1))} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg text-base font-bold text-[var(--marrom)] cursor-pointer hover:bg-gray-100 transition-all shadow-sm">−</button>
+                      <span className="text-xl font-extrabold text-[var(--marrom)] w-8 text-center">{modalQtd}</span>
+                      <button onClick={() => setModalQtd(modalQtd + 1)} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg text-base font-bold text-[var(--marrom)] cursor-pointer hover:bg-gray-100 transition-all shadow-sm">+</button>
+                      <span className="text-[10px] text-gray-400 ml-1">→ {arredondarPar(modalQtd)} etiq.</span>
                     </div>
-                    <p className="text-center text-xs text-gray-400 mt-1">
-                      Serão impressas <span className="font-bold text-[var(--marrom)]">{arredondarPar(modalQtd)}</span> etiquetas (par na bobina)
-                    </p>
                   </div>
                 </div>
 
                 {/* Footer */}
-                <div className="border-t border-gray-200 px-5 py-4 flex gap-3">
+                <div className="border-t border-gray-200 px-4 py-3 flex gap-2">
                   <button
                     onClick={adicionarAoCarrinho}
                     disabled={!podeSalvar}
-                    className={"flex-1 py-3 rounded-xl font-bold text-sm cursor-pointer transition-all " + (!podeSalvar ? "bg-gray-200 text-gray-400" : "bg-[var(--vermelho)] text-white hover:bg-red-600 shadow-lg")}
+                    className={"flex-1 py-2.5 rounded-xl font-bold text-sm cursor-pointer transition-all " + (!podeSalvar ? "bg-gray-200 text-gray-400" : "bg-[var(--vermelho)] text-white hover:bg-red-600 shadow-lg")}
                   >
-                    🛒 Adicionar ao Carrinho
+                    🛒 Adicionar
                   </button>
-                  <button onClick={() => setModalItem(null)} className="px-6 py-3 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer transition-all">
+                  <button onClick={() => setModalItem(null)} className="px-4 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer transition-all">
                     Cancelar
                   </button>
                 </div>
@@ -736,6 +781,41 @@ ${linhas}
             );
           })()}
         </div>
+
+        {/* ===== Modal PIN ===== */}
+        {pinModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setPinModal(null)}>
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xs overflow-hidden" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-[var(--vermelho)] px-4 py-3 text-white text-center">
+                <span className="text-2xl block mb-1">🔒</span>
+                <h3 className="font-bold text-base">{pinModal.name}</h3>
+                <p className="text-[10px] text-white/80 mt-0.5">Digite o PIN para continuar</p>
+              </div>
+              <div className="p-5">
+                <input
+                  type="password"
+                  inputMode="numeric"
+                  maxLength={4}
+                  value={pinInput}
+                  onChange={(e) => { setPinInput(e.target.value.replace(/\D/g, "")); setPinErro(false); }}
+                  onKeyDown={(e) => e.key === "Enter" && confirmarPin()}
+                  placeholder="••••"
+                  autoFocus
+                  className={"w-full text-center text-2xl font-extrabold tracking-[0.5em] px-4 py-3 border-2 rounded-xl focus:outline-none transition-all " + (pinErro ? "border-red-500 bg-red-50 shake" : "border-gray-200 focus:border-[var(--vermelho)]")}
+                />
+                {pinErro && <p className="text-xs text-red-500 text-center mt-2 font-semibold">PIN incorreto</p>}
+              </div>
+              <div className="border-t border-gray-200 px-4 py-3 flex gap-2">
+                <button onClick={confirmarPin} className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-[var(--vermelho)] text-white cursor-pointer hover:bg-red-600 transition-all shadow-lg">
+                  Confirmar
+                </button>
+                <button onClick={() => setPinModal(null)} className="px-4 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer transition-all">
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </>
   );

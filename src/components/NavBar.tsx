@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import PatternStrip from "./PatternStrip";
 
 const links = [
   { href: "/", label: "Início", icon: "\u{1F3E0}" },
@@ -16,6 +17,8 @@ export default function NavBar() {
   const pathname = usePathname();
 
   return (
+    <>
+    <PatternStrip />
     <nav className="bg-gradient-to-r from-[var(--marrom)] to-[#7a3520] text-[var(--branco)] px-6 py-0 shadow-lg">
       <div className="max-w-6xl mx-auto flex items-center justify-between">
         {/* Logo */}
@@ -62,5 +65,6 @@ export default function NavBar() {
         </div>
       </div>
     </nav>
+    </>
   );
 }

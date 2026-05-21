@@ -250,7 +250,7 @@ export default function ImportarItens() {
       <NavBar />
       <main className="min-h-screen bg-[var(--bege)]">
         {/* Header */}
-        <div className="bg-gradient-to-r from-[var(--marrom)] to-[#7a3520] text-white px-6 py-8">
+        <div className="bg-gradient-to-r from-[var(--vermelho)] to-[#d41636] text-white px-6 py-8">
           <div className="max-w-4xl mx-auto flex items-center gap-3">
             <span className="text-3xl">&#x1F4C4;</span>
             <div>

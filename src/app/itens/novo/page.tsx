@@ -107,7 +107,7 @@ export default function NovoItem() {
     <>
       <NavBar />
       <main className="min-h-screen bg-[var(--bege)]">
-        <div className="bg-gradient-to-r from-[var(--marrom)] to-[#7a3520] text-white px-6 py-8">
+        <div className="bg-gradient-to-r from-[var(--vermelho)] to-[#d41636] text-white px-6 py-8">
           <div className="max-w-2xl mx-auto text-center">
             <span className="text-3xl block mb-1">&#x2795;</span>
             <h1 className="text-2xl font-extrabold">Novo Produto</h1>

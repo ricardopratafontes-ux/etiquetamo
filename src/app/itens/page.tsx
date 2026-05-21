@@ -85,7 +85,7 @@ export default function ListaItens() {
       <NavBar />
       <main className="min-h-screen bg-[var(--bege)]">
         {/* Header com gradiente */}
-        <div className="bg-gradient-to-r from-[var(--marrom)] to-[#7a3520] text-white px-6 py-8">
+        <div className="bg-gradient-to-r from-[var(--vermelho)] to-[#d41636] text-white px-6 py-8">
           <div className="max-w-5xl mx-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -203,77 +203,32 @@ export default function ListaItens() {
               )}
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 pb-8">
               {itensFiltrados.map((item) => {
                 const catNome = nomeCategoria(item.category_id);
                 return (
-                  <div
+                  <Link
                     key={item.id}
+                    href={`/itens/${item.id}/editar`}
                     className={
-                      "bg-white rounded-xl shadow-sm border-l-4 overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5 " +
+                      "group bg-white rounded-xl shadow-sm border-l-4 px-3 py-2.5 flex items-center gap-2.5 transition-all hover:shadow-md hover:-translate-y-0.5 cursor-pointer " +
                       (item.active ? "border-l-[var(--verde)]" : "border-l-gray-300 opacity-60")
                     }
                   >
-                    {/* Cabeçalho compacto */}
-                    <div className="px-3 pt-3 pb-2">
-                      <div className="flex items-start justify-between gap-1">
-                        <h3 className="font-bold text-[var(--marrom)] text-sm leading-tight truncate flex-1 min-w-0">
-                          {item.name}
-                        </h3>
-                        <button
-                          onClick={() => toggleAtivo(item)}
-                          className={
-                            "shrink-0 w-2 h-2 rounded-full mt-1.5 cursor-pointer " +
-                            (item.active ? "bg-green-500" : "bg-gray-300")
-                          }
-                          title={item.active ? "Ativo" : "Inativo"}
-                        />
-                      </div>
-                      {item.code && (
-                        <p className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">{item.code}</p>
-                      )}
-                    </div>
-
-                    {/* Badges compactos */}
-                    <div className="px-3 pb-2 flex flex-wrap gap-1">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-[var(--marrom)] text-sm leading-tight truncate">
+                        {item.name}
+                      </h3>
                       {catNome && (
-                        <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-medium rounded-full border border-amber-200 truncate max-w-[120px]">
+                        <span className="text-[10px] text-amber-600 font-medium truncate block mt-0.5">
                           {catNome}
                         </span>
                       )}
-                      {item.uses_expiry && item.expiry_days && (
-                        <span className="px-1.5 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-medium rounded-full border border-blue-200">
-                          {item.expiry_days}d
-                        </span>
-                      )}
-                      {item.storage_type && item.storage_type !== "ambiente" && (
-                        <span className="px-1.5 py-0.5 bg-cyan-50 text-cyan-700 text-[10px] font-medium rounded-full border border-cyan-200">
-                          {item.storage_type === "congelado" ? "🧊" : "❄️"}
-                        </span>
-                      )}
-                      {item.uses_lot && (
-                        <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 text-[10px] font-medium rounded-full border border-purple-200">
-                          Lote
-                        </span>
-                      )}
                     </div>
-
-                    {/* Footer compacto com Editar + Imprimir */}
-                    <div className="bg-gray-50 px-3 py-2 flex items-center justify-end gap-1.5 border-t border-gray-100">
-                      <Link
-                        href={`/itens/${item.id}/editar`}
-                        className="flex items-center gap-1 px-2.5 py-1 bg-[var(--marrom)] text-white text-[11px] font-bold rounded-lg hover:opacity-90 transition-all"
-                      >
-                        ✏️ Editar
-                      </Link>
-                      <Link
-                        href={`/producao/${item.id}/imprimir`}
-                        className="flex items-center gap-1 px-2.5 py-1 bg-[var(--vermelho)] text-white text-[11px] font-bold rounded-lg hover:bg-red-600 transition-all"
-                      >
-                        🖨️ Imprimir
-                      </Link>
-                    </div>
-                  </div>
+                    <span className="shrink-0 text-xs text-gray-400 group-hover:text-[var(--vermelho)] transition-colors">
+                      ✏️
+                    </span>
+                  </Link>
                 );
               })}
             </div>
