@@ -135,7 +135,7 @@ export default function EditarItem() {
             {/* Card 1: Identificacao */}
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
               <div className="bg-[var(--marrom)] px-5 py-3 text-center">
-                <h2 className="font-bold text-white text-sm uppercase tracking-wide">&#x1F3F7;&#xFE0F; Identificacao do Produto</h2>
+                <h2 className="font-bold text-white text-sm uppercase tracking-wide">&#x1F3F7;&#xFE0F; Identificação do Produto</h2>
               </div>
               <div className="p-5 space-y-4">
                 {/* Descricao */}
@@ -143,18 +143,18 @@ export default function EditarItem() {
                   <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">
                     Descricao <span className="text-[var(--vermelho)]">*</span>
                   </label>
-                  <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex: Sorvete de Chocolate Belga" className="w-full px-4 py-3 bg-[var(--bege)] border-2 border-transparent rounded-xl text-sm font-medium focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" required />
+                  <input type="text" value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex: Sorvete de Chocolate Belga" className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm font-medium text-center focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" required />
                 </div>
 
                 {/* Codigo + EAN */}
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Codigo</label>
-                    <input type="text" value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Ex: SORV-001" className="w-full px-4 py-3 bg-[var(--bege)] border-2 border-transparent rounded-xl text-sm focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" />
+                    <input type="text" value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Ex: SORV-001" className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm text-center focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" />
                   </div>
                   <div>
                     <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Codigo EAN (GTIN)</label>
-                    <input type="text" value={codigoEan} onChange={(e) => setCodigoEan(e.target.value)} placeholder="EAN / GTIN" className="w-full px-4 py-3 bg-[var(--bege)] border-2 border-transparent rounded-xl text-sm focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" />
+                    <input type="text" value={codigoEan} onChange={(e) => setCodigoEan(e.target.value)} placeholder="EAN / GTIN" className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm text-center focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" />
                   </div>
                 </div>
 
@@ -162,7 +162,7 @@ export default function EditarItem() {
                 <div>
                   <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Familia de Produto</label>
                   <div className="flex gap-2">
-                    <select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} className="flex-1 px-4 py-3 bg-[var(--bege)] border-2 border-transparent rounded-xl text-sm focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all cursor-pointer">
+                    <select value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)} className="flex-1 px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all cursor-pointer">
                       <option value="">Sem familia</option>
                       {categories.map((c) => (<option key={c.id} value={c.id}>{c.name}</option>))}
                     </select>
@@ -180,7 +180,7 @@ export default function EditarItem() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Peso Liquido</label>
-                    <input type="text" value={pesoLiquido} onChange={(e) => setPesoLiquido(e.target.value)} placeholder="Ex: 500g, 1.5kg" className="w-full px-4 py-3 bg-[var(--bege)] border-2 border-transparent rounded-xl text-sm focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" />
+                    <input type="text" value={pesoLiquido} onChange={(e) => setPesoLiquido(e.target.value)} placeholder="Ex: 500g, 1.5kg" className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm text-center focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all" />
                   </div>
                   <div>
                     <label className="text-sm font-semibold text-[var(--marrom)] mb-1.5 block text-center">Unidade</label>
@@ -279,7 +279,7 @@ export default function EditarItem() {
                   onChange={(e) => { if (e.target.value.length <= LIMITE_INFO) setInfoAdicional(e.target.value); }}
                   placeholder='Ex: "Contem gluten" / "Sem lactose"'
                   rows={2}
-                  className="w-full px-4 py-3 bg-[var(--bege)] border-2 border-transparent rounded-xl text-sm focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all resize-none"
+                  className="w-full px-4 py-3 bg-gray-100 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all resize-none"
                 />
                 <div className="flex justify-between mt-2">
                   <p className="text-xs text-gray-400">Aparece na etiqueta impressa</p>
