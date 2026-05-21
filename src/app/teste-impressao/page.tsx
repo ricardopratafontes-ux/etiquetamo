@@ -40,19 +40,21 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
    * Layout da etiqueta 50mm x 50mm (area util 46mm x 46mm com padding 2mm):
    *
    * ┌──────────────────────────────────────────────┐
-   * │         NOME DO PRODUTO (max 14mm)           │
+   * │         NOME DO PRODUTO (Arial Bold)         │
    * ├──────────────────────────────────────────────┤
-   * │                                    │  [OP]   │  ← operador 5x5 canto direito
-   * │        Fab: 21/05/2026             │         │
-   * │                                    │         │
-   * │        Val: 28/05/2026             │         │
-   * │                                    │         │
-   * ├─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─(2mm gap)─ ─ ┼─────────┤  ← linha do topo do QR
-   * │  Lote: TESTE-001                   │  ┌────┐ │
-   * │  Contém leite e derivados          │  │ QR │ │
-   * │                                    │  └────┘ │
-   * │                                    │  [mo!]  │
-   * └──────────────────────────────────────────────┘
+   * │                                              │
+   * │        Fab: 21/05/2026  (18pt bold)          │
+   * │                                              │
+   * │        Val: 28/05/2026  (18pt bold)          │
+   * │                                              │
+   * ├─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ┬─────────── ┤  ← linha do topo do QR
+   * │  Lote: TESTE-001                │  [OP] 5x5  │
+   * │  Contém leite e derivados       │  1mm gap   │
+   * │                                 │  ┌──────┐  │
+   * │                                 │  │  QR  │  │
+   * │                                 │  └──────┘  │
+   * │                                 │   [mo!]    │
+   * └─────────────────────────────────┴────────────┘
    */
 
   return (
@@ -68,8 +70,9 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
         overflow: "hidden",
       }}
     >
-      {/* ZONA 1: Nome do produto — CAIXA ALTA, topo */}
+      {/* ZONA 1: Nome do produto — Arial Bold, CAIXA ALTA */}
       <div style={{
+        fontFamily: "Arial, sans-serif",
         fontWeight: "bold",
         fontSize: fontNome,
         textAlign: "center",
@@ -83,51 +86,25 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
         {nome}
       </div>
 
-      {/* ZONA 2: Fab + Val — fonte maxima, centralizado, vai ate 2mm acima do QR */}
+      {/* ZONA 2: Fab + Val — 18pt bold, centralizado, Val pode chegar a 1mm do operador */}
       <div style={{
         flex: 1,
         display: "flex",
-        position: "relative",
-        paddingBottom: "2mm",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
+        textAlign: "center",
+        paddingBottom: "1mm",
       }}>
-        {/* Fab e Val — ocupam toda a largura, centralizados, fonte maxima */}
-        <div style={{
-          flex: 1,
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-          alignItems: "center",
-          textAlign: "center",
-          paddingRight: "7mm",
-        }}>
-          <div style={{ fontSize: "16pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.4" }}>
-            Fab: {fabricacao}
-          </div>
-          <div style={{ fontSize: "16pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.4" }}>
-            Val: {validade}
-          </div>
+        <div style={{ fontSize: "18pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.35" }}>
+          Fab: {fabricacao}
         </div>
-        {/* Operador — 5mm x 5mm, canto superior direito, sem transparencia */}
-        {operador && (
-          <div style={{
-            position: "absolute",
-            top: "1mm",
-            right: "0",
-            width: "5mm",
-            height: "5mm",
-            border: "0.3pt solid #000",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "6pt",
-            fontWeight: "bold",
-          }}>
-            {operador}
-          </div>
-        )}
+        <div style={{ fontSize: "18pt", fontWeight: "bold", whiteSpace: "nowrap", lineHeight: "1.35" }}>
+          Val: {validade}
+        </div>
       </div>
 
-      {/* ZONA 3: Lote/info a esquerda | QR + logo a direita — alinhados pela linha do topo do QR */}
+      {/* ZONA 3: Lote/info a esquerda | Operador + QR + logo a direita */}
       <div style={{
         display: "flex",
         alignItems: "flex-start",
@@ -154,14 +131,29 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
             </div>
           )}
         </div>
-        {/* Direita: QR + logo empilhados */}
+        {/* Direita: operador + QR + logo empilhados, alinhados a direita */}
         <div style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          gap: "0.5mm",
           marginLeft: "1mm",
         }}>
+          {/* Operador — 5mm x 5mm, 1mm acima do QR */}
+          {operador && (
+            <div style={{
+              width: "5mm",
+              height: "5mm",
+              border: "0.3pt solid #000",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "6pt",
+              fontWeight: "bold",
+              marginBottom: "1mm",
+            }}>
+              {operador}
+            </div>
+          )}
           <div style={{
             width: "10mm",
             height: "10mm",
@@ -177,7 +169,7 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
           <img
             src="/logo-mo.png"
             alt="mo!"
-            style={{ height: "5mm", opacity: 0.8 }}
+            style={{ height: "5mm", opacity: 0.8, marginTop: "0.5mm" }}
           />
         </div>
       </div>
@@ -197,7 +189,7 @@ function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
   const logo = logoUrl || "/logo-mo.png";
 
   const operadorHTML = dados.operador
-    ? `<div style="position:absolute;top:1mm;right:0;width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;">${dados.operador}</div>`
+    ? `<div style="width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;margin-bottom:1mm;">${dados.operador}</div>`
     : "";
 
   const loteHTML = dados.lote
@@ -209,19 +201,17 @@ function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
     : "";
 
   const cell = `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;line-height:1.15;max-height:14mm;overflow:hidden;">${dados.nome}</div>
-    <div style="flex:1;display:flex;position:relative;padding-bottom:2mm;">
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding-right:7mm;">
-        <div style="font-size:16pt;font-weight:bold;white-space:nowrap;line-height:1.4;">Fab: ${dados.fabricacao}</div>
-        <div style="font-size:16pt;font-weight:bold;white-space:nowrap;line-height:1.4;">Val: ${dados.validade}</div>
-      </div>
-      ${operadorHTML}
+    <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;line-height:1.15;max-height:14mm;overflow:hidden;">${dados.nome}</div>
+    <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding-bottom:1mm;">
+      <div style="font-size:18pt;font-weight:bold;white-space:nowrap;line-height:1.35;">Fab: ${dados.fabricacao}</div>
+      <div style="font-size:18pt;font-weight:bold;white-space:nowrap;line-height:1.35;">Val: ${dados.validade}</div>
     </div>
     <div style="display:flex;align-items:flex-start;">
       <div style="flex:1;">${loteHTML}${infoHTML}</div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:0.5mm;margin-left:1mm;">
+      <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
+        ${operadorHTML}
         <div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>
-        <img src="${logo}" style="height:5mm;opacity:0.8;" />
+        <img src="${logo}" style="height:5mm;opacity:0.8;margin-top:0.5mm;" />
       </div>
     </div>
   </div>`;
