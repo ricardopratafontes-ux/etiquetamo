@@ -46,6 +46,11 @@ function calcValidade(diasValidade: number | null): string {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
+/** Encurta data de dd/mm/aaaa para dd/mm/aa */
+function dataCurta(data: string): string {
+  return data.replace(/\/(\d{4})$/, (_, ano: string) => "/" + ano.slice(2));
+}
+
 // --- Steps ---
 type StepTipo = "producao" | "contagem" | null;
 type Step = 1 | 2 | 3 | 4;
@@ -203,70 +208,99 @@ export default function ImprimirWizard() {
     }).join(" ");
   }
 
+  // --- Gerar HTML de uma etiqueta individual (layout estabelecido) ---
+  function gerarCelulaEtiqueta(
+    nome: string, fabricacao: string, validade: string,
+    lote: string, info: string, produtorIniciais: string, logoUrl: string
+  ): string {
+    const temInfo = !!info;
+    const fNome = temInfo ? "16pt" : "18pt";
+    const fLote = temInfo ? "9pt" : "10pt";
+    const fInfo = "7pt";
+
+    const operadorHTML = produtorIniciais
+      ? `<div style="position:absolute;right:0;width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;">${produtorIniciais}</div>`
+      : "";
+
+    const loteHTML = lote
+      ? `<div style="font-size:${fLote};font-weight:bold;line-height:1.4;">Lote: ${lote}</div>`
+      : "";
+
+    const infoHTML = temInfo
+      ? `<div style="font-size:${fInfo};font-style:italic;line-height:1.3;margin-top:0.5mm;">${info}</div>`
+      : "";
+
+    return `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">${nome}</div>
+      <div style="display:flex;flex-direction:column;align-items:center;padding-top:0.5mm;padding-bottom:0.5mm;">
+        <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">FAB: ${dataCurta(fabricacao)}</div>
+        <div style="display:flex;align-items:center;width:100%;position:relative;">
+          <div style="width:100%;text-align:center;font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">VAL: ${dataCurta(validade)}</div>
+          ${operadorHTML}
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;">
+        <div style="flex:1;">${loteHTML}${infoHTML}</div>
+        <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
+          <div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>
+          <img src="${logoUrl}" style="height:5mm;opacity:0.8;margin-top:0.5mm;" />
+        </div>
+      </div>
+    </div>`;
+  }
+
   // --- Impressão ---
   async function imprimirTudo() {
     if (carrinho.length === 0) return;
     setImprimindo(true);
-    // Monta o HTML de impressão
+
     const fabricacao = dataHoje();
+    const logoUrl = window.location.origin + "/logo-mo.png";
 
-    let html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Impressão EtiquetaMO</title>
-    <style>
-      @page { size: 107mm 50mm; margin: 0; }
-      @media print { body { margin: 0; } .no-print { display: none; } }
-      body { font-family: Arial, Helvetica, sans-serif; margin: 0; padding: 0; }
-      .linha { width: 107mm; height: 50mm; display: flex; page-break-after: always; }
-      .etiqueta { width: 50mm; height: 50mm; box-sizing: border-box; padding: 2mm; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; position: relative; border: 0.3mm solid #ccc; }
-      .gap { width: 3mm; }
-      .nome { font-size: 13pt; font-weight: 900; text-align: center; line-height: 1.15; margin-bottom: 1mm; }
-      .datas { text-align: center; font-size: 10pt; font-weight: 700; line-height: 1.4; }
-      .datas span { font-weight: 400; }
-      .rodape { display: flex; justify-content: space-between; align-items: flex-end; font-size: 7pt; color: #333; }
-      .lote { font-size: 7.5pt; }
-      .info { font-size: 6.5pt; text-align: center; color: #555; margin-top: 0.5mm; }
-      .iniciais { width: 5mm; height: 5mm; border: 0.3mm solid #999; display: flex; align-items: center; justify-content: center; font-size: 5pt; font-weight: 900; }
-    </style></head><body>`;
-
-    // Gera etiquetas
-    const etiquetas: string[] = [];
+    // Gera células individuais de etiqueta
+    const celulas: string[] = [];
     for (const item of carrinho) {
       const validade = calcValidade(item.item.expiry_days);
       const prods = iniciaisProdutores(item.produtores);
-      const infoLine = item.item.additional_info ? `<div class="info">${item.item.additional_info}</div>` : "";
-      const loteLine = item.lote ? `<span class="lote">Lote: ${item.lote}</span>` : `<span></span>`;
-
-      const etqHtml = `<div class="etiqueta">
-        <div class="nome">${item.item.name}</div>
-        <div class="datas">
-          <div>Fab: <span>${fabricacao}</span></div>
-          <div>Val: <span>${validade}</span></div>
-        </div>
-        ${infoLine}
-        <div class="rodape">
-          ${loteLine}
-          <div class="iniciais">${prods}</div>
-        </div>
-      </div>`;
 
       for (let i = 0; i < item.quantidade; i++) {
-        etiquetas.push(etqHtml);
+        celulas.push(gerarCelulaEtiqueta(
+          item.item.name, fabricacao, validade,
+          item.lote, item.item.additional_info || "", prods, logoUrl
+        ));
       }
     }
 
-    // Arredonda para par (duplica última se ímpar)
-    if (etiquetas.length % 2 !== 0) {
-      etiquetas.push(etiquetas[etiquetas.length - 1]);
+    // Arredonda para par (duplica última se ímpar) — DEC-023
+    if (celulas.length % 2 !== 0) {
+      celulas.push(celulas[celulas.length - 1]);
     }
 
-    // Monta linhas de 2
-    for (let i = 0; i < etiquetas.length; i += 2) {
-      html += `<div class="linha">${etiquetas[i]}<div class="gap"></div>${etiquetas[i + 1]}</div>`;
+    // Monta linhas de 2 etiquetas (107mm = 2mm + 50mm + 3mm + 50mm + 2mm)
+    let linhas = "";
+    for (let i = 0; i < celulas.length; i += 2) {
+      linhas += `<div style="width:107mm;display:flex;padding-left:2mm;padding-right:2mm;gap:3mm;page-break-after:always;">${celulas[i]}${celulas[i + 1]}</div>`;
     }
 
-    html += `<div class="no-print" style="text-align:center;padding:20px;">
-      <button onclick="window.print()" style="padding:12px 32px;font-size:16px;font-weight:bold;background:#f31c40;color:white;border:none;border-radius:12px;cursor:pointer;">🖨️ Imprimir</button>
-      <button onclick="window.close()" style="padding:12px 32px;font-size:16px;margin-left:12px;background:#98472d;color:white;border:none;border-radius:12px;cursor:pointer;">Fechar</button>
-    </div></body></html>`;
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Impressão EtiquetaMO</title>
+<style>
+  @page { margin: 0; size: 107mm 50mm; }
+  @media print { html, body { margin: 0; padding: 0; width: 107mm; } .no-print { display: none !important; } }
+  html, body { margin: 0; padding: 0; }
+</style>
+</head>
+<body>
+${linhas}
+<div class="no-print" style="text-align:center;padding:20px;">
+  <button onclick="window.print()" style="padding:12px 32px;font-size:16px;font-weight:bold;background:#f31c40;color:white;border:none;border-radius:12px;cursor:pointer;">🖨️ Imprimir</button>
+  <button onclick="window.close()" style="padding:12px 32px;font-size:16px;margin-left:12px;background:#98472d;color:white;border:none;border-radius:12px;cursor:pointer;">Fechar</button>
+</div>
+</body>
+</html>`;
 
     const win = window.open("", "_blank");
     if (win) {
@@ -274,7 +308,7 @@ export default function ImprimirWizard() {
       win.document.close();
     }
 
-    // Salvar no histórico (simplificado)
+    // Salvar no histórico
     if (orgId && emitente) {
       for (const item of carrinho) {
         await supabase.from("print_history").insert({
@@ -311,23 +345,23 @@ export default function ImprimirWizard() {
                 <span className="text-3xl">🖨️</span>
                 <div>
                   <h1 className="text-2xl font-extrabold">Impressão de Etiquetas</h1>
-                  <p className="text-sm opacity-70">
-                    {step === 1 && "Escolha o tipo de etiqueta"}
-                    {step === 2 && "Quem está emitindo?"}
-                    {step === 3 && "Escolha a família de produtos"}
-                    {step === 4 && `${nomeFamilia(familiaSelecionada)} — Adicione ao carrinho`}
+                  <p className="text-base font-bold text-white mt-0.5">
+                    {step === 1 && "👉 Escolha o tipo de etiqueta"}
+                    {step === 2 && "👉 Quem está emitindo?"}
+                    {step === 3 && "👉 Escolha a família de produtos"}
+                    {step === 4 && `📦 ${nomeFamilia(familiaSelecionada)} — Adicione ao carrinho`}
                   </p>
                 </div>
               </div>
               {/* Breadcrumb */}
               <div className="flex items-center gap-1.5 text-xs">
-                <span className={step >= 1 ? "bg-white/30 px-2 py-1 rounded-lg font-bold" : "text-white/40"}>1. Tipo</span>
-                <span className="text-white/30">›</span>
-                <span className={step >= 2 ? "bg-white/30 px-2 py-1 rounded-lg font-bold" : "text-white/40"}>2. Emitente</span>
-                <span className="text-white/30">›</span>
-                <span className={step >= 3 ? "bg-white/30 px-2 py-1 rounded-lg font-bold" : "text-white/40"}>3. Família</span>
-                <span className="text-white/30">›</span>
-                <span className={step >= 4 ? "bg-white/30 px-2 py-1 rounded-lg font-bold" : "text-white/40"}>4. Produtos</span>
+                <span className={step >= 1 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>1. Tipo</span>
+                <span className="text-white/40">›</span>
+                <span className={step >= 2 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>2. Emitente</span>
+                <span className="text-white/40">›</span>
+                <span className={step >= 3 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>3. Família</span>
+                <span className="text-white/40">›</span>
+                <span className={step >= 4 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>4. Produtos</span>
               </div>
             </div>
           </div>
@@ -336,7 +370,7 @@ export default function ImprimirWizard() {
         <div className="max-w-6xl mx-auto px-6 -mt-4 pb-8">
           {/* Botão voltar */}
           {step > 1 && (
-            <button onClick={voltar} className="flex items-center gap-1 text-sm text-[var(--marrom)] font-semibold mb-4 mt-2 hover:opacity-70 cursor-pointer transition-all">
+            <button onClick={voltar} className="flex items-center gap-1.5 text-sm text-white bg-[var(--marrom)] font-bold px-4 py-2 rounded-xl mb-4 mt-2 hover:bg-[#7a3520] cursor-pointer transition-all shadow-sm">
               ← Voltar
             </button>
           )}
@@ -418,8 +452,8 @@ export default function ImprimirWizard() {
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-bold text-[var(--marrom)] text-lg">{nomeFamilia(familiaSelecionada)}</h3>
-                  <button onClick={() => { setFamiliaSelecionada(null); setStep(3); }} className="text-sm text-[var(--vermelho)] font-semibold cursor-pointer hover:underline">
-                    Trocar família
+                  <button onClick={() => { setFamiliaSelecionada(null); setStep(3); }} className="px-4 py-2 bg-[var(--marrom)] text-white text-sm font-bold rounded-xl cursor-pointer hover:bg-[#7a3520] transition-all shadow-sm">
+                    🏷️ Trocar família
                   </button>
                 </div>
                 <div className="space-y-2">
