@@ -61,20 +61,8 @@ export default function Home() {
       <NavBar />
 
       <main className="min-h-screen bg-[var(--bege)]">
-        {/* Hero — nome e frase alinhados a esquerda */}
-        <div className="bg-gradient-to-br from-[var(--marrom)] to-[#7a3520] text-white px-6 py-6">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-4xl font-extrabold tracking-tight mb-1">
-              Etiqueta<span className="text-[var(--vermelho)]">MO</span>
-            </h1>
-            <p className="text-sm opacity-70 font-medium">
-              Sistema de etiquetas da Gelateria Moderna desde 1959
-            </p>
-          </div>
-        </div>
-
         {/* Cards de acao */}
-        <div className="max-w-4xl mx-auto px-6 -mt-6">
+        <div className="max-w-4xl mx-auto px-6 mt-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {acoes.map((acao) => (
               <Link

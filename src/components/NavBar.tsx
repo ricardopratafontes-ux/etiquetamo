@@ -28,9 +28,14 @@ export default function NavBar() {
             height={60}
             className="drop-shadow-md"
           />
-          <span className="text-xl font-extrabold tracking-tight">
-            Etiqueta<span className="text-[var(--vermelho)]">MO</span>
-          </span>
+          <div>
+            <span className="text-xl font-extrabold tracking-tight block">
+              Etiqueta<span className="text-[var(--vermelho)]">MO</span>
+            </span>
+            <span className="text-[10px] text-white/60 font-medium block leading-tight">
+              Sistema de Etiquetas da Gelateria Moderna
+            </span>
+          </div>
         </Link>
 
         {/* Links */}
