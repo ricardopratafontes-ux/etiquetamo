@@ -22,6 +22,7 @@ interface ItemCarrinho {
   produtores: string[]; // IDs dos colaboradores que produziram
   lote: string;
   tipoEtiqueta: "normal" | "contagem";
+  infoComplementar: string; // Override ou complemento da info adicional cadastrada
 }
 
 // --- Helpers ---
@@ -99,6 +100,7 @@ export default function ImprimirWizard() {
   const [modalQtd, setModalQtd] = useState(1);
   const [modalLote, setModalLote] = useState("");
   const [modalTipoEtiqueta, setModalTipoEtiqueta] = useState<"normal" | "contagem">("normal");
+  const [modalInfoComplementar, setModalInfoComplementar] = useState("");
 
   // Carrinho
   const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([]);
@@ -210,6 +212,7 @@ export default function ImprimirWizard() {
     setModalProdutores([]);
     setModalQtd(1);
     setModalLote("");
+    setModalInfoComplementar(item.additional_info || "");
     // Default: tipo selecionado no step 1, mas pode mudar se item tem ambos
     setModalTipoEtiqueta(tipo === "contagem" ? "contagem" : "normal");
   }
@@ -230,10 +233,10 @@ export default function ImprimirWizard() {
     const existente = carrinho.findIndex((c) => c.item.id === modalItem.id && c.tipoEtiqueta === modalTipoEtiqueta);
     if (existente >= 0) {
       setCarrinho((prev) => prev.map((c, i) =>
-        i === existente ? { ...c, quantidade: c.quantidade + modalQtd, produtores: modalProdutores, lote: modalLote } : c
+        i === existente ? { ...c, quantidade: c.quantidade + modalQtd, produtores: modalProdutores, lote: modalLote, infoComplementar: modalInfoComplementar } : c
       ));
     } else {
-      setCarrinho((prev) => [...prev, { item: modalItem, quantidade: modalQtd, produtores: modalProdutores, lote: modalLote, tipoEtiqueta: modalTipoEtiqueta }]);
+      setCarrinho((prev) => [...prev, { item: modalItem, quantidade: modalQtd, produtores: modalProdutores, lote: modalLote, tipoEtiqueta: modalTipoEtiqueta, infoComplementar: modalInfoComplementar }]);
     }
     setModalItem(null);
   }
@@ -340,7 +343,7 @@ export default function ImprimirWizard() {
       for (let i = 0; i < item.quantidade; i++) {
         celulas.push(gerarCelulaEtiqueta(
           item.item.name, fabricacao, validade,
-          item.lote, item.item.additional_info || "", prods, logoUrl
+          item.lote, item.infoComplementar || "", prods, logoUrl
         ));
       }
     }
@@ -565,31 +568,31 @@ ${linhas}
                   ) : (
                     itensFiltrados.map((item) => {
                       const noCarrinho = carrinho.some((c) => c.item.id === item.id);
+                      const iconeArm = item.storage_type === "congelado" ? "🧊" : item.storage_type === "refrigerado" ? "❄️" : "";
                       return (
                         <button
                           key={item.id}
                           onClick={() => abrirModalItem(item)}
                           className={
-                            "w-full text-left bg-white rounded-xl shadow-sm px-4 py-3 flex items-center justify-between cursor-pointer transition-all hover:shadow-md " +
-                            (noCarrinho ? "border-2 border-green-400 bg-green-50" : "border border-gray-100 hover:border-[var(--vermelho)]")
+                            "w-full text-left rounded-xl px-3 py-2 flex items-center gap-2 cursor-pointer transition-all hover:shadow-md " +
+                            (noCarrinho ? "bg-green-50 border-2 border-green-400 shadow-sm" : "bg-white border border-gray-100 hover:border-[var(--vermelho)] shadow-sm")
                           }
                         >
+                          {iconeArm && <span className="text-lg shrink-0">{iconeArm}</span>}
                           <div className="flex-1 min-w-0">
-                            <p className="font-bold text-[var(--marrom)] text-sm truncate">{item.name}</p>
-                            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                              <span className="text-[10px] text-gray-400">
-                                {item.expiry_days ? `${item.expiry_days}d` : "Sem val."}
-                                {item.uses_lot ? " · Lote" : ""}
-                                {item.storage_type && item.storage_type !== "ambiente" ? ` · ${item.storage_type === "congelado" ? "🧊" : "❄️"}` : ""}
-                              </span>
-                              {item.uses_label && <span className="text-[9px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded font-bold">Normal</span>}
-                              {item.uses_counting_label && <span className="text-[9px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">Contagem</span>}
+                            <p className="font-bold text-[var(--marrom)] text-[13px] leading-tight truncate">{item.name}</p>
+                            {item.additional_info && (
+                              <p className="text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded mt-0.5 truncate inline-block max-w-full">📝 {item.additional_info}</p>
+                            )}
+                            <div className="flex items-center gap-1 mt-0.5">
+                              {item.expiry_days && <span className="text-[9px] text-gray-400 bg-gray-50 px-1 rounded">{item.expiry_days}d</span>}
+                              {item.uses_lot && <span className="text-[9px] text-gray-400 bg-gray-50 px-1 rounded">Lote</span>}
                             </div>
                           </div>
                           {noCarrinho ? (
-                            <span className="text-xs font-bold text-green-600 bg-green-100 px-2 py-1 rounded-lg">✓ No carrinho</span>
+                            <span className="text-[10px] font-bold text-green-600 shrink-0">✓</span>
                           ) : (
-                            <span className="text-xs font-bold text-[var(--vermelho)]">+ Adicionar</span>
+                            <span className="text-xs font-bold text-[var(--vermelho)] shrink-0">+</span>
                           )}
                         </button>
                       );
@@ -614,7 +617,7 @@ ${linhas}
                         {carrinho.map((c, idx) => {
                           const previewHTML = gerarCelulaEtiqueta(
                             c.item.name, dataHoje(), calcValidade(c.item.expiry_days),
-                            c.lote, c.item.additional_info || "", iniciaisProdutores(c.produtores),
+                            c.lote, c.infoComplementar || "", iniciaisProdutores(c.produtores),
                             "/logo-mo.png"
                           );
                           return (
@@ -771,6 +774,22 @@ ${linhas}
                       />
                     </div>
                   )}
+
+                  {/* Info complementar (editável) */}
+                  <div>
+                    <label className="text-xs font-semibold text-[var(--marrom)] mb-1 flex items-center gap-1">
+                      📝 Info na etiqueta
+                      {modalItem.additional_info && <span className="text-[9px] text-gray-400 font-normal">(do cadastro)</span>}
+                    </label>
+                    <input
+                      type="text"
+                      value={modalInfoComplementar}
+                      onChange={(e) => setModalInfoComplementar(e.target.value.slice(0, 60))}
+                      placeholder="Ex: Contém glúten, Sem lactose..."
+                      className="w-full px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg text-sm font-medium focus:outline-none focus:border-[var(--vermelho)] focus:bg-white transition-all"
+                    />
+                    <p className="text-[9px] text-gray-400 mt-0.5">{modalInfoComplementar.length}/60 — aparece na etiqueta abaixo do lote</p>
+                  </div>
 
                   {/* Quantidade — compacto inline */}
                   <div className="flex items-center justify-between bg-[var(--bege)] rounded-xl px-4 py-2.5">
