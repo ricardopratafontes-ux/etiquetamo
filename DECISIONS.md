@@ -220,3 +220,21 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 - **Decisão**: Headers de página usam gradiente vermelho (#f31c40 → #d41636) em vez de marrom. NavBar mantém marrom (identidade). PatternStrip (faixa de triângulos) aparece em todas as páginas via componente reutilizável na NavBar.
 - **Motivo**: Ricardo relatou excesso de marrom nas páginas. Vermelho nos headers dá mais energia e diferencia da NavBar.
 - **Alternativas descartadas**: Manter tudo marrom (cansativo visualmente).
+
+### DEC-032 — Integração OMIE: nomes do EtiquetaMO são definitivos
+- **Data**: 2026-05-21
+- **Decisão**: A sincronização OMIE NUNCA sobrescreve o campo `name` dos itens. Os nomes cadastrados no EtiquetaMO são menores e mais convenientes para etiquetas térmicas. O match é feito por `omie_product_id` (código numérico). Apenas `code` e `barcode/ean` podem ser atualizados via sync.
+- **Motivo**: Ricardo definiu que os nomes importados foram customizados para o contexto da gelateria e da etiqueta. Nomes do OMIE são longos demais.
+- **Alternativas descartadas**: Sync bidirecional de nomes (causaria regressão nos nomes otimizados).
+
+### DEC-033 — OMIE: itens desconhecidos vão para quarentena
+- **Data**: 2026-05-21
+- **Decisão**: Produtos que existem no OMIE mas não no EtiquetaMO NÃO são inseridos automaticamente. Vão para tabela `omie_quarantine` com status "pending" para cadastro manual pelo operador.
+- **Motivo**: Ricardo definiu: "não inserir, eles já foram importados. Caso venha algum item que não existe, coloca ele à parte numa quarentena e faz a gente cadastrar manualmente."
+- **Alternativas descartadas**: Auto-inserção (risco de poluir cadastro com itens irrelevantes).
+
+### DEC-034 — OMIE webhook: gatilho na etapa "Produzindo"
+- **Data**: 2026-05-21
+- **Decisão**: O webhook OMIE dispara quando uma ordem de produção entra na etapa "Produzindo" (4ª no kanban). O sistema salva na fila de impressão (`omie_print_queue`) e mostra notificação para o operador decidir quando imprimir.
+- **Motivo**: Ricardo definiu: "a etapa de produção que faz sentido ser o gatilho é Produzindo". Notificação + fila, não impressão automática.
+- **Alternativas descartadas**: Impressão automática no webhook (operador precisa controlar o timing).

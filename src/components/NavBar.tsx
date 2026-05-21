@@ -13,6 +13,7 @@ const links = [
   { href: "/etiqueta-caixa", label: "Avulsas", icon: "\u{1F3F7}️" },
   { href: "/historico", label: "Histórico", icon: "\u{1F4CB}" },
   { href: "/relatorios", label: "Relatórios", icon: "\u{1F4CA}" },
+  { href: "/omie", label: "OMIE", icon: "\u{1F517}" },
 ];
 
 export default function NavBar() {

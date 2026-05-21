@@ -215,6 +215,106 @@ export interface Database {
           notes?: string | null;
         };
       };
+      omie_quarantine: {
+        Row: {
+          id: string;
+          organization_id: string;
+          omie_product_id: number;
+          omie_code: string | null;
+          product_name: string;
+          unit: string | null;
+          ean: string | null;
+          raw_data: Record<string, unknown>;
+          status: "pending" | "registered" | "ignored";
+          resolved_item_id: string | null;
+          created_at: string;
+          resolved_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          omie_product_id: number;
+          omie_code?: string | null;
+          product_name: string;
+          unit?: string | null;
+          ean?: string | null;
+          raw_data?: Record<string, unknown>;
+          status?: "pending" | "registered" | "ignored";
+          resolved_item_id?: string | null;
+        };
+        Update: {
+          status?: "pending" | "registered" | "ignored";
+          resolved_item_id?: string | null;
+          resolved_at?: string | null;
+        };
+      };
+      omie_print_queue: {
+        Row: {
+          id: string;
+          organization_id: string;
+          omie_order_id: number | null;
+          omie_order_number: string | null;
+          product_name: string;
+          item_id: string | null;
+          quantity: number;
+          lot: string | null;
+          webhook_payload: Record<string, unknown>;
+          status: "pending" | "printed" | "skipped";
+          created_at: string;
+          printed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          omie_order_id?: number | null;
+          omie_order_number?: string | null;
+          product_name: string;
+          item_id?: string | null;
+          quantity?: number;
+          lot?: string | null;
+          webhook_payload?: Record<string, unknown>;
+          status?: "pending" | "printed" | "skipped";
+        };
+        Update: {
+          status?: "pending" | "printed" | "skipped";
+          printed_at?: string | null;
+        };
+      };
+      omie_sync_log: {
+        Row: {
+          id: string;
+          organization_id: string;
+          sync_type: "products" | "full";
+          total_omie: number;
+          matched: number;
+          quarantined: number;
+          updated: number;
+          errors: number;
+          details: Record<string, unknown>;
+          started_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          organization_id: string;
+          sync_type: "products" | "full";
+          total_omie?: number;
+          matched?: number;
+          quarantined?: number;
+          updated?: number;
+          errors?: number;
+          details?: Record<string, unknown>;
+        };
+        Update: {
+          total_omie?: number;
+          matched?: number;
+          quarantined?: number;
+          updated?: number;
+          errors?: number;
+          details?: Record<string, unknown>;
+          completed_at?: string | null;
+        };
+      };
       print_history: {
         Row: {
           id: string;
@@ -266,3 +366,8 @@ export type ProductionOrderUpdate = Database["public"]["Tables"]["production_ord
 export type ProductionOrderItem = Database["public"]["Tables"]["production_order_items"]["Row"];
 export type ProductionOrderItemInsert = Database["public"]["Tables"]["production_order_items"]["Insert"];
 export type ProductionOrderItemUpdate = Database["public"]["Tables"]["production_order_items"]["Update"];
+export type OmieQuarantine = Database["public"]["Tables"]["omie_quarantine"]["Row"];
+export type OmieQuarantineInsert = Database["public"]["Tables"]["omie_quarantine"]["Insert"];
+export type OmiePrintQueue = Database["public"]["Tables"]["omie_print_queue"]["Row"];
+export type OmiePrintQueueInsert = Database["public"]["Tables"]["omie_print_queue"]["Insert"];
+export type OmieSyncLog = Database["public"]["Tables"]["omie_sync_log"]["Row"];

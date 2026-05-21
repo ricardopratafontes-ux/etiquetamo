@@ -2,20 +2,22 @@
 - Environments: .env.local
 
   Creating an optimized production build ...
-✓ Compiled successfully in 5.7s
+✓ Compiled successfully in 6.2s
   Running TypeScript ...
-  Finished TypeScript in 6.9s ...
+  Finished TypeScript in 5.8s ...
   Collecting page data using 11 workers ...
-  Generating static pages using 11 workers (0/15) ...
-  Generating static pages using 11 workers (3/15) 
-  Generating static pages using 11 workers (7/15) 
-  Generating static pages using 11 workers (11/15) 
-✓ Generating static pages using 11 workers (15/15) in 610ms
+  Generating static pages using 11 workers (0/18) ...
+  Generating static pages using 11 workers (4/18) 
+  Generating static pages using 11 workers (8/18) 
+  Generating static pages using 11 workers (13/18) 
+✓ Generating static pages using 11 workers (18/18) in 593ms
   Finalizing page optimization ...
 
 Route (app)
 ┌ ○ /
 ├ ○ /_not-found
+├ ƒ /api/omie/sync
+├ ƒ /api/omie/webhook
 ├ ○ /colaboradores
 ├ ○ /etiqueta-caixa
 ├ ○ /historico
@@ -24,6 +26,7 @@ Route (app)
 ├ ƒ /itens/[id]/editar
 ├ ○ /itens/importar
 ├ ○ /itens/novo
+├ ○ /omie
 ├ ○ /producao
 ├ ƒ /producao/[id]/imprimir
 ├ ○ /producao/nova
