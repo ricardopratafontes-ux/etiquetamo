@@ -18,18 +18,28 @@ interface ItemDB {
   uses_complementary_label: boolean | null; complementary_label_text: string | null;
   is_portioned: boolean | null;
 }
+interface CampoOpcional {
+  label: string;
+  valor: string;
+}
+interface DadosComplementar {
+  nome: string;
+  quantidade: string | null;
+  campos: CampoOpcional[];
+  campoExtra: string | null;
+}
 interface ItemCarrinho {
   item: ItemDB;
   quantidade: number;
-  produtores: string[]; // IDs dos colaboradores que produziram
+  produtores: string[];
   lote: string;
   tipoEtiqueta: "normal" | "contagem";
-  infoComplementar: string; // Override ou complemento da info adicional cadastrada
-  incluirComplementar: boolean; // Incluir etiqueta complementar na impressão
-  complementarTexto: string; // Texto da etiqueta complementar
-  pesoOverride: string; // Peso editado na hora (se zerado no cadastro)
-  unidadeOverride: string; // Unidade editada na hora
-  incluirPeso: boolean; // Flag para incluir peso na etiqueta
+  infoComplementar: string;
+  incluirComplementar: boolean;
+  complementarDados: DadosComplementar | null;
+  pesoOverride: string;
+  unidadeOverride: string;
+  incluirPeso: boolean;
 }
 
 // --- Helpers ---
@@ -87,6 +97,13 @@ function regrasProdutor(modo: "producao" | "contagem" | null, categoriaNome: str
 type StepTipo = "producao" | "contagem" | null;
 type Step = 1 | 2 | 3 | 4;
 
+const CAMPOS_PRESET_COMPL = [
+  { label: "Lote", placeholder: "Ex: LOTE-2024-01" },
+  { label: "Fabricação", placeholder: "Ex: 21/05/2026", autoFill: true },
+  { label: "Validade", placeholder: "Ex: 28/05/2026" },
+  { label: "Peso", placeholder: "Ex: 5kg" },
+];
+
 export default function ImprimirWizard() {
   // Data loading
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([]);
@@ -109,7 +126,12 @@ export default function ImprimirWizard() {
   const [modalTipoEtiqueta, setModalTipoEtiqueta] = useState<"normal" | "contagem">("normal");
   const [modalInfoComplementar, setModalInfoComplementar] = useState("");
   const [modalIncluirComplementar, setModalIncluirComplementar] = useState(false);
-  const [modalComplementarTexto, setModalComplementarTexto] = useState("");
+  const [modalComplNome, setModalComplNome] = useState("");
+  const [modalComplUsarQtd, setModalComplUsarQtd] = useState(false);
+  const [modalComplQtd, setModalComplQtd] = useState("");
+  const [modalComplCampos, setModalComplCampos] = useState<CampoOpcional[]>([]);
+  const [modalComplUsarExtra, setModalComplUsarExtra] = useState(false);
+  const [modalComplExtra, setModalComplExtra] = useState("");
   const [modalPeso, setModalPeso] = useState("");
   const [modalUnidade, setModalUnidade] = useState("");
   const [modalIncluirPeso, setModalIncluirPeso] = useState(false);
@@ -231,10 +253,15 @@ export default function ImprimirWizard() {
     setModalInfoComplementar(item.additional_info || "");
     setModalTipoEtiqueta(tipo === "contagem" ? "contagem" : "normal");
     setModalIncluirComplementar(false);
-    setModalComplementarTexto(item.complementary_label_text || "");
+    setModalComplNome(item.complementary_label_text || item.name);
+    setModalComplUsarQtd(false);
+    setModalComplQtd("");
+    setModalComplCampos([]);
+    setModalComplUsarExtra(false);
+    setModalComplExtra("");
     setModalPeso(item.net_weight || "");
     setModalUnidade(item.unit || "");
-    setModalIncluirPeso(!!(item.net_weight && item.net_weight !== "0" && item.net_weight !== "0,00"));
+    setModalIncluirPeso(false);
   }
 
   function toggleProdutor(id: string) {
@@ -250,10 +277,16 @@ export default function ImprimirWizard() {
     // Bloqueia só se obrigatório e vazio
     if (regra === "obrigatorio" && modalProdutores.length === 0) return;
 
+    const complDados: DadosComplementar | null = modalIncluirComplementar ? {
+      nome: modalComplNome || modalItem.name,
+      quantidade: modalComplUsarQtd ? (modalComplQtd || "0") : null,
+      campos: modalComplCampos.filter((c) => c.valor.trim()),
+      campoExtra: modalComplUsarExtra ? modalComplExtra : null,
+    } : null;
     const novoItem: ItemCarrinho = {
       item: modalItem, quantidade: modalQtd, produtores: modalProdutores, lote: modalLote,
       tipoEtiqueta: modalTipoEtiqueta, infoComplementar: modalInfoComplementar,
-      incluirComplementar: modalIncluirComplementar, complementarTexto: modalComplementarTexto,
+      incluirComplementar: modalIncluirComplementar, complementarDados: complDados,
       pesoOverride: modalPeso, unidadeOverride: modalUnidade, incluirPeso: modalIncluirPeso,
     };
     const existente = carrinho.findIndex((c) => c.item.id === modalItem.id && c.tipoEtiqueta === modalTipoEtiqueta);
@@ -352,6 +385,42 @@ export default function ImprimirWizard() {
     </div>`;
   }
 
+  // --- Gerar célula de etiqueta complementar (layout avulsa) ---
+  function gerarCelulaComplementar(dados: DadosComplementar, logoUrl: string): string {
+    const temQtd = dados.quantidade && dados.quantidade.trim();
+    const temCampos = dados.campos.filter((c) => c.valor.trim()).length > 0;
+    const temExtra = dados.campoExtra && dados.campoExtra.trim();
+    const linhasAbaixo = (temQtd ? 1 : 0) + (temCampos ? 1 : 0) + (temExtra ? 1 : 0);
+    const fNome = linhasAbaixo >= 3 ? "14pt" : linhasAbaixo >= 2 ? "16pt" : "18pt";
+
+    let qtdHTML = "";
+    if (temQtd) {
+      qtdHTML = `<div style="font-size:14pt;font-weight:bold;text-align:center;padding:1mm 0;text-transform:uppercase;">QTD: ${dados.quantidade}</div>`;
+    }
+    let camposHTML = "";
+    const camposAtivos = dados.campos.filter((c) => c.valor.trim());
+    if (camposAtivos.length > 0) {
+      camposHTML = camposAtivos.map((c) =>
+        `<div style="font-size:9pt;line-height:1.3;"><strong>${c.label}:</strong> ${c.valor}</div>`
+      ).join("");
+    }
+    let extraHTML = "";
+    if (temExtra) {
+      extraHTML = `<div style="font-size:8pt;font-style:italic;line-height:1.3;margin-top:0.5mm;color:#333;">${dados.campoExtra}</div>`;
+    }
+
+    return `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
+      <div style="font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;overflow:hidden;">${dados.nome || "NOME"}</div>
+      ${qtdHTML}
+      <div style="display:flex;align-items:flex-start;margin-top:auto;">
+        <div style="flex:1;">${camposHTML}${extraHTML}</div>
+        <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
+          <img src="${logoUrl}" style="height:5mm;opacity:0.8;" />
+        </div>
+      </div>
+    </div>`;
+  }
+
   // --- Impressão ---
   async function imprimirTudo() {
     if (carrinho.length === 0) return;
@@ -371,6 +440,12 @@ export default function ImprimirWizard() {
           item.item.name, fabricacao, validade,
           item.lote, item.infoComplementar || "", prods, logoUrl
         ));
+      }
+      // Etiquetas complementares (mesma qtd)
+      if (item.incluirComplementar && item.complementarDados) {
+        for (let i = 0; i < item.quantidade; i++) {
+          celulas.push(gerarCelulaComplementar(item.complementarDados, logoUrl));
+        }
       }
     }
 
@@ -665,11 +740,20 @@ ${linhas}
                               <button onClick={() => removerDoCarrinho(idx)} className="text-red-400 hover:text-red-600 text-xs cursor-pointer">✕</button>
                             </div>
                             {/* Preview miniatura da etiqueta */}
-                            <div className="mt-2 flex justify-center">
+                            <div className="mt-2 flex justify-center gap-1.5">
                               <div className="border border-gray-300 rounded bg-white" style={{ width: "100px", height: "100px", overflow: "hidden" }}>
                                 <div style={{ transform: "scale(0.53)", transformOrigin: "top left", width: "50mm", height: "50mm" }} dangerouslySetInnerHTML={{ __html: previewHTML }} />
                               </div>
+                              {c.incluirComplementar && c.complementarDados && (() => {
+                                const complHTML = gerarCelulaComplementar(c.complementarDados, "/logo-mo.png");
+                                return (
+                                  <div className="border border-purple-400 rounded bg-purple-50" style={{ width: "100px", height: "100px", overflow: "hidden" }}>
+                                    <div style={{ transform: "scale(0.53)", transformOrigin: "top left", width: "50mm", height: "50mm" }} dangerouslySetInnerHTML={{ __html: complHTML }} />
+                                  </div>
+                                );
+                              })()}
                             </div>
+                            {c.incluirComplementar && <p className="text-[8px] text-purple-600 text-center font-bold mt-0.5">🏷️ + Etiqueta complementar</p>}
                             <div className="flex items-center justify-between mt-2">
                               <div className="flex items-center gap-2">
                                 <button onClick={() => ajustarQtd(idx, -1)} className="w-7 h-7 flex items-center justify-center bg-white rounded-lg text-[var(--marrom)] font-bold shadow-sm cursor-pointer hover:bg-gray-100">−</button>
@@ -724,7 +808,7 @@ ${linhas}
 
             return (
             <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setModalItem(null)}>
-              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                 {/* Header com nome */}
                 <div className="bg-[var(--vermelho)] px-4 py-3 text-white">
                   <h3 className="font-bold text-base leading-tight">{modalItem.name}</h3>
@@ -767,23 +851,82 @@ ${linhas}
                     </div>
                   )}
                   {modalItem.uses_complementary_label && (
-                    <div className={"rounded-lg px-2.5 py-1.5 mt-1.5 border cursor-pointer transition-all " + (modalIncluirComplementar ? "bg-purple-100 border-purple-400" : "bg-purple-50 border-purple-100")}
-                      onClick={() => setModalIncluirComplementar(!modalIncluirComplementar)}>
-                      <div className="flex items-center justify-between">
+                    <div className={"rounded-lg px-2.5 py-1.5 mt-1.5 border transition-all " + (modalIncluirComplementar ? "bg-purple-100 border-purple-400" : "bg-purple-50 border-purple-100")}>
+                      <div className="flex items-center justify-between cursor-pointer" onClick={() => setModalIncluirComplementar(!modalIncluirComplementar)}>
                         <p className="text-[9px] text-purple-600 font-bold">🏷️ Incluir etiqueta complementar</p>
                         <div className={"w-8 h-4 rounded-full transition-all flex items-center px-0.5 " + (modalIncluirComplementar ? "bg-purple-500 justify-end" : "bg-gray-300 justify-start")}>
                           <div className="w-3 h-3 bg-white rounded-full shadow-sm" />
                         </div>
                       </div>
                       {modalIncluirComplementar && (
-                        <input
-                          type="text"
-                          value={modalComplementarTexto}
-                          onChange={(e) => { e.stopPropagation(); setModalComplementarTexto(e.target.value.slice(0, 80)); }}
-                          onClick={(e) => e.stopPropagation()}
-                          placeholder="Texto da etiqueta complementar..."
-                          className="w-full mt-1.5 px-2 py-1.5 text-[11px] bg-white border border-purple-200 rounded-lg focus:outline-none focus:border-purple-400"
-                        />
+                        <div className="mt-2 space-y-2" onClick={(e) => e.stopPropagation()}>
+                          {/* Nome na complementar */}
+                          <input type="text" value={modalComplNome}
+                            onChange={(e) => setModalComplNome(e.target.value)}
+                            placeholder="Nome na etiqueta complementar"
+                            className="w-full px-2 py-1.5 text-[11px] bg-white border border-purple-200 rounded-lg focus:outline-none focus:border-purple-400 font-semibold" />
+                          {/* Toggle quantidade */}
+                          <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => setModalComplUsarQtd(!modalComplUsarQtd)}
+                              className={"w-7 h-4 rounded-full transition-all cursor-pointer relative " + (modalComplUsarQtd ? "bg-purple-500" : "bg-gray-300")}>
+                              <span className={"absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-all " + (modalComplUsarQtd ? "left-3.5" : "left-0.5")} />
+                            </button>
+                            <span className="text-[10px] font-bold text-purple-700">Quantidade</span>
+                          </div>
+                          {modalComplUsarQtd && (
+                            <input type="text" value={modalComplQtd}
+                              onChange={(e) => setModalComplQtd(e.target.value)}
+                              placeholder="Ex: 12, 5kg, 3 potes"
+                              className="w-full px-2 py-1.5 text-[11px] bg-white border border-purple-200 rounded-lg focus:outline-none focus:border-purple-400" />
+                          )}
+                          {/* Campos opcionais */}
+                          <div>
+                            <p className="text-[9px] font-bold text-purple-600 mb-1">Campos opcionais</p>
+                            {modalComplCampos.length > 0 && (
+                              <div className="space-y-1 mb-1">
+                                {modalComplCampos.map((campo, idx) => (
+                                  <div key={idx} className="flex items-center gap-1">
+                                    <span className="text-[9px] font-bold text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded min-w-[45px] text-center">{campo.label}</span>
+                                    <input type="text" value={campo.valor}
+                                      onChange={(e) => setModalComplCampos((prev) => prev.map((c, i) => i === idx ? { ...c, valor: e.target.value } : c))}
+                                      placeholder={CAMPOS_PRESET_COMPL.find((p) => p.label === campo.label)?.placeholder || "Valor..."}
+                                      className="flex-1 px-2 py-1 text-[10px] bg-white border border-purple-200 rounded focus:outline-none focus:border-purple-400" />
+                                    <button onClick={() => setModalComplCampos((prev) => prev.filter((_, i) => i !== idx))} className="text-red-400 hover:text-red-600 text-[10px] cursor-pointer font-bold">✕</button>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex flex-wrap gap-1">
+                              {CAMPOS_PRESET_COMPL.map((preset) => (
+                                <button key={preset.label} type="button"
+                                  onClick={() => setModalComplCampos((prev) => [...prev, { label: preset.label, valor: preset.autoFill ? dataHoje() : "" }])}
+                                  className="px-2 py-0.5 bg-purple-50 text-purple-700 text-[9px] font-bold rounded cursor-pointer hover:bg-purple-100 transition-all">
+                                  + {preset.label}
+                                </button>
+                              ))}
+                              <button type="button"
+                                onClick={() => { const l = prompt("Nome do campo:"); if (l?.trim()) setModalComplCampos((prev) => [...prev, { label: l.trim(), valor: "" }]); }}
+                                className="px-2 py-0.5 bg-purple-700 text-white text-[9px] font-bold rounded cursor-pointer hover:bg-purple-800 transition-all">
+                                + Custom
+                              </button>
+                            </div>
+                          </div>
+                          {/* Campo extra */}
+                          <div className="flex items-center gap-2">
+                            <button type="button" onClick={() => setModalComplUsarExtra(!modalComplUsarExtra)}
+                              className={"w-7 h-4 rounded-full transition-all cursor-pointer relative " + (modalComplUsarExtra ? "bg-purple-500" : "bg-gray-300")}>
+                              <span className={"absolute top-0.5 w-3 h-3 bg-white rounded-full shadow transition-all " + (modalComplUsarExtra ? "left-3.5" : "left-0.5")} />
+                            </button>
+                            <span className="text-[10px] font-bold text-purple-700">Campo extra</span>
+                          </div>
+                          {modalComplUsarExtra && (
+                            <textarea value={modalComplExtra}
+                              onChange={(e) => setModalComplExtra(e.target.value)}
+                              placeholder="Info adicional na etiqueta complementar..."
+                              rows={2}
+                              className="w-full px-2 py-1.5 text-[11px] bg-white border border-purple-200 rounded-lg focus:outline-none focus:border-purple-400 resize-none" />
+                          )}
+                        </div>
                       )}
                     </div>
                   )}
