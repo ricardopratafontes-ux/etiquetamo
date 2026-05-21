@@ -17,7 +17,7 @@ interface LinhaImportada {
   imprimeEtiqueta: string;
   etiquetaComplementar: string;
   tipoArmazenagem: string;
-  infoAdicional: string;
+  responsavel: string;
 }
 
 interface ResultadoImportacao {
@@ -28,10 +28,10 @@ interface ResultadoImportacao {
 
 const ORG_SLUG = "gelateria";
 
-const MODELO_CSV = `Descricao;Codigo;Familia de Produto;Codigo EAN (GTIN);Unidade;Peso Liquido;Dias de Validade;Possui Lote;Imprime Etiqueta;Etiqueta Complementar;Tipo de Armazenagem;Informacao Adicional
-Sorvete de Chocolate Belga;SORV-001;Sorvetes;7891234567890;KG;1kg;7;Sim;Sim;Nao;Congelado;Contem lactose
-Picole de Morango;PIC-001;Picoles;7891234567891;UN;80g;30;Nao;Sim;Nao;Congelado;Contem corante natural
-Torta de Limao;TORTA-001;Tortas;7891234567892;UN;1.2kg;5;Sim;Sim;Sim;Refrigerado;Manter entre 2 e 8 graus`;
+const MODELO_CSV = `Codigo;Descricao;Familia de Produto;Codigo EAN;Unidade;Peso Liquido;Dias de Validade;Possui Lote;Imprime Etiqueta;Etiqueta Complementar;Tipo de Armazenagem;Responsavel
+SORV-001;Sorvete de Chocolate Belga;Sorvetes;7891234567890;KG;1kg;7;Sim;Sim;Nao;Congelado;Ricardo
+PIC-001;Picole de Morango;Picoles;7891234567891;UN;80g;30;Nao;Sim;Nao;Congelado;Ricardo
+TORTA-001;Torta de Limao;Tortas;7891234567892;UN;1.2kg;5;Sim;Sim;Sim;Refrigerado;Ricardo`;
 
 // Mapeamento de colunas: aceita variacoes comuns
 const MAPA_COLUNAS: Record<string, keyof LinhaImportada> = {
@@ -74,9 +74,9 @@ const MAPA_COLUNAS: Record<string, keyof LinhaImportada> = {
   "tipo de armazenagem": "tipoArmazenagem",
   armazenagem: "tipoArmazenagem",
   storage: "tipoArmazenagem",
-  "info adicional": "infoAdicional",
-  "informacao adicional": "infoAdicional",
-  observacao: "infoAdicional",
+  responsavel: "responsavel",
+  "responsável": "responsavel",
+  responsible: "responsavel",
 };
 
 function parseCSV(text: string): string[][] {
@@ -155,7 +155,7 @@ export default function ImportarItens() {
     const linhasMapeadas: LinhaImportada[] = [];
     for (let i = 1; i < dados.length; i++) {
       const row = dados[i];
-      const linha: LinhaImportada = { codigo: "", nome: "", familia: "", codigoEan: "", unidade: "UN", pesoLiquido: "", validadeDias: "", possuiLote: "", imprimeEtiqueta: "sim", etiquetaComplementar: "", tipoArmazenagem: "ambiente", infoAdicional: "" };
+      const linha: LinhaImportada = { codigo: "", nome: "", familia: "", codigoEan: "", unidade: "UN", pesoLiquido: "", validadeDias: "", possuiLote: "", imprimeEtiqueta: "sim", etiquetaComplementar: "", tipoArmazenagem: "ambiente", responsavel: "" };
       for (const [idxStr, campo] of Object.entries(mapa)) {
         const idx = parseInt(idxStr);
         if (row[idx] !== undefined) linha[campo] = row[idx];
@@ -214,7 +214,7 @@ export default function ImportarItens() {
         uses_expiry: !!linha.validadeDias,
         uses_complementary_label: linha.etiquetaComplementar ? normBool(linha.etiquetaComplementar) : false,
         expiry_days: linha.validadeDias ? parseInt(linha.validadeDias) || null : null,
-        additional_info: linha.infoAdicional.trim() || null,
+        additional_info: linha.responsavel.trim() ? `Resp: ${linha.responsavel.trim()}` : null,
       });
 
       if (error) { erros.push(`Linha ${numLinha} ("${linha.nome}"): ${error.message}`); }
@@ -257,7 +257,7 @@ export default function ImportarItens() {
               </button>
               <div className="mt-4 p-3 bg-gray-50 rounded-xl border border-gray-200">
                 <p className="text-xs text-gray-500 font-mono leading-relaxed">
-                  Colunas: Descricao ; Codigo ; Familia de Produto ; Codigo EAN (GTIN) ; Unidade ; Peso Liquido ; Dias de Validade ; Possui Lote ; Imprime Etiqueta ; Etiqueta Complementar ; Tipo de Armazenagem ; Informacao Adicional
+                  Colunas: Codigo ; Descricao ; Familia de Produto ; Codigo EAN ; Unidade ; Peso Liquido ; Dias de Validade ; Possui Lote ; Imprime Etiqueta ; Etiqueta Complementar ; Tipo de Armazenagem ; Responsavel
                 </p>
               </div>
             </div>
