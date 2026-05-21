@@ -105,6 +105,7 @@ export default function ImprimirWizard() {
   const [modalInfoComplementar, setModalInfoComplementar] = useState("");
 
   // Carrinho
+  const [buscaItem, setBuscaItem] = useState("");
   const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([]);
 
   // PIN de segurança
@@ -142,13 +143,16 @@ export default function ImprimirWizard() {
     if (tipo === "contagem") {
       if (!item.uses_counting_label) return false;
     } else {
-      // Produção: itens com etiqueta (excluir os que são só contagem)
       if (!item.uses_label) return false;
     }
     // Filtro por família
     if (familiaSelecionada) {
-      if (familiaSelecionada === "__sem_familia__") return item.category_id === null;
-      return item.category_id === familiaSelecionada;
+      if (familiaSelecionada === "__sem_familia__") { if (item.category_id !== null) return false; }
+      else if (item.category_id !== familiaSelecionada) return false;
+    }
+    // Filtro por busca
+    if (buscaItem.trim()) {
+      if (!item.name.toLowerCase().includes(buscaItem.trim().toLowerCase())) return false;
     }
     return true;
   });
@@ -198,7 +202,7 @@ export default function ImprimirWizard() {
   }
 
   function selecionarFamilia(catId: string | null) {
-    setFamiliaSelecionada(catId);
+    setFamiliaSelecionada(catId); setBuscaItem("");
     setStep(4);
   }
 
@@ -258,7 +262,7 @@ export default function ImprimirWizard() {
   function voltar() {
     if (step === 2) { setStep(1); setTipo(null); }
     else if (step === 3) { setStep(2); setEmitente(null); }
-    else if (step === 4) { setStep(3); setFamiliaSelecionada(null); }
+    else if (step === 4) { setStep(3); setFamiliaSelecionada(null); setBuscaItem(""); }
   }
 
   // Total de etiquetas (arredondado para par)
@@ -558,17 +562,26 @@ ${linhas}
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-bold text-[var(--marrom)] text-lg">{nomeFamilia(familiaSelecionada)}</h3>
-                  <button onClick={() => { setFamiliaSelecionada(null); setStep(3); }} className="px-4 py-2 bg-[var(--marrom)] text-white text-sm font-bold rounded-xl cursor-pointer hover:bg-[#7a3520] transition-all shadow-sm">
+                  <button onClick={() => { setFamiliaSelecionada(null); setBuscaItem(""); setStep(3); }} className="px-4 py-2 bg-[var(--marrom)] text-white text-sm font-bold rounded-xl cursor-pointer hover:bg-[#7a3520] transition-all shadow-sm">
                     🏷️ Trocar família
                   </button>
                 </div>
                 <div>
+                  <div className="mb-2">
+                    <input
+                      type="text"
+                      placeholder="🔍 Buscar produto..."
+                      value={buscaItem}
+                      onChange={(e) => setBuscaItem(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:border-[var(--vermelho)] focus:ring-1 focus:ring-[var(--vermelho)] bg-white"
+                    />
+                  </div>
                   {itensFiltrados.length === 0 ? (
                     <div className="text-center py-12 bg-white rounded-xl">
-                      <p className="text-gray-500">Nenhum item nesta família para {tipo}.</p>
+                      <p className="text-gray-500">{buscaItem.trim() ? `Nenhum item encontrado para "${buscaItem}"` : `Nenhum item nesta família para ${tipo}.`}</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 gap-1.5">
+                    <div className="grid grid-cols-4 gap-1.5">
                     {itensFiltrados.map((item) => {
                       const noCarrinho = carrinho.some((c) => c.item.id === item.id);
                       const armIcon = item.storage_type === "congelado" ? "🧊" : item.storage_type === "refrigerado" ? "❄️" : "🌡️";
