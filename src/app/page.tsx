@@ -44,6 +44,14 @@ const acoes = [
     cor: "bg-white border-2 border-[var(--vermelho)]",
     corTexto: "text-[var(--vermelho)]",
   },
+  {
+    href: "/historico",
+    icon: "\u{1F4CB}",
+    titulo: "Histórico",
+    descricao: "Consulte impressões anteriores e reimprima etiquetas",
+    cor: "bg-white border-2 border-[var(--marrom)]",
+    corTexto: "text-[var(--marrom)]",
+  },
 ];
 
 export default function Home() {
@@ -96,7 +104,7 @@ export default function Home() {
               </div>
               <div className="bg-[var(--bege)] rounded-xl p-4 text-center">
                 <span className="text-2xl block mb-1">🏷️</span>
-                <p className="text-xs font-semibold text-[var(--marrom)]">Sprint 2</p>
+                <p className="text-xs font-semibold text-[var(--marrom)]">Sprint 4</p>
               </div>
               <div className="bg-orange-50 rounded-xl p-4 text-center border border-orange-200">
                 <span className="text-2xl block mb-1">🖨️</span>

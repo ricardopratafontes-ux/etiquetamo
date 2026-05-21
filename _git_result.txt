@@ -1,0 +1,12 @@
+warning: in the working copy of '_git_push.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'src/app/imprimir/page.tsx', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_build.bat', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of '_build_result.txt', LF will be replaced by CRLF the next time Git touches it
+[main 40e1ed1] feat: complementar com campos estruturados + preview carrinho + modal largo + peso off
+ 5 files changed, 207 insertions(+), 25 deletions(-)
+ create mode 100644 _build.bat
+ create mode 100644 _build_err.txt
+ create mode 100644 _build_result.txt
+To https://github.com/ricardopratafontes-ux/etiquetamo.git
+   b8370be..40e1ed1  main -> main
+EXITCODE=0

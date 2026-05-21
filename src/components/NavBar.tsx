@@ -11,6 +11,7 @@ const links = [
   { href: "/itens", label: "Itens", icon: "\u{1F4E6}" },
   { href: "/colaboradores", label: "Equipe", icon: "\u{1F465}" },
   { href: "/etiqueta-caixa", label: "Avulsas", icon: "\u{1F3F7}️" },
+  { href: "/historico", label: "Histórico", icon: "\u{1F4CB}" },
 ];
 
 export default function NavBar() {
