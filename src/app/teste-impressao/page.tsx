@@ -33,8 +33,8 @@ function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
   const temInfo = !!info;
   /* Tamanhos dinamicos: sem info = fontes maiores (mais espaco disponivel) */
   const fontNome = temInfo ? "14pt" : "16pt";
-  const fontDatas = temInfo ? "11pt" : "13pt";
-  const fontLote = temInfo ? "8pt" : "9pt";
+  const fontDatas = temInfo ? "12pt" : "14pt";
+  const fontLote = temInfo ? "9pt" : "10pt";
   const fontInfo = "7pt";
 
   return (
@@ -58,7 +58,7 @@ function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
         textTransform: "uppercase" as const,
         borderBottom: "0.5pt solid #000",
         paddingBottom: "1mm",
-        marginBottom: "1.5mm",
+        marginBottom: "0",
         lineHeight: "1.15",
         maxHeight: "14mm",
         overflow: "hidden",
@@ -66,22 +66,23 @@ function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
         {nome}
       </div>
 
-      {/* Area central: datas centralizadas + info | Coluna direita: QR + logo */}
+      {/* Area central: datas+lote centralizados | Coluna direita: QR + logo */}
       <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
-        {/* Coluna esquerda: datas, lote, info — centralizado */}
+        {/* Coluna esquerda: Fab, Val, Lote — centralizados vertical e horizontal, fontes grandes */}
         <div style={{
           flex: 1,
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
-          fontSize: fontDatas,
-          lineHeight: "1.6",
+          alignItems: "center",
           textAlign: "center",
         }}>
-          <div><strong>Fab:</strong> {fabricacao}</div>
-          <div><strong>Val:</strong> {validade}</div>
+          <div style={{ fontSize: fontDatas, fontWeight: "bold", lineHeight: "1.8" }}>
+            <div>Fab: {fabricacao}</div>
+            <div>Val: {validade}</div>
+          </div>
           {lote && (
-            <div style={{ fontSize: fontLote, marginTop: "0.5mm" }}><strong>Lote:</strong> {lote}</div>
+            <div style={{ fontSize: fontLote, fontWeight: "bold", marginTop: "1mm" }}>Lote: {lote}</div>
           )}
           {temInfo && (
             <div style={{ marginTop: "1mm", fontSize: fontInfo, fontStyle: "italic", lineHeight: "1.2" }}>
@@ -115,7 +116,7 @@ function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
           <img
             src="/logo-mo.png"
             alt="mo!"
-            style={{ height: "5mm", opacity: 0.6 }}
+            style={{ height: "5mm", opacity: 0.2 }}
           />
         </div>
       </div>
@@ -130,18 +131,18 @@ function Etiqueta({ nome, fabricacao, validade, lote, info }: EtiquetaProps) {
 function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
   const temInfo = !!dados.info;
   const fNome = temInfo ? "14pt" : "16pt";
-  const fDatas = temInfo ? "11pt" : "13pt";
-  const fLote = temInfo ? "8pt" : "9pt";
+  const fDatas = temInfo ? "12pt" : "14pt";
+  const fLote = temInfo ? "9pt" : "10pt";
   const fInfo = "7pt";
   const logo = logoUrl || "/logo-mo.png";
-  const loteHTML = dados.lote ? `<div style="font-size:${fLote};margin-top:0.5mm;"><strong>Lote:</strong> ${dados.lote}</div>` : "";
+  const loteHTML = dados.lote ? `<div style="font-size:${fLote};font-weight:bold;margin-top:1mm;">Lote: ${dados.lote}</div>` : "";
   const infoHTML = temInfo ? `<div style="margin-top:1mm;font-size:${fInfo};font-style:italic;line-height:1.2;">${dados.info}</div>` : "";
 
   const cell = `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;margin-bottom:1.5mm;line-height:1.15;max-height:14mm;overflow:hidden;">${dados.nome}</div>
+    <div style="font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:1mm;margin-bottom:0;line-height:1.15;max-height:14mm;overflow:hidden;">${dados.nome}</div>
     <div style="flex:1;display:flex;overflow:hidden;">
-      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;font-size:${fDatas};line-height:1.6;text-align:center;"><div><strong>Fab:</strong> ${dados.fabricacao}</div><div><strong>Val:</strong> ${dados.validade}</div>${loteHTML}${infoHTML}</div>
-      <div style="width:12mm;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:1mm;margin-left:1.5mm;"><div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div><img src="${logo}" style="height:5mm;opacity:0.6;" /></div>
+      <div style="flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;"><div style="font-size:${fDatas};font-weight:bold;line-height:1.8;"><div>Fab: ${dados.fabricacao}</div><div>Val: ${dados.validade}</div></div>${loteHTML}${infoHTML}</div>
+      <div style="width:12mm;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:1mm;margin-left:1.5mm;"><div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div><img src="${logo}" style="height:5mm;opacity:0.2;" /></div>
     </div>
   </div>`;
   return `<div style="width:107mm;display:flex;padding-left:2mm;padding-right:2mm;gap:3mm;">${cell}${cell}</div>`;
