@@ -67,6 +67,7 @@ function normalizar(s: string): string {
 const FAMILIAS_CONTAGEM_OPCIONAL = ["barra de gelatos", "baldes"];
 const FAMILIA_USO_CONSUMO = "uso e consumo";
 const FAMILIA_INSUMOS = "insumos";
+const FAMILIA_BASES_XAROPES = "bases e xaropes";
 
 /**
  * Determina se o campo "produtor" é obrigatório, opcional ou oculto.
@@ -144,6 +145,7 @@ export default function ImprimirWizard() {
     lot: string | null;
     status: string;
     created_at: string;
+    webhook_payload?: Record<string, unknown>;
   }
   const [filaOP, setFilaOP] = useState<PrintQueueItem[]>([]);
   const [opSelecionada, setOpSelecionada] = useState<PrintQueueItem | null>(null);
@@ -469,7 +471,16 @@ export default function ImprimirWizard() {
     abrirModalItem(item);
     // Pré-preencher dados da OP
     if (op.lot) setModalLote(op.lot);
-    if (op.quantity > 1) setModalQtd(op.quantity);
+    // Quantidade: aplicar regra ÷10 para Bases e Xaropes
+    if (op.quantity && op.quantity > 0) {
+      const catNome = nomeCategoriaPorId(item.category_id).toLowerCase();
+      if (catNome === FAMILIA_BASES_XAROPES) {
+        // Bases e Xaropes: quantidade OMIE é em kg, cada balde = 10kg → ÷10 + 1 segurança
+        setModalQtd(Math.ceil(op.quantity / 10) + 1);
+      } else {
+        setModalQtd(op.quantity);
+      }
+    }
   }
 
   function pularOP(opId: string) {
