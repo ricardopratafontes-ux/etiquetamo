@@ -101,6 +101,7 @@ export async function listarProdutos(pagina: number = 1, registrosPorPagina: num
       pagina,
       registros_por_pagina: registrosPorPagina,
       apenas_importado_api: "N",
+      filtrar_apenas_omiepdv: "N",
     }],
   });
 }
@@ -113,8 +114,4 @@ export async function consultarProduto(codigoProduto: number): Promise<OmieProdu
     endpoint: "/geral/produtos/",
     method: "ConsultarProduto",
     params: [{
-      codigo_produto: codigoProduto,
-    }],
-  });
-  return result;
-}
+      codigo_produto: codigoProduto
