@@ -1,7 +1,7 @@
 /**
  * OMIE API Client — EtiquetaMO
  *
- * Todas as chamadas OMIE são POST com JSON-RPC.
+ * Todas as chamadas OMIE sao POST com JSON-RPC.
  * Auth via app_key + app_secret no body (nunca em headers).
  *
  * Ref: https://ajuda.omie.com.br/pt-BR/collections/3045828-apis-e-webhooks
@@ -11,7 +11,7 @@ const OMIE_BASE_URL = "https://app.omie.com.br/api/v1";
 
 interface OmieRequestParams {
   endpoint: string; // ex: "/geral/produtos/"
-  method: string;   // ex: "ListarProdutos"
+  method: string;   // ex: "ConsultarProduto"
   params: Record<string, unknown>[];
 }
 
@@ -21,14 +21,14 @@ interface OmieError {
 }
 
 /**
- * Chamada genérica à API OMIE (JSON-RPC over POST)
+ * Chamada generica a API OMIE (JSON-RPC over POST)
  */
 export async function omieCall<T>(req: OmieRequestParams): Promise<T> {
   const appKey = process.env.OMIE_APP_KEY;
   const appSecret = process.env.OMIE_APP_SECRET;
 
   if (!appKey || !appSecret) {
-    throw new Error("OMIE_APP_KEY e OMIE_APP_SECRET não configurados");
+    throw new Error("OMIE_APP_KEY e OMIE_APP_SECRET nao configurados");
   }
 
   const body = {
@@ -60,7 +60,7 @@ export async function omieCall<T>(req: OmieRequestParams): Promise<T> {
   return data as T;
 }
 
-// ─── Tipos de resposta OMIE ───────────────────────────────────────
+// --- Tipos de resposta OMIE ---
 
 export interface OmieProduto {
   codigo_produto: number;
@@ -80,38 +80,18 @@ export interface OmieProduto {
   inativo?: string; // "S" ou "N"
 }
 
-export interface OmieListarProdutosResponse {
-  pagina: number;
-  total_de_paginas: number;
-  registros: number;
-  total_de_registros: number;
-  produto_servico_cadastro: OmieProduto[];
-}
-
-// ─── Funções específicas ──────────────────────────────────────────
+// --- Funcoes especificas ---
 
 /**
- * Lista produtos do OMIE com paginação
- */
-export async function listarProdutos(pagina: number = 1, registrosPorPagina: number = 50): Promise<OmieListarProdutosResponse> {
-  return omieCall<OmieListarProdutosResponse>({
-    endpoint: "/geral/produtos/",
-    method: "ListarProdutos",
-    params: [{
-      pagina,
-      registros_por_pagina: registrosPorPagina,
-      apenas_importado_api: "N",
-      filtrar_apenas_omiepdv: "N",
-    }],
-  });
-}
-
-/**
- * Busca um produto específico por código OMIE
+ * Busca um produto especifico por codigo OMIE
  */
 export async function consultarProduto(codigoProduto: number): Promise<OmieProduto> {
   const result = await omieCall<OmieProduto>({
     endpoint: "/geral/produtos/",
     method: "ConsultarProduto",
     params: [{
-      codigo_produto: codigoProduto
+      codigo_produto: codigoProduto,
+    }],
+  });
+  return result;
+}
