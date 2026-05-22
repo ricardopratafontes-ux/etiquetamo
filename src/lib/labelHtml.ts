@@ -47,8 +47,6 @@ export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
   const temInfo = !!info;
 
   // Fonte dinâmica bidirecional com consideração de quebra em 2 linhas.
-  // Largura útil ~50mm = ~142pt. Nomes que cabem em 2 linhas podem usar fonte maior.
-  // Estimativa: chars por linha ≈ 142 / (fontSize * 0.6)
   const len = nome.length;
   const baseNome = temInfo ? 16 : 18;
   let fNomeVal: number;
@@ -61,10 +59,8 @@ export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
   } else if (len <= 14) {
     fNomeVal = baseNome + 1;
   } else if (len <= 18) {
-    // Cabe em 2 linhas com fonte maior
     fNomeVal = baseNome;
   } else if (len <= 24) {
-    // 2 linhas com fonte média
     fNomeVal = baseNome - 1;
   } else if (len <= 32) {
     fNomeVal = baseNome - 3;
@@ -76,19 +72,33 @@ export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
   const fNome = `${fNomeVal}pt`;
   const fLote = temInfo ? "9pt" : "10pt";
 
-  // Operador: quadradinho posicionado ao lado esquerdo da logo (área inferior)
+  // Operador: quadradinho posicionado ao lado esquerdo da logo (canto inferior direito)
   const operadorHTML = produtorIniciais
     ? `<div style="width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;flex-shrink:0;">${produtorIniciais}</div>`
     : "";
 
   const loteHTML = lote
-    ? `<div style="font-size:${fLote};font-weight:bold;line-height:1.4;">Lote: ${lote}</div>`
+    ? `<div style="font-size:${fLote};font-weight:bold;line-height:1.3;">Lote: ${lote}</div>`
     : "";
+
+  // Fonte dinâmica para observações: quanto menos texto, maior a fonte
+  let fInfo = "8.5pt";
+  if (temInfo) {
+    const infoLen = info.length;
+    if (infoLen <= 30) fInfo = "11pt";
+    else if (infoLen <= 50) fInfo = "10pt";
+    else if (infoLen <= 70) fInfo = "9pt";
+    else if (infoLen <= 100) fInfo = "8pt";
+    else fInfo = "7pt";
+  }
 
   const infoHTML = temInfo
-    ? `<div style="font-size:8.5pt;font-weight:bold;line-height:1.2;margin-top:0.3mm;word-break:break-word;">${info}</div>`
+    ? `<div style="font-size:${fInfo};font-weight:bold;line-height:1.2;word-break:break-word;">${info}</div>`
     : "";
 
+  // Layout inferior:
+  // Esquerda: lote + observações (flex:1, área maior)
+  // Direita (coluna): QR em cima, [iniciais + logo] embaixo no canto inferior direito
   return `<div style="width:54mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
     <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;word-break:break-word;">${nome}</div>
     <div style="display:flex;flex-direction:column;align-items:center;padding-top:0.5mm;padding-bottom:0.5mm;">
@@ -96,13 +106,15 @@ export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
       <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">VAL: ${dataCurta(validade)}</div>
     </div>
     <div style="display:flex;align-items:flex-end;">
-      <div style="flex:1;">${loteHTML}${infoHTML}</div>
-      <div style="display:flex;align-items:center;gap:1mm;margin-left:1mm;">
-        ${operadorHTML}
+      <div style="flex:1;padding-right:1mm;">${loteHTML}${infoHTML}</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;">
         ${dados.qrCode
       ? `<div class="qr-placeholder" data-qr="${dados.qrCode}" style="width:10mm;height:10mm;"></div>`
       : `<div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>`}
-        <img src="${logoUrl}" style="height:5mm;" />
+        <div style="display:flex;align-items:center;gap:0.5mm;margin-top:0.5mm;">
+          ${operadorHTML}
+          <img src="${logoUrl}" style="height:5mm;" />
+        </div>
       </div>
     </div>
   </div>`;
