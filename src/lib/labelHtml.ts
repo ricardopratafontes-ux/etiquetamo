@@ -18,6 +18,7 @@ export interface DadosEtiquetaProduto {
   info: string;
   produtorIniciais: string;
   logoUrl: string;
+  qrCodeDataUrl?: string; // QR code como data URL (SVG ou PNG)
 }
 
 export interface CampoOpcionalAvulsa {
@@ -79,8 +80,10 @@ export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
     <div style="display:flex;align-items:flex-start;">
       <div style="flex:1;">${loteHTML}${infoHTML}</div>
       <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
-        <div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>
-        <img src="${logoUrl}" style="height:5mm;opacity:0.8;margin-top:0.5mm;" />
+        ${dados.qrCodeDataUrl
+      ? `<img src="${dados.qrCodeDataUrl}" style="width:10mm;height:10mm;" />`
+      : `<div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>`}
+        <img src="${logoUrl}" style="height:5mm;margin-top:0.5mm;" />
       </div>
     </div>
   </div>`;
@@ -125,7 +128,7 @@ export function gerarCelulaAvulsa(dados: DadosEtiquetaAvulsa): string {
     <div style="display:flex;align-items:flex-start;margin-top:auto;">
       <div style="flex:1;">${camposHTML}${extraHTML}</div>
       <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
-        <img src="${logoUrl}" style="height:5mm;opacity:0.8;" />
+        <img src="${logoUrl}" style="height:5mm;" />
       </div>
     </div>
   </div>`;

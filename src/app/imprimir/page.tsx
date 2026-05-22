@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase";
 import { dataHoje, calcValidade, dataCurta } from "@/lib/dateUtils";
 import { gerarCelulaEtiqueta, gerarCelulaAvulsa, type DadosEtiquetaProduto, type DadosEtiquetaAvulsa } from "@/lib/labelHtml";
 
+import QRCode from "qrcode";
+
 const ORG_SLUG = "gelateria";
 
 // --- Tipos ---
@@ -56,7 +58,20 @@ function arredondarPar(n: number): number {
 }
 
 function normalizar(s: string): string {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+
+async function gerarQRDataUrl(texto: string): Promise<string> {
+  try {
+    return await QRCode.toDataURL(texto, {
+      width: 120,
+      margin: 0,
+      color: { dark: "#000000", light: "#ffffff" },
+      errorCorrectionLevel: "M",
+    });
+  } catch {
+    return "";
+  }
 }
 
 // dateUtils e labelHtml importados do módulo compartilhado
@@ -453,16 +468,27 @@ export default function ImprimirWizard() {
     const fabricacao = dataHoje();
     const logoUrl = window.location.origin + "/logo-mo.png";
 
+    // Gera QR codes para cada item (um por produto, reutilizado nas cópias)
+    const qrCache: Record<string, string> = {};
+    for (const item of carrinho) {
+      const code = item.item.code || item.item.id;
+      if (!qrCache[code]) {
+        qrCache[code] = await gerarQRDataUrl(code);
+      }
+    }
+
     // Gera células individuais de etiqueta
     const celulas: string[] = [];
     for (const item of carrinho) {
       const validade = calcValidade(item.item.expiry_days);
       const prods = iniciaisProdutores(item.produtores);
+      const qrDataUrl = qrCache[item.item.code || item.item.id] || "";
 
       for (let i = 0; i < item.quantidade; i++) {
         celulas.push(gerarCelulaEtiqueta({
           nome: item.item.name, fabricacao, validade,
-          lote: item.lote, info: item.infoComplementar || "", produtorIniciais: prods, logoUrl
+          lote: item.lote, info: item.infoComplementar || "", produtorIniciais: prods, logoUrl,
+          qrCodeDataUrl: qrDataUrl,
         }));
       }
       // Etiquetas complementares (mesma qtd)
