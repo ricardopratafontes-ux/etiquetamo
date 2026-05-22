@@ -78,7 +78,7 @@ function PreviewEtiqueta({ dados }: { dados: DadosEtiqueta }) {
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginLeft: "1mm" }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-mo.png" alt="mo!" style={{ height: "5mm", opacity: 0.8 }} />
+          <img src="/logo-preta.jpeg" alt="mo!" style={{ height: "5mm", opacity: 0.8 }} />
         </div>
       </div>
     </div>
@@ -196,7 +196,7 @@ export default function EtiquetasAvulsasPage() {
     if (!nome.trim()) { setStatus("Preencha o nome na etiqueta."); return; }
 
     setStatus("Preparando impressão...");
-    const logoUrl = window.location.origin + "/logo-mo.png";
+    const logoUrl = window.location.origin + "/logo-preta.jpeg";
 
     // Gera as células
     const celula = gerarCelulaAvulsa({ ...dadosEtiqueta, logoUrl });

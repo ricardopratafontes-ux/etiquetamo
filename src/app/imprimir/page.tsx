@@ -219,6 +219,45 @@ export default function ImprimirWizard() {
 
   useEffect(() => { carregar(); }, [carregar]);
 
+  // --- QR codes no preview (carrega lib CDN e preenche placeholders) ---
+  useEffect(() => {
+    // Carregar lib qrcode-generator se ainda não carregou
+    if (typeof window !== "undefined" && !(window as unknown as Record<string, unknown>).qrcode) {
+      const existing = document.querySelector("script[src*='qrcode-generator']");
+      if (!existing) {
+        const s = document.createElement("script");
+        s.src = "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js";
+        s.async = true;
+        s.onload = () => preencherQRPreviews();
+        document.head.appendChild(s);
+        return;
+      }
+    }
+    preencherQRPreviews();
+  }, [carrinho]);
+
+  function preencherQRPreviews() {
+    const qrFunc = (window as unknown as Record<string, unknown>).qrcode as ((typeNumber: number, errorCorrection: string) => { addData: (d: string) => void; make: () => void; createImgTag: (cellSize: number, margin: number) => string }) | undefined;
+    if (!qrFunc) return;
+    const els = document.querySelectorAll(".qr-placeholder");
+    els.forEach((el) => {
+      if (el.querySelector("img")) return; // já preenchido
+      const code = el.getAttribute("data-qr");
+      if (!code) return;
+      try {
+        const qr = qrFunc(0, "M");
+        qr.addData(code);
+        qr.make();
+        const img = qr.createImgTag(2, 0);
+        el.innerHTML = img;
+        const imgEl = el.querySelector("img");
+        if (imgEl) imgEl.style.cssText = "width:10mm;height:10mm;";
+      } catch (_) {
+        el.innerHTML = `<div style="width:10mm;height:10mm;display:flex;align-items:center;justify-content:center;font-size:5pt;border:0.5pt solid #000;">${code}</div>`;
+      }
+    });
+  }
+
   // --- Itens filtrados por tipo e família ---
   const itensFiltrados = todosItens.filter((item) => {
     // Filtro por tipo
@@ -461,7 +500,7 @@ export default function ImprimirWizard() {
     setImprimindo(true);
 
     const fabricacao = dataHoje();
-    const logoUrl = window.location.origin + "/logo-mo.png";
+    const logoUrl = window.location.origin + "/logo-preta.jpeg";
 
     // Gera células individuais de etiqueta
     const celulas: string[] = [];
@@ -976,7 +1015,7 @@ ${linhas}
                           const previewHTML = gerarCelulaEtiqueta({
                             nome: c.item.name, fabricacao: dataHoje(), validade: calcValidade(c.item.expiry_days),
                             lote: c.lote, info: c.infoComplementar || "", produtorIniciais: iniciaisProdutores(c.produtores),
-                            logoUrl: "/logo-mo.png"
+                            logoUrl: "/logo-preta.jpeg"
                           });
                           return (
                           <div key={idx} className="bg-[var(--bege)] rounded-xl p-3">
@@ -993,7 +1032,7 @@ ${linhas}
                                 <div style={{ transform: "scale(0.53)", transformOrigin: "top left", width: "50mm", height: "50mm" }} dangerouslySetInnerHTML={{ __html: previewHTML }} />
                               </div>
                               {c.incluirComplementar && c.complementarDados && (() => {
-                                const complHTML = gerarCelulaAvulsa({ nome: c.complementarDados.nome, quantidade: c.complementarDados.quantidade, campos: c.complementarDados.campos, campoExtra: c.complementarDados.campoExtra, logoUrl: "/logo-mo.png" });
+                                const complHTML = gerarCelulaAvulsa({ nome: c.complementarDados.nome, quantidade: c.complementarDados.quantidade, campos: c.complementarDados.campos, campoExtra: c.complementarDados.campoExtra, logoUrl: "/logo-preta.jpeg" });
                                 return (
                                   <div className="border border-purple-400 rounded bg-purple-50" style={{ width: "100px", height: "100px", overflow: "hidden" }}>
                                     <div style={{ transform: "scale(0.53)", transformOrigin: "top left", width: "50mm", height: "50mm" }} dangerouslySetInnerHTML={{ __html: complHTML }} />
