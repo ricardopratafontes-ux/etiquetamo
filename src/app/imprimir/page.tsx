@@ -461,9 +461,9 @@ export default function ImprimirWizard() {
   }
 
   function textoArmazenagem(tipo: string | null): string {
-    if (tipo === "congelado") return "Manter congelado (-18°C)";
-    if (tipo === "refrigerado") return "Manter refrigerado (0 a 5°C)";
-    return "Manter em temperatura ambiente";
+    if (tipo === "congelado") return "Conservar congelado (-12°C a -18°C)";
+    if (tipo === "refrigerado") return "Conservar refrigerado (0°C a 5°C)";
+    return "Conservar em temperatura ambiente (até 25°C)";
   }
 
   // Layout de etiquetas: importado de @/lib/labelHtml (fonte de verdade)

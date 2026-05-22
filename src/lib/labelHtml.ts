@@ -65,7 +65,7 @@ export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
     : "";
 
   const infoHTML = temInfo
-    ? `<div style="font-size:${fInfo};font-style:italic;line-height:1.3;margin-top:0.5mm;">${info}</div>`
+    ? `<div style="font-size:8.5pt;font-weight:bold;line-height:1.2;margin-top:0.3mm;word-break:break-word;">${info}</div>`
     : "";
 
   return `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
