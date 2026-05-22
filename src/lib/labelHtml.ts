@@ -18,7 +18,7 @@ export interface DadosEtiquetaProduto {
   info: string;
   produtorIniciais: string;
   logoUrl: string;
-  qrCodeDataUrl?: string; // QR code como data URL (SVG ou PNG)
+  qrCode?: string; // Código do produto para gerar QR code
 }
 
 export interface CampoOpcionalAvulsa {
@@ -80,8 +80,8 @@ export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
     <div style="display:flex;align-items:flex-start;">
       <div style="flex:1;">${loteHTML}${infoHTML}</div>
       <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
-        ${dados.qrCodeDataUrl
-      ? `<img src="${dados.qrCodeDataUrl}" style="width:10mm;height:10mm;" />`
+        ${dados.qrCode
+      ? `<div class="qr-placeholder" data-qr="${dados.qrCode}" style="width:10mm;height:10mm;"></div>`
       : `<div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>`}
         <img src="${logoUrl}" style="height:5mm;margin-top:0.5mm;" />
       </div>

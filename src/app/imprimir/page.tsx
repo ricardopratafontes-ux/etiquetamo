@@ -6,8 +6,6 @@ import { supabase } from "@/lib/supabase";
 import { dataHoje, calcValidade, dataCurta } from "@/lib/dateUtils";
 import { gerarCelulaEtiqueta, gerarCelulaAvulsa, type DadosEtiquetaProduto, type DadosEtiquetaAvulsa } from "@/lib/labelHtml";
 
-import QRCode from "qrcode";
-
 const ORG_SLUG = "gelateria";
 
 // --- Tipos ---
@@ -61,22 +59,7 @@ function normalizar(s: string): string {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
 
-async function gerarQRDataUrl(texto: string): Promise<string> {
-  try {
-    const svgStr = await QRCode.toString(texto, {
-      type: "svg",
-      width: 120,
-      margin: 0,
-      color: { dark: "#000000", light: "#ffffff" },
-      errorCorrectionLevel: "M",
-    });
-    // Converte SVG string para data URL
-    return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgStr)));
-  } catch (err) {
-    console.error("QR Code error:", err);
-    return "";
-  }
-}
+
 
 // dateUtils e labelHtml importados do módulo compartilhado
 
@@ -480,27 +463,18 @@ export default function ImprimirWizard() {
     const fabricacao = dataHoje();
     const logoUrl = window.location.origin + "/logo-mo.png";
 
-    // Gera QR codes para cada item (um por produto, reutilizado nas cópias)
-    const qrCache: Record<string, string> = {};
-    for (const item of carrinho) {
-      const code = item.item.code || item.item.id;
-      if (!qrCache[code]) {
-        qrCache[code] = await gerarQRDataUrl(code);
-      }
-    }
-
     // Gera células individuais de etiqueta
     const celulas: string[] = [];
     for (const item of carrinho) {
       const validade = calcValidade(item.item.expiry_days);
       const prods = iniciaisProdutores(item.produtores);
-      const qrDataUrl = qrCache[item.item.code || item.item.id] || "";
+      const qrCode = item.item.code || "";
 
       for (let i = 0; i < item.quantidade; i++) {
         celulas.push(gerarCelulaEtiqueta({
           nome: item.item.name, fabricacao, validade,
           lote: item.lote, info: item.infoComplementar || "", produtorIniciais: prods, logoUrl,
-          qrCodeDataUrl: qrDataUrl,
+          qrCode,
         }));
       }
       // Etiquetas complementares (mesma qtd)
@@ -545,7 +519,28 @@ ${linhas}
   <button onclick="window.print()" style="padding:12px 32px;font-size:16px;font-weight:bold;background:#f31c40;color:white;border:none;border-radius:12px;cursor:pointer;">🖨️ Imprimir novamente</button>
   <button onclick="window.close()" style="padding:12px 32px;font-size:16px;margin-left:12px;background:#98472d;color:white;border:none;border-radius:12px;cursor:pointer;">Fechar</button>
 </div>
-<script>setTimeout(function(){window.print()},400);window.onafterprint=function(){window.close();};</script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
+<script>
+(function(){
+  var els = document.querySelectorAll('.qr-placeholder');
+  for(var i=0;i<els.length;i++){
+    var code = els[i].getAttribute('data-qr');
+    if(!code) continue;
+    try {
+      var qr = qrcode(0,'M');
+      qr.addData(code);
+      qr.make();
+      var img = qr.createImgTag(2,0);
+      els[i].innerHTML = img;
+      els[i].querySelector('img').style.cssText = 'width:10mm;height:10mm;';
+    } catch(e) {
+      els[i].innerHTML = '<div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:5pt;font-weight:bold;">'+code+'</div>';
+    }
+  }
+  setTimeout(function(){window.print()},600);
+  window.onafterprint=function(){window.close();};
+})();
+</script>
 </body>
 </html>`;
 
