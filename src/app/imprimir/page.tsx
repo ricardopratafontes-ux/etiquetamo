@@ -63,13 +63,17 @@ function normalizar(s: string): string {
 
 async function gerarQRDataUrl(texto: string): Promise<string> {
   try {
-    return await QRCode.toDataURL(texto, {
+    const svgStr = await QRCode.toString(texto, {
+      type: "svg",
       width: 120,
       margin: 0,
       color: { dark: "#000000", light: "#ffffff" },
       errorCorrectionLevel: "M",
     });
-  } catch {
+    // Converte SVG string para data URL
+    return "data:image/svg+xml;base64," + btoa(unescape(encodeURIComponent(svgStr)));
+  } catch (err) {
+    console.error("QR Code error:", err);
     return "";
   }
 }
