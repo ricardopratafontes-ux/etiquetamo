@@ -45,10 +45,13 @@ export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
   const { nome, fabricacao, validade, lote, info, produtorIniciais, logoUrl } = dados;
   const temInfo = !!info;
 
-  // Fonte dinâmica: reduz para nomes longos (campos fixos, só nome adapta)
+  // Fonte dinâmica: cresce para nomes curtos, reduz para longos (espaço do nome fixo)
   const len = nome.length;
   const baseNome = temInfo ? 16 : 18;
   const fNome =
+    len <= 5  ? `${baseNome + 6}pt` :
+    len <= 8  ? `${baseNome + 4}pt` :
+    len <= 12 ? `${baseNome + 2}pt` :
     len <= 15 ? `${baseNome}pt` :
     len <= 22 ? `${baseNome - 2}pt` :
     len <= 30 ? `${baseNome - 4}pt` :
