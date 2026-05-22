@@ -172,36 +172,4 @@ export async function POST() {
     await supabase
       .from("omie_sync_log")
       .update({
-        total_omie: totalOmie,
-        matched,
-        quarantined,
-        updated,
-        errors,
-        completed_at: new Date().toISOString(),
-      })
-      .eq("id", syncLog.id);
-
-    return NextResponse.json({
-      success: true,
-      summary: {
-        total_omie: totalOmie,
-        matched,
-        quarantined,
-        updated,
-        errors,
-      },
-      debug: {
-        pages_fetched: pagina,
-        products_received: allProducts.length,
-        omie_key_present: !!process.env.OMIE_APP_KEY,
-        omie_secret_present: !!process.env.OMIE_APP_SECRET,
-      },
-    });
-  } catch (error) {
-    console.error("Erro na sincronização OMIE:", error);
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Erro desconhecido" },
-      { status: 500 }
-    );
-  }
-}
+        total_omie: total
