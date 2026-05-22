@@ -68,7 +68,7 @@ const FAMILIA_INSUMOS = "insumos";
  *   Contagem → oculto por padrão; opcional para Barra de Gelatos e Food Service
  *   Produção → oculto para Uso e Consumo; opcional para Insumos; obrigatório para o resto
  */
-function regrasProdutor(modo: "producao" | "contagem" | null, categoriaNome: string): "obrigatorio" | "opcional" | "oculto" {
+function regrasProdutor(modo: StepTipo, categoriaNome: string): "obrigatorio" | "opcional" | "oculto" {
   const cat = categoriaNome.toLowerCase().trim();
   if (modo === "contagem") {
     if (FAMILIAS_CONTAGEM_OPCIONAL.some((f) => cat === f)) return "opcional";
@@ -81,7 +81,7 @@ function regrasProdutor(modo: "producao" | "contagem" | null, categoriaNome: str
 }
 
 // --- Steps ---
-type StepTipo = "producao" | "contagem" | null;
+type StepTipo = "producao" | "contagem" | "ordem_producao" | null;
 type Step = 1 | 2 | 3 | 4;
 
 const CAMPOS_PRESET_COMPL = [
@@ -127,6 +127,20 @@ export default function ImprimirWizard() {
   const [buscaItem, setBuscaItem] = useState("");
   const [carrinho, setCarrinho] = useState<ItemCarrinho[]>([]);
 
+  // Fila de OP (Ordem de Produção via webhook OMIE)
+  interface PrintQueueItem {
+    id: string;
+    omie_order_id: number | null;
+    omie_order_number: string | null;
+    product_name: string;
+    item_id: string | null;
+    quantity: number;
+    lot: string | null;
+    status: string;
+    created_at: string;
+  }
+  const [filaOP, setFilaOP] = useState<PrintQueueItem[]>([]);
+
   // PIN de segurança
   const [pinModal, setPinModal] = useState<Colaborador | null>(null);
   const [pinInput, setPinInput] = useState("");
@@ -151,6 +165,16 @@ export default function ImprimirWizard() {
     if (colabRes.data) setColaboradores(colabRes.data);
     if (catRes.data) setCategorias(catRes.data);
     if (itensRes.data) setTodosItens(itensRes.data);
+
+    // Carregar fila de OP pendente
+    const { data: opData } = await supabase
+      .from("omie_print_queue")
+      .select("*")
+      .eq("organization_id", org.id)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false });
+    setFilaOP((opData || []) as PrintQueueItem[]);
+
     setLoading(false);
   }, []);
 
@@ -301,8 +325,53 @@ export default function ImprimirWizard() {
 
   function voltar() {
     if (step === 2) { setStep(1); setTipo(null); }
-    else if (step === 3) { setStep(2); setEmitente(null); }
-    else if (step === 4) { setStep(3); setFamiliaSelecionada(null); setBuscaItem(""); }
+    else if (step === 3) {
+      if (tipo === "ordem_producao") { setStep(1); setTipo(null); setEmitente(null); }
+      else { setStep(2); setEmitente(null); }
+    }
+    else if (step === 4) {
+      if (tipo === "ordem_producao") { setStep(2); setEmitente(null); }
+      else { setStep(3); setFamiliaSelecionada(null); setBuscaItem(""); }
+    }
+  }
+
+  // Adicionar item de OP ao carrinho
+  function adicionarOPAoCarrinho(op: PrintQueueItem) {
+    // Buscar item vinculado no EtiquetaMO
+    const itemVinculado = op.item_id ? todosItens.find((i) => i.id === op.item_id) : null;
+
+    if (itemVinculado) {
+      // Item vinculado — usar dados completos do cadastro
+      const novoItem: ItemCarrinho = {
+        item: itemVinculado,
+        quantidade: op.quantity || 1,
+        produtores: [],
+        lote: op.lot || "",
+        tipoEtiqueta: "normal",
+        infoComplementar: itemVinculado.additional_info || "",
+        incluirComplementar: false,
+        complementarDados: null,
+        pesoOverride: itemVinculado.net_weight || "",
+        unidadeOverride: itemVinculado.unit || "",
+        incluirPeso: false,
+      };
+      const existente = carrinho.findIndex((c) => c.item.id === itemVinculado.id);
+      if (existente >= 0) {
+        setCarrinho((prev) => prev.map((c, i) =>
+          i === existente ? { ...novoItem, quantidade: c.quantidade + (op.quantity || 1) } : c
+        ));
+      } else {
+        setCarrinho((prev) => [...prev, novoItem]);
+      }
+    }
+    // Marcar como processado na fila
+    supabase.from("omie_print_queue").update({ status: "queued" }).eq("id", op.id);
+    setFilaOP((prev) => prev.filter((p) => p.id !== op.id));
+  }
+
+  function pularOP(opId: string) {
+    supabase.from("omie_print_queue").update({ status: "skipped" }).eq("id", opId);
+    setFilaOP((prev) => prev.filter((p) => p.id !== opId));
   }
 
   // Total de etiquetas (arredondado para par)
@@ -436,7 +505,7 @@ ${linhas}
                   <p className="text-base font-bold text-white mt-0.5">
                     {step === 1 && "👉 Escolha o tipo de etiqueta"}
                     {step === 2 && "👉 Quem está emitindo?"}
-                    {step === 3 && "👉 Escolha a família de produtos"}
+                    {step === 3 && (tipo === "ordem_producao" ? "👉 Selecione as ordens de produção" : "👉 Escolha a família de produtos")}
                     {step === 4 && `📦 ${nomeFamilia(familiaSelecionada)} — Adicione ao carrinho`}
                   </p>
                 </div>
@@ -447,9 +516,13 @@ ${linhas}
                 <span className="text-white/40">›</span>
                 <span className={step >= 2 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>2. Emitente</span>
                 <span className="text-white/40">›</span>
-                <span className={step >= 3 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>3. Família</span>
-                <span className="text-white/40">›</span>
-                <span className={step >= 4 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>4. Produtos</span>
+                <span className={step >= 3 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>3. {tipo === "ordem_producao" ? "Ordens" : "Família"}</span>
+                {tipo !== "ordem_producao" && (
+                  <>
+                    <span className="text-white/40">›</span>
+                    <span className={step >= 4 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>4. Produtos</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -465,7 +538,7 @@ ${linhas}
 
           {/* ===== STEP 1: Tipo ===== */}
           {step === 1 && (
-            <div className="grid grid-cols-2 gap-6 max-w-2xl mx-auto mt-8">
+            <div className="grid grid-cols-3 gap-6 max-w-3xl mx-auto mt-8">
               <button onClick={() => selecionarTipo("producao")} className="bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-[var(--vermelho)] p-8 flex flex-col items-center gap-4 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1">
                 <span className="text-6xl">🏭</span>
                 <span className="text-xl font-extrabold text-[var(--marrom)]">Produção</span>
@@ -475,6 +548,16 @@ ${linhas}
                 <span className="text-6xl">📋</span>
                 <span className="text-xl font-extrabold text-[var(--marrom)]">Contagem</span>
                 <span className="text-sm text-gray-500 text-center">Etiquetas de identificação e contagem de estoque</span>
+              </button>
+              <button onClick={() => selecionarTipo("ordem_producao")} className="bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-[var(--vermelho)] p-8 flex flex-col items-center gap-4 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 relative">
+                <span className="text-6xl">📋🏭</span>
+                <span className="text-xl font-extrabold text-[var(--marrom)]">Ordem de Produção</span>
+                <span className="text-sm text-gray-500 text-center">Ordens recebidas automaticamente do OMIE</span>
+                {filaOP.length > 0 && (
+                  <span className="absolute top-3 right-3 bg-[var(--vermelho)] text-white text-xs px-2.5 py-1 rounded-full font-bold animate-pulse">
+                    {filaOP.length}
+                  </span>
+                )}
               </button>
             </div>
           )}
@@ -504,8 +587,126 @@ ${linhas}
             </div>
           )}
 
+          {/* ===== STEP 3 (OP): Fila de Ordens de Produção ===== */}
+          {step === 3 && tipo === "ordem_producao" && (
+            <div className="flex gap-6 mt-2">
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-[var(--marrom)] text-lg">Ordens de Produção Pendentes</h3>
+                  {filaOP.length > 0 && (
+                    <span className="bg-[var(--vermelho)] text-white text-xs px-3 py-1 rounded-full font-bold">
+                      {filaOP.length} pendente{filaOP.length > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+
+                {filaOP.length === 0 ? (
+                  <div className="bg-white rounded-2xl p-8 shadow-md text-center">
+                    <span className="text-4xl block mb-2">✅</span>
+                    <p className="text-[var(--marrom)] font-semibold">Nenhuma ordem pendente</p>
+                    <p className="text-sm text-gray-500 mt-1">Quando o OMIE enviar novas ordens de produção, elas aparecerão aqui.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {filaOP.map((op) => {
+                      const itemVinculado = op.item_id ? todosItens.find((i) => i.id === op.item_id) : null;
+                      const jaNoCarrinho = itemVinculado ? carrinho.some((c) => c.item.id === itemVinculado.id) : false;
+                      return (
+                        <div key={op.id} className={"bg-white rounded-xl p-4 shadow-sm border-l-4 flex items-center justify-between " + (jaNoCarrinho ? "border-green-400 bg-green-50" : "border-[var(--vermelho)]")}>
+                          <div>
+                            <p className="font-semibold text-[var(--marrom)]">{op.product_name}</p>
+                            <p className="text-xs text-gray-500">
+                              {op.omie_order_number && `OP #${op.omie_order_number} · `}
+                              Qtd: {op.quantity}
+                              {op.lot && ` · Lote: ${op.lot}`}
+                              {" · "}
+                              {new Date(op.created_at).toLocaleString("pt-BR")}
+                            </p>
+                            {!itemVinculado && (
+                              <p className="text-xs text-orange-600 font-medium mt-1">⚠️ Item não vinculado no EtiquetaMO</p>
+                            )}
+                            {jaNoCarrinho && (
+                              <p className="text-xs text-green-600 font-bold mt-1">✓ No carrinho</p>
+                            )}
+                          </div>
+                          <div className="flex gap-2">
+                            {itemVinculado && !jaNoCarrinho && (
+                              <button onClick={() => adicionarOPAoCarrinho(op)}
+                                className="text-xs px-3 py-1.5 rounded-lg bg-[var(--vermelho)] text-white hover:opacity-90 transition-colors font-semibold cursor-pointer">
+                                🛒 Adicionar
+                              </button>
+                            )}
+                            <button onClick={() => pularOP(op.id)}
+                              className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer">
+                              Pular
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Carrinho lateral (mesmo do step 4) */}
+              <div className="w-80 shrink-0">
+                <div className="bg-white rounded-2xl shadow-lg border-2 border-[var(--verde)] sticky top-4">
+                  <div className="bg-[var(--verde)] px-4 py-3 rounded-t-2xl">
+                    <h3 className="font-bold text-[var(--marrom)] text-sm flex items-center gap-2">
+                      🛒 Carrinho <span className="ml-auto bg-[var(--marrom)] text-white text-xs px-2 py-0.5 rounded-full">{carrinho.length}</span>
+                    </h3>
+                  </div>
+                  <div className="p-4 max-h-[400px] overflow-y-auto">
+                    {carrinho.length === 0 ? (
+                      <p className="text-center text-gray-400 text-sm py-6">Adicione ordens da fila</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {carrinho.map((c, idx) => (
+                          <div key={idx} className="bg-[var(--bege)] rounded-xl p-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="font-bold text-[var(--marrom)] text-xs leading-tight flex-1">{c.item.name}</p>
+                              <button onClick={() => removerDoCarrinho(idx)} className="text-red-400 hover:text-red-600 text-xs cursor-pointer">✕</button>
+                            </div>
+                            <div className="flex items-center justify-between mt-2">
+                              <div className="flex items-center gap-2">
+                                <button onClick={() => ajustarQtd(idx, -1)} className="w-7 h-7 flex items-center justify-center bg-white rounded-lg text-[var(--marrom)] font-bold shadow-sm cursor-pointer hover:bg-gray-100">−</button>
+                                <span className="text-sm font-extrabold text-[var(--marrom)] w-6 text-center">{c.quantidade}</span>
+                                <button onClick={() => ajustarQtd(idx, 1)} className="w-7 h-7 flex items-center justify-center bg-white rounded-lg text-[var(--marrom)] font-bold shadow-sm cursor-pointer hover:bg-gray-100">+</button>
+                              </div>
+                              <span className="text-[10px] text-gray-500">→ {arredondarPar(c.quantidade)} etiq.</span>
+                            </div>
+                            {c.lote && <p className="text-[10px] text-gray-400 mt-1">Lote: {c.lote}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  {carrinho.length > 0 && (
+                    <div className="border-t border-gray-200 p-4">
+                      <div className="flex justify-between text-sm mb-3">
+                        <span className="text-gray-500">Total de etiquetas:</span>
+                        <span className="font-extrabold text-[var(--marrom)]">{totalEtiquetas}</span>
+                      </div>
+                      <div className="flex justify-between text-[10px] text-gray-400 mb-3">
+                        <span>Emitente: {emitente?.name}</span>
+                        <span>{dataHoje()}</span>
+                      </div>
+                      <button
+                        onClick={imprimirTudo}
+                        disabled={imprimindo}
+                        className={"w-full py-3 rounded-xl font-extrabold text-base cursor-pointer transition-all shadow-lg " + (imprimindo ? "bg-gray-300 text-gray-500" : "bg-[var(--vermelho)] text-white hover:bg-red-600 hover:shadow-xl")}
+                      >
+                        {imprimindo ? "Preparando..." : `🖨️ Imprimir ${totalEtiquetas} Etiquetas`}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* ===== STEP 3: Família ===== */}
-          {step === 3 && (() => {
+          {step === 3 && tipo !== "ordem_producao" && (() => {
             // Ícones e cores por nome de família (case-insensitive)
             const FAMILIA_VISUAL: Record<string, { icon: string; bg: string; border: string }> = {
               "gelatos": { icon: "🍨", bg: "bg-pink-50", border: "border-pink-200 hover:border-pink-400" },
