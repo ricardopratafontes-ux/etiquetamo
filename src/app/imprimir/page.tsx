@@ -313,7 +313,9 @@ export default function ImprimirWizard() {
     setModalProdutores([]);
     setModalQtd(1);
     setModalLote("");
-    setModalInfoComplementar(item.additional_info || "");
+    const armazInfo = textoArmazenagem(item.storage_type);
+    const addInfo = item.additional_info || "";
+    setModalInfoComplementar(addInfo ? `${armazInfo} | ${addInfo}` : armazInfo);
     setModalTipoEtiqueta(tipo === "contagem" ? "contagem" : "normal");
     setModalIncluirComplementar(false);
     setModalComplNome(item.complementary_label_text || item.name);
@@ -456,6 +458,12 @@ export default function ImprimirWizard() {
       const c = colaboradores.find((x) => x.id === id);
       return c ? iniciais(c.name) : "??";
     }).join(" ");
+  }
+
+  function textoArmazenagem(tipo: string | null): string {
+    if (tipo === "congelado") return "Manter congelado (-18°C)";
+    if (tipo === "refrigerado") return "Manter refrigerado (0 a 5°C)";
+    return "Manter em temperatura ambiente";
   }
 
   // Layout de etiquetas: importado de @/lib/labelHtml (fonte de verdade)
