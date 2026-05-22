@@ -153,6 +153,9 @@ export default function ImprimirWizard() {
   const [pinInput, setPinInput] = useState("");
   const [pinErro, setPinErro] = useState(false);
 
+  // Edição de item no carrinho
+  const [editandoIdx, setEditandoIdx] = useState<number | null>(null);
+
   // Impressão
   const [imprimindo, setImprimindo] = useState(false);
 
@@ -334,13 +337,19 @@ export default function ImprimirWizard() {
       incluirComplementar: modalIncluirComplementar, complementarDados: complDados,
       pesoOverride: modalPeso, unidadeOverride: modalUnidade, incluirPeso: modalIncluirPeso,
     };
-    const existente = carrinho.findIndex((c) => c.item.id === modalItem.id && c.tipoEtiqueta === modalTipoEtiqueta);
-    if (existente >= 0) {
-      setCarrinho((prev) => prev.map((c, i) =>
-        i === existente ? { ...novoItem, quantidade: c.quantidade + modalQtd } : c
-      ));
+    if (editandoIdx !== null) {
+      // Modo edição: substituir item no índice
+      setCarrinho((prev) => prev.map((c, i) => i === editandoIdx ? novoItem : c));
+      setEditandoIdx(null);
     } else {
-      setCarrinho((prev) => [...prev, novoItem]);
+      const existente = carrinho.findIndex((c) => c.item.id === modalItem.id && c.tipoEtiqueta === modalTipoEtiqueta);
+      if (existente >= 0) {
+        setCarrinho((prev) => prev.map((c, i) =>
+          i === existente ? { ...novoItem, quantidade: c.quantidade + modalQtd } : c
+        ));
+      } else {
+        setCarrinho((prev) => [...prev, novoItem]);
+      }
     }
     // Se veio de uma OP, marcar como processada
     if (opSelecionada) {
@@ -353,6 +362,30 @@ export default function ImprimirWizard() {
 
   function removerDoCarrinho(idx: number) {
     setCarrinho((prev) => prev.filter((_, i) => i !== idx));
+  }
+
+  function editarItemCarrinho(idx: number) {
+    const c = carrinho[idx];
+    if (!c) return;
+    setEditandoIdx(idx);
+    abrirModalItem(c.item);
+    setModalQtd(c.quantidade);
+    setModalLote(c.lote);
+    setModalTipoEtiqueta(c.tipoEtiqueta);
+    setModalInfoComplementar(c.infoComplementar);
+    setModalIncluirComplementar(c.incluirComplementar);
+    setModalProdutores(c.produtores);
+    setModalPeso(c.pesoOverride);
+    setModalUnidade(c.unidadeOverride);
+    setModalIncluirPeso(c.incluirPeso);
+    if (c.complementarDados) {
+      setModalComplNome(c.complementarDados.nome);
+      setModalComplUsarQtd(!!c.complementarDados.quantidade);
+      setModalComplQtd(c.complementarDados.quantidade || "");
+      setModalComplCampos(c.complementarDados.campos.length > 0 ? c.complementarDados.campos : [{ label: "", valor: "" }]);
+      setModalComplUsarExtra(!!c.complementarDados.campoExtra);
+      setModalComplExtra(c.complementarDados.campoExtra || "");
+    }
   }
 
   function ajustarQtd(idx: number, delta: number) {
@@ -471,9 +504,10 @@ export default function ImprimirWizard() {
 <body>
 ${linhas}
 <div class="no-print" style="text-align:center;padding:20px;">
-  <button onclick="window.print()" style="padding:12px 32px;font-size:16px;font-weight:bold;background:#f31c40;color:white;border:none;border-radius:12px;cursor:pointer;">🖨️ Imprimir</button>
+  <button onclick="window.print()" style="padding:12px 32px;font-size:16px;font-weight:bold;background:#f31c40;color:white;border:none;border-radius:12px;cursor:pointer;">🖨️ Imprimir novamente</button>
   <button onclick="window.close()" style="padding:12px 32px;font-size:16px;margin-left:12px;background:#98472d;color:white;border:none;border-radius:12px;cursor:pointer;">Fechar</button>
 </div>
+<script>setTimeout(function(){window.print()},400);window.onafterprint=function(){window.close();};</script>
 </body>
 </html>`;
 
@@ -500,6 +534,7 @@ ${linhas}
       }
     }
 
+    setCarrinho([]);
     setImprimindo(false);
   }
 
@@ -728,7 +763,10 @@ ${linhas}
                           <div key={idx} className="bg-[var(--bege)] rounded-xl p-3">
                             <div className="flex items-start justify-between gap-2">
                               <p className="font-bold text-[var(--marrom)] text-xs leading-tight flex-1">{c.item.name}</p>
-                              <button onClick={() => removerDoCarrinho(idx)} className="text-red-400 hover:text-red-600 text-xs cursor-pointer">✕</button>
+                              <div className="flex gap-1">
+                                <button onClick={() => editarItemCarrinho(idx)} className="text-blue-400 hover:text-blue-600 text-xs cursor-pointer" title="Editar">✏️</button>
+                                <button onClick={() => removerDoCarrinho(idx)} className="text-red-400 hover:text-red-600 text-xs cursor-pointer" title="Remover">✕</button>
+                              </div>
                             </div>
                             <div className="flex items-center justify-between mt-2">
                               <div className="flex items-center gap-2">
@@ -911,7 +949,10 @@ ${linhas}
                           <div key={idx} className="bg-[var(--bege)] rounded-xl p-3">
                             <div className="flex items-start justify-between gap-2">
                               <p className="font-bold text-[var(--marrom)] text-xs leading-tight flex-1">{c.item.name}</p>
-                              <button onClick={() => removerDoCarrinho(idx)} className="text-red-400 hover:text-red-600 text-xs cursor-pointer">✕</button>
+                              <div className="flex gap-1">
+                                <button onClick={() => editarItemCarrinho(idx)} className="text-blue-400 hover:text-blue-600 text-xs cursor-pointer" title="Editar">✏️</button>
+                                <button onClick={() => removerDoCarrinho(idx)} className="text-red-400 hover:text-red-600 text-xs cursor-pointer" title="Remover">✕</button>
+                              </div>
                             </div>
                             {/* Preview miniatura da etiqueta */}
                             <div className="mt-2 flex justify-center gap-1.5">
@@ -981,7 +1022,7 @@ ${linhas}
             const podeSalvar = regraProdutor === "obrigatorio" ? modalProdutores.length > 0 : true;
 
             return (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setModalItem(null); setOpSelecionada(null); }}>
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setModalItem(null); setOpSelecionada(null); setEditandoIdx(null); }}>
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                 {/* Header com nome */}
                 <div className="bg-[var(--vermelho)] px-4 py-3 text-white">
@@ -1248,9 +1289,9 @@ ${linhas}
                     disabled={!podeSalvar}
                     className={"flex-1 py-2.5 rounded-xl font-bold text-sm cursor-pointer transition-all " + (!podeSalvar ? "bg-gray-200 text-gray-400" : "bg-[var(--vermelho)] text-white hover:bg-red-600 shadow-lg")}
                   >
-                    🛒 Adicionar
+                    {editandoIdx !== null ? "💾 Salvar" : "🛒 Adicionar"}
                   </button>
-                  <button onClick={() => { setModalItem(null); setOpSelecionada(null); }} className="px-4 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer transition-all">
+                  <button onClick={() => { setModalItem(null); setOpSelecionada(null); setEditandoIdx(null); }} className="px-4 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer transition-all">
                     Cancelar
                   </button>
                 </div>
