@@ -11,19 +11,11 @@ const ORG_SLUG = "gelateria";
  * POST /api/omie/webhook
  * Recebe webhooks do OMIE (formato omie-connect-2.0).
  *
- * Payload real recebido:
- * {
- *   "event": { "cEtapa", "cNumOP", "nCodOP", "nCodProd", "cConcluida", "dDtPrevisao" },
- *   "topic": "OrdemProducao.Alterada",
- *   "appKey": "...",
- *   "author": { "name", "email", "userId" },
- *   "messageId": "..."
- * }
- *
  * REGRAS:
  * - Retornar HTTP 2XX em menos de 7 segundos
- * - Accept-and-store: salva e processa
- * - Etapa "40" = "Produzindo" (4a no kanban OMIE)
+ * - Deduplicar: se mesma OP (nCodOP) já existe, atualiza em vez de criar nova
+ * - Vincular item: tenta por omie_product_id, fallback por código do produto
+ * - Extrair lote do evento se disponível
  */
 export async function POST(request: NextRequest) {
   try {
@@ -55,13 +47,16 @@ export async function POST(request: NextRequest) {
       const nCodOP = event.nCodOP || null;
       const cNumOP = event.cNumOP || null;
       const cEtapa = event.cEtapa || "";
+      const cLote = event.cLote || event.lote || event.cNumeroLote || null;
 
-      // Buscar nome do produto via API OMIE
+      // Buscar dados do produto via API OMIE
       let productName = `Produto OMIE #${nCodProd || "?"}`;
+      let produtoCodigo: string | null = null;
       if (nCodProd) {
         try {
           const produto = await consultarProduto(nCodProd);
           productName = produto.descricao || productName;
+          produtoCodigo = produto.codigo || null;
         } catch (err) {
           console.error("[OMIE Webhook] Erro ao buscar produto:", err);
         }
@@ -70,6 +65,7 @@ export async function POST(request: NextRequest) {
       // Tentar vincular ao item do EtiquetaMO
       let itemId: string | null = null;
       if (nCodProd) {
+        // Tentativa 1: por omie_product_id (ID numérico OMIE)
         const { data: item } = await supabase
           .from("items")
           .select("id")
@@ -77,9 +73,49 @@ export async function POST(request: NextRequest) {
           .eq("omie_product_id", nCodProd)
           .single();
         itemId = item?.id || null;
+
+        // Tentativa 2: fallback por código do produto
+        if (!itemId && produtoCodigo) {
+          const { data: itemByCodigo } = await supabase
+            .from("items")
+            .select("id")
+            .eq("organization_id", orgId)
+            .eq("code", produtoCodigo)
+            .single();
+          itemId = itemByCodigo?.id || null;
+        }
       }
 
-      // Inserir na fila de impressao
+      // Deduplicação: se OP com mesmo omie_order_id já existe, atualizar
+      if (nCodOP) {
+        const { data: existing } = await supabase
+          .from("omie_print_queue")
+          .select("id, status")
+          .eq("organization_id", orgId)
+          .eq("omie_order_id", nCodOP)
+          .single();
+
+        if (existing) {
+          // Atualizar entrada existente (não recriar)
+          await supabase.from("omie_print_queue").update({
+            product_name: productName,
+            item_id: itemId,
+            lot: cLote,
+            webhook_payload: payload,
+          }).eq("id", existing.id);
+
+          return NextResponse.json({
+            received: true,
+            processed: true,
+            action: "updated",
+            topic,
+            etapa: cEtapa,
+            product: productName,
+          });
+        }
+      }
+
+      // Inserir nova entrada na fila
       await supabase.from("omie_print_queue").insert({
         organization_id: orgId,
         omie_order_id: nCodOP,
@@ -87,13 +123,14 @@ export async function POST(request: NextRequest) {
         product_name: productName,
         item_id: itemId,
         quantity: 1,
-        lot: null,
+        lot: cLote,
         webhook_payload: payload,
       });
 
       return NextResponse.json({
         received: true,
         processed: true,
+        action: "created",
         topic,
         etapa: cEtapa,
         product: productName,

@@ -140,6 +140,9 @@ export default function ImprimirWizard() {
     created_at: string;
   }
   const [filaOP, setFilaOP] = useState<PrintQueueItem[]>([]);
+  const [opSelecionada, setOpSelecionada] = useState<PrintQueueItem | null>(null);
+  const [opVinculando, setOpVinculando] = useState<string | null>(null);
+  const [opBuscaVinc, setOpBuscaVinc] = useState("");
 
   // PIN de segurança
   const [pinModal, setPinModal] = useState<Colaborador | null>(null);
@@ -308,6 +311,12 @@ export default function ImprimirWizard() {
     } else {
       setCarrinho((prev) => [...prev, novoItem]);
     }
+    // Se veio de uma OP, marcar como processada
+    if (opSelecionada) {
+      supabase.from("omie_print_queue").update({ status: "queued" }).eq("id", opSelecionada.id);
+      setFilaOP((prev) => prev.filter((p) => p.id !== opSelecionada.id));
+      setOpSelecionada(null);
+    }
     setModalItem(null);
   }
 
@@ -335,43 +344,21 @@ export default function ImprimirWizard() {
     }
   }
 
-  // Adicionar item de OP ao carrinho
-  function adicionarOPAoCarrinho(op: PrintQueueItem) {
-    // Buscar item vinculado no EtiquetaMO
-    const itemVinculado = op.item_id ? todosItens.find((i) => i.id === op.item_id) : null;
-
-    if (itemVinculado) {
-      // Item vinculado — usar dados completos do cadastro
-      const novoItem: ItemCarrinho = {
-        item: itemVinculado,
-        quantidade: op.quantity || 1,
-        produtores: [],
-        lote: op.lot || "",
-        tipoEtiqueta: "normal",
-        infoComplementar: itemVinculado.additional_info || "",
-        incluirComplementar: false,
-        complementarDados: null,
-        pesoOverride: itemVinculado.net_weight || "",
-        unidadeOverride: itemVinculado.unit || "",
-        incluirPeso: false,
-      };
-      const existente = carrinho.findIndex((c) => c.item.id === itemVinculado.id);
-      if (existente >= 0) {
-        setCarrinho((prev) => prev.map((c, i) =>
-          i === existente ? { ...novoItem, quantidade: c.quantidade + (op.quantity || 1) } : c
-        ));
-      } else {
-        setCarrinho((prev) => [...prev, novoItem]);
-      }
-    }
-    // Marcar como processado na fila
-    supabase.from("omie_print_queue").update({ status: "queued" }).eq("id", op.id);
-    setFilaOP((prev) => prev.filter((p) => p.id !== op.id));
+  // Abrir modal de configuração para item de OP
+  function abrirModalOP(op: PrintQueueItem, item: ItemDB) {
+    setOpSelecionada(op);
+    setOpVinculando(null);
+    setOpBuscaVinc("");
+    abrirModalItem(item);
+    // Pré-preencher dados da OP
+    if (op.lot) setModalLote(op.lot);
+    if (op.quantity > 1) setModalQtd(op.quantity);
   }
 
   function pularOP(opId: string) {
     supabase.from("omie_print_queue").update({ status: "skipped" }).eq("id", opId);
     setFilaOP((prev) => prev.filter((p) => p.id !== opId));
+    if (opVinculando === opId) { setOpVinculando(null); setOpBuscaVinc(""); }
   }
 
   // Total de etiquetas (arredondado para par)
@@ -611,36 +598,81 @@ ${linhas}
                     {filaOP.map((op) => {
                       const itemVinculado = op.item_id ? todosItens.find((i) => i.id === op.item_id) : null;
                       const jaNoCarrinho = itemVinculado ? carrinho.some((c) => c.item.id === itemVinculado.id) : false;
+                      const isVinculando = opVinculando === op.id;
+                      const itensVincBusca = isVinculando ? todosItens.filter((i) =>
+                        opBuscaVinc.trim() ? i.name.toLowerCase().includes(opBuscaVinc.trim().toLowerCase()) : true
+                      ).slice(0, 10) : [];
                       return (
-                        <div key={op.id} className={"bg-white rounded-xl p-4 shadow-sm border-l-4 flex items-center justify-between " + (jaNoCarrinho ? "border-green-400 bg-green-50" : "border-[var(--vermelho)]")}>
-                          <div>
-                            <p className="font-semibold text-[var(--marrom)]">{op.product_name}</p>
-                            <p className="text-xs text-gray-500">
-                              {op.omie_order_number && `OP #${op.omie_order_number} · `}
-                              Qtd: {op.quantity}
-                              {op.lot && ` · Lote: ${op.lot}`}
-                              {" · "}
-                              {new Date(op.created_at).toLocaleString("pt-BR")}
-                            </p>
-                            {!itemVinculado && (
-                              <p className="text-xs text-orange-600 font-medium mt-1">⚠️ Item não vinculado no EtiquetaMO</p>
-                            )}
-                            {jaNoCarrinho && (
-                              <p className="text-xs text-green-600 font-bold mt-1">✓ No carrinho</p>
-                            )}
-                          </div>
-                          <div className="flex gap-2">
-                            {itemVinculado && !jaNoCarrinho && (
-                              <button onClick={() => adicionarOPAoCarrinho(op)}
-                                className="text-xs px-3 py-1.5 rounded-lg bg-[var(--vermelho)] text-white hover:opacity-90 transition-colors font-semibold cursor-pointer">
-                                🛒 Adicionar
+                        <div key={op.id} className={"bg-white rounded-xl p-4 shadow-sm border-l-4 " + (jaNoCarrinho ? "border-green-400 bg-green-50" : "border-[var(--vermelho)]")}>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold text-[var(--marrom)]">{op.product_name}</p>
+                              <p className="text-xs text-gray-500">
+                                {op.omie_order_number && `OP #${op.omie_order_number} · `}
+                                Qtd: {op.quantity}
+                                {op.lot && ` · Lote: ${op.lot}`}
+                                {" · "}
+                                {new Date(op.created_at).toLocaleString("pt-BR")}
+                              </p>
+                              {!itemVinculado && !isVinculando && (
+                                <p className="text-xs text-orange-600 font-medium mt-1">⚠️ Item não vinculado — clique em Vincular para associar</p>
+                              )}
+                              {jaNoCarrinho && (
+                                <p className="text-xs text-green-600 font-bold mt-1">✓ No carrinho</p>
+                              )}
+                            </div>
+                            <div className="flex gap-2 shrink-0">
+                              {itemVinculado && !jaNoCarrinho && (
+                                <button onClick={() => abrirModalOP(op, itemVinculado)}
+                                  className="text-xs px-3 py-1.5 rounded-lg bg-[var(--vermelho)] text-white hover:opacity-90 transition-colors font-semibold cursor-pointer">
+                                  🛒 Configurar
+                                </button>
+                              )}
+                              {!itemVinculado && !isVinculando && (
+                                <button onClick={() => { setOpVinculando(op.id); setOpBuscaVinc(""); }}
+                                  className="text-xs px-3 py-1.5 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors font-semibold cursor-pointer">
+                                  🔗 Vincular
+                                </button>
+                              )}
+                              <button onClick={() => pularOP(op.id)}
+                                className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer">
+                                Pular
                               </button>
-                            )}
-                            <button onClick={() => pularOP(op.id)}
-                              className="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer">
-                              Pular
-                            </button>
+                            </div>
                           </div>
+                          {/* Busca inline para vincular item não-vinculado */}
+                          {isVinculando && (
+                            <div className="mt-3 pt-3 border-t border-gray-100">
+                              <p className="text-[10px] font-bold text-blue-600 mb-1.5">Selecione o item correspondente no EtiquetaMO:</p>
+                              <input
+                                type="text"
+                                placeholder="🔍 Buscar item..."
+                                value={opBuscaVinc}
+                                onChange={(e) => setOpBuscaVinc(e.target.value)}
+                                autoFocus
+                                className="w-full px-3 py-2 rounded-lg border border-blue-200 text-sm focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 bg-white mb-2"
+                              />
+                              <div className="max-h-40 overflow-y-auto space-y-1">
+                                {itensVincBusca.map((item) => (
+                                  <button
+                                    key={item.id}
+                                    onClick={() => abrirModalOP(op, item)}
+                                    className="w-full text-left px-3 py-2 rounded-lg bg-gray-50 hover:bg-blue-50 hover:border-blue-300 border border-gray-200 text-sm font-medium text-[var(--marrom)] cursor-pointer transition-all flex items-center justify-between"
+                                  >
+                                    <span>{item.name}</span>
+                                    <span className="text-[10px] text-gray-400">{item.code || ""}</span>
+                                  </button>
+                                ))}
+                                {itensVincBusca.length === 0 && opBuscaVinc.trim() && (
+                                  <p className="text-xs text-gray-400 text-center py-2">Nenhum item encontrado</p>
+                                )}
+                              </div>
+                              <button onClick={() => { setOpVinculando(null); setOpBuscaVinc(""); }}
+                                className="mt-2 text-xs text-gray-500 hover:text-gray-700 cursor-pointer font-medium">
+                                ← Cancelar vinculação
+                              </button>
+                            </div>
+                          )}
                         </div>
                       );
                     })}
@@ -918,7 +950,7 @@ ${linhas}
             const podeSalvar = regraProdutor === "obrigatorio" ? modalProdutores.length > 0 : true;
 
             return (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setModalItem(null)}>
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => { setModalItem(null); setOpSelecionada(null); }}>
               <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
                 {/* Header com nome */}
                 <div className="bg-[var(--vermelho)] px-4 py-3 text-white">
@@ -1187,7 +1219,7 @@ ${linhas}
                   >
                     🛒 Adicionar
                   </button>
-                  <button onClick={() => setModalItem(null)} className="px-4 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer transition-all">
+                  <button onClick={() => { setModalItem(null); setOpSelecionada(null); }} className="px-4 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600 hover:bg-gray-200 cursor-pointer transition-all">
                     Cancelar
                   </button>
                 </div>
