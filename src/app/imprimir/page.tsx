@@ -64,14 +64,14 @@ function normalizar(s: string): string {
 // dateUtils e labelHtml importados do módulo compartilhado
 
 /** Famílias com regras especiais (comparação case-insensitive) */
-const FAMILIAS_CONTAGEM_OPCIONAL = ["barra de gelatos", "food service"];
+const FAMILIAS_CONTAGEM_OPCIONAL = ["barra de gelatos", "baldes"];
 const FAMILIA_USO_CONSUMO = "uso e consumo";
 const FAMILIA_INSUMOS = "insumos";
 
 /**
  * Determina se o campo "produtor" é obrigatório, opcional ou oculto.
  * Regras:
- *   Contagem → oculto por padrão; opcional para Barra de Gelatos e Food Service
+ *   Contagem → oculto por padrão; opcional para Barra de Gelatos e Baldes
  *   Produção → oculto para Uso e Consumo; opcional para Insumos; obrigatório para o resto
  */
 function regrasProdutor(modo: StepTipo, categoriaNome: string): "obrigatorio" | "opcional" | "oculto" {
@@ -497,9 +497,9 @@ export default function ImprimirWizard() {
   }
 
   function textoArmazenagem(tipo: string | null): string {
-    if (tipo === "congelado") return "Conservar congelado (-12°C a -18°C)";
-    if (tipo === "refrigerado") return "Conservar refrigerado (0°C a 5°C)";
-    return "Conservar em temperatura ambiente (até 25°C)";
+    if (tipo === "congelado") return "Conservar Congelado (-16°C a -22°C) - NÃO PERMITE RECONGELAMENTO";
+    if (tipo === "refrigerado") return "Conservar em ambiente resfriado (2°C a 6°C)";
+    return "Conservar em temperatura ambiente";
   }
 
   // Layout de etiquetas: importado de @/lib/labelHtml (fonte de verdade)
@@ -896,7 +896,7 @@ ${linhas}
               "sorvetes": { icon: "🍦", bg: "bg-purple-50", border: "border-purple-200 hover:border-purple-400" },
               "picolés": { icon: "🧊", bg: "bg-cyan-50", border: "border-cyan-200 hover:border-cyan-400" },
               "barra de gelatos": { icon: "🍫", bg: "bg-amber-50", border: "border-amber-200 hover:border-amber-400" },
-              "food service": { icon: "🍽️", bg: "bg-blue-50", border: "border-blue-200 hover:border-blue-400" },
+              "baldes": { icon: "🪣", bg: "bg-blue-50", border: "border-blue-200 hover:border-blue-400" },
               "uso e consumo": { icon: "🏠", bg: "bg-green-50", border: "border-green-200 hover:border-green-400" },
               "insumos": { icon: "🧪", bg: "bg-orange-50", border: "border-orange-200 hover:border-orange-400" },
               "coberturas": { icon: "🫕", bg: "bg-rose-50", border: "border-rose-200 hover:border-rose-400" },

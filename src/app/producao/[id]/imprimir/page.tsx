@@ -26,7 +26,7 @@ interface ItemComDetalhes extends ProductionOrderItem {
 }
 
 /** Categorias excluídas da regra de validade do pacote (DEC-021) */
-const CATEGORIAS_SEM_VALIDADE_PACOTE = ["food service", "producao", "produção"];
+const CATEGORIAS_SEM_VALIDADE_PACOTE = ["baldes", "producao", "produção"];
 
 // Funções locais removidas — agora importadas de @/lib/dateUtils e @/lib/labelHtml
 

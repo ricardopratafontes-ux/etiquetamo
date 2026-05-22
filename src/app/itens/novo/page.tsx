@@ -187,11 +187,11 @@ export default function NovoItem() {
                     </button>
                     <button type="button" onClick={() => setTipoArmazenagem("refrigerado")} className={"flex flex-col items-center gap-0.5 py-2 rounded-xl cursor-pointer transition-all " + (tipoArmazenagem === "refrigerado" ? "bg-[var(--vermelho)] text-white shadow-md" : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")}>
                       <span className="text-sm font-bold">Refrigerado</span>
-                      <span className={"text-[10px] " + (tipoArmazenagem === "refrigerado" ? "text-white/80" : "text-gray-500")}>Manter em 5&#xB0;C</span>
+                      <span className={"text-[10px] " + (tipoArmazenagem === "refrigerado" ? "text-white/80" : "text-gray-500")}>2°C a 6°C</span>
                     </button>
                     <button type="button" onClick={() => setTipoArmazenagem("congelado")} className={"flex flex-col items-center gap-0.5 py-2 rounded-xl cursor-pointer transition-all " + (tipoArmazenagem === "congelado" ? "bg-[var(--vermelho)] text-white shadow-md" : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")}>
                       <span className="text-sm font-bold">Congelado</span>
-                      <span className={"text-[10px] " + (tipoArmazenagem === "congelado" ? "text-white/80" : "text-gray-500")}>Manter entre -14 e -22&#xB0;C</span>
+                      <span className={"text-[10px] " + (tipoArmazenagem === "congelado" ? "text-white/80" : "text-gray-500")}>-16°C a -22°C</span>
                     </button>
                   </div>
                 </div>

@@ -204,12 +204,12 @@ export default function EditarItem() {
                     <button type="button" onClick={() => setTipoArmazenagem("refrigerado")} className={"flex flex-col items-center gap-1 py-3 rounded-xl cursor-pointer transition-all " + (tipoArmazenagem === "refrigerado" ? "bg-[var(--vermelho)] text-white shadow-md" : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")}>
                       <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2v24M14 2l-4 4M14 2l4 4M14 26l-4-4M14 26l4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.4 8l18.2 10.5M3.4 8l1.4 5.2M3.4 8l5.2 1.4M24.6 20l-1.4-5.2M24.6 20l-5.2-1.4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.4 20l18.2-10.5M3.4 20l5.2-1.4M3.4 20l1.4-5.2M24.6 8l-5.2 1.4M24.6 8l-1.4 5.2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
                       <span className="text-sm font-bold">Refrigerado</span>
-                      <span className={"text-[10px] " + (tipoArmazenagem === "refrigerado" ? "text-white/80" : "text-gray-500")}>Manter em 5°C</span>
+                      <span className={"text-[10px] " + (tipoArmazenagem === "refrigerado" ? "text-white/80" : "text-gray-500")}>2°C a 6°C</span>
                     </button>
                     <button type="button" onClick={() => setTipoArmazenagem("congelado")} className={"flex flex-col items-center gap-1 py-3 rounded-xl cursor-pointer transition-all " + (tipoArmazenagem === "congelado" ? "bg-[var(--vermelho)] text-white shadow-md" : "bg-[var(--bege)] text-[var(--marrom)] hover:bg-gray-200")}>
                       <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14 2v24M14 2l-4 4M14 2l4 4M14 26l-4-4M14 26l4-4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.4 8l18.2 10.5M3.4 8l1.4 5.2M3.4 8l5.2 1.4M24.6 20l-1.4-5.2M24.6 20l-5.2-1.4" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3.4 20l18.2-10.5M3.4 20l5.2-1.4M3.4 20l1.4-5.2M24.6 8l-5.2 1.4M24.6 8l-1.4 5.2" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/><circle cx="14" cy="14" r="3" fill="currentColor"/></svg>
                       <span className="text-sm font-bold">Congelado</span>
-                      <span className={"text-[10px] " + (tipoArmazenagem === "congelado" ? "text-white/80" : "text-gray-500")}>-14 a -22°C</span>
+                      <span className={"text-[10px] " + (tipoArmazenagem === "congelado" ? "text-white/80" : "text-gray-500")}>-16°C a -22°C</span>
                     </button>
                   </div>
                 </div>

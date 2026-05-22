@@ -119,7 +119,7 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
   - Peso = 0,00 → perguntar ao usuário (implementar em futuro review de importação)
   - Peso preenchido → aceitar e imprimir na etiqueta (zona de info, junto com lote)
   - NÃO PERECÍVEL → nunca perguntar peso, não exigir armazenagem
-  - Categoria FOOD SERVICE → nunca mostrar peso na etiqueta
+  - Categoria BALDES → nunca mostrar peso na etiqueta
 - **Dois operadores na impressão** (obrigatórios):
   - "Quem fez a produção" → iniciais vão na etiqueta (quadrado 5mm×5mm)
   - "Quem está imprimindo" → registrado no histórico, NÃO vai na etiqueta
@@ -137,7 +137,7 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 
 ### DEC-021 — Lote do fabricante + validade do pacote como teto
 - **Data**: 2026-05-21
-- **Decisão**: Para itens que NÃO são da família FOOD SERVICE nem PRODUÇÃO e possuem lote (`uses_lot = true`):
+- **Decisão**: Para itens que NÃO são da família BALDES nem PRODUÇÃO e possuem lote (`uses_lot = true`):
   1. O lote informado na impressão é o **lote do fabricante** (impresso no balde/saco/pacote). O operador digita manualmente. O UI deve deixar claro que é "Lote do Fabricante".
   2. Ao informar o lote, aparece um **popup perguntando a data de validade** impressa no saco/pacote original.
   3. **Regra de validade**: a data final da etiqueta é **a menor** entre:
@@ -186,7 +186,7 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 ### DEC-026 — Regras de produtor por modo e família
 - **Data**: 2026-05-21
 - **Decisão**: O campo "Quem produziu?" na modal do wizard segue regras condicionais:
-  - **Contagem**: oculto por padrão. Opcional apenas para famílias "Barra de Gelatos" e "Food Service".
+  - **Contagem**: oculto por padrão. Opcional apenas para famílias "Barra de Gelatos" e "Baldes".
   - **Produção**: oculto para família "Uso e Consumo". Opcional para "Insumos". Obrigatório para todas as demais.
 - **Motivo**: Nem todo item precisa de rastreabilidade de produtor. Itens de uso/consumo e contagem geral não são fabricados na cozinha.
 - **Alternativas descartadas**: Produtor obrigatório para tudo (impraticável para contagem e materiais).
