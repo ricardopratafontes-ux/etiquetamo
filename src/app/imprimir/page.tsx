@@ -55,6 +55,10 @@ function arredondarPar(n: number): number {
   return n % 2 === 0 ? n : n + 1;
 }
 
+function normalizar(s: string): string {
+  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
 // dateUtils e labelHtml importados do módulo compartilhado
 
 /** Famílias com regras especiais (comparação case-insensitive) */
@@ -176,7 +180,34 @@ export default function ImprimirWizard() {
       .eq("organization_id", org.id)
       .eq("status", "pending")
       .order("created_at", { ascending: false });
-    setFilaOP((opData || []) as PrintQueueItem[]);
+
+    const ops = (opData || []) as PrintQueueItem[];
+    const itensLocal = itensRes.data || [];
+
+    // Auto-vincular OPs sem item_id usando match por nome
+    for (const op of ops) {
+      if (op.item_id) continue; // já vinculado
+      const nomeOP = normalizar(op.product_name);
+      // Tentar match: nome do item contido no nome OMIE ou vice-versa
+      const matches = itensLocal.filter((it: ItemDB) => {
+        const nomeItem = normalizar(it.name);
+        return nomeOP.includes(nomeItem) || nomeItem.includes(nomeOP);
+      });
+      let bestMatch: ItemDB | null = null;
+      if (matches.length === 1) {
+        bestMatch = matches[0] as ItemDB;
+      } else if (matches.length > 1) {
+        // Pegar o mais específico (nome mais longo)
+        bestMatch = matches.sort((a: ItemDB, b: ItemDB) => b.name.length - a.name.length)[0] as ItemDB;
+      }
+      if (bestMatch) {
+        // Atualizar no banco e na memória
+        op.item_id = bestMatch.id;
+        supabase.from("omie_print_queue").update({ item_id: bestMatch.id }).eq("id", op.id);
+      }
+    }
+
+    setFilaOP(ops);
 
     setLoading(false);
   }, []);
