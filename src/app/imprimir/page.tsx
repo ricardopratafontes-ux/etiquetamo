@@ -3,6 +3,8 @@
 import NavBar from "@/components/NavBar";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { dataHoje, calcValidade, dataCurta } from "@/lib/dateUtils";
+import { gerarCelulaEtiqueta, gerarCelulaAvulsa, type DadosEtiquetaProduto, type DadosEtiquetaAvulsa } from "@/lib/labelHtml";
 
 const ORG_SLUG = "gelateria";
 
@@ -53,22 +55,7 @@ function arredondarPar(n: number): number {
   return n % 2 === 0 ? n : n + 1;
 }
 
-function dataHoje(): string {
-  const d = new Date();
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
-}
-
-function calcValidade(diasValidade: number | null): string {
-  if (!diasValidade) return "—";
-  const d = new Date();
-  d.setDate(d.getDate() + diasValidade);
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
-}
-
-/** Encurta data de dd/mm/aaaa para dd/mm/aa */
-function dataCurta(data: string): string {
-  return data.replace(/\/(\d{4})$/, (_, ano: string) => "/" + ano.slice(2));
-}
+// dateUtils e labelHtml importados do módulo compartilhado
 
 /** Famílias com regras especiais (comparação case-insensitive) */
 const FAMILIAS_CONTAGEM_OPCIONAL = ["barra de gelatos", "food service"];
@@ -336,90 +323,7 @@ export default function ImprimirWizard() {
     }).join(" ");
   }
 
-  // --- Gerar HTML de uma etiqueta individual (layout estabelecido) ---
-  function gerarCelulaEtiqueta(
-    nome: string, fabricacao: string, validade: string,
-    lote: string, info: string, produtorIniciais: string, logoUrl: string
-  ): string {
-    const temInfo = !!info;
-    // Fonte dinâmica: reduz para nomes longos (campos fixos, só nome adapta)
-    const len = nome.length;
-    const baseNome = temInfo ? 16 : 18;
-    const fNome =
-      len <= 15 ? `${baseNome}pt` :
-      len <= 22 ? `${baseNome - 2}pt` :
-      len <= 30 ? `${baseNome - 4}pt` :
-      len <= 40 ? `${baseNome - 6}pt` :
-      `${baseNome - 8}pt`;
-    const fLote = temInfo ? "9pt" : "10pt";
-    const fInfo = "7pt";
-
-    const operadorHTML = produtorIniciais
-      ? `<div style="position:absolute;right:0;width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;">${produtorIniciais}</div>`
-      : "";
-
-    const loteHTML = lote
-      ? `<div style="font-size:${fLote};font-weight:bold;line-height:1.4;">Lote: ${lote}</div>`
-      : "";
-
-    const infoHTML = temInfo
-      ? `<div style="font-size:${fInfo};font-style:italic;line-height:1.3;margin-top:0.5mm;">${info}</div>`
-      : "";
-
-    return `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;word-break:break-word;">${nome}</div>
-      <div style="display:flex;flex-direction:column;align-items:center;padding-top:0.5mm;padding-bottom:0.5mm;">
-        <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">FAB: ${dataCurta(fabricacao)}</div>
-        <div style="display:flex;align-items:center;width:100%;position:relative;">
-          <div style="width:100%;text-align:center;font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">VAL: ${dataCurta(validade)}</div>
-          ${operadorHTML}
-        </div>
-      </div>
-      <div style="display:flex;align-items:flex-start;">
-        <div style="flex:1;">${loteHTML}${infoHTML}</div>
-        <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
-          <div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>
-          <img src="${logoUrl}" style="height:5mm;opacity:0.8;margin-top:0.5mm;" />
-        </div>
-      </div>
-    </div>`;
-  }
-
-  // --- Gerar célula de etiqueta complementar (layout avulsa) ---
-  function gerarCelulaComplementar(dados: DadosComplementar, logoUrl: string): string {
-    const temQtd = dados.quantidade && dados.quantidade.trim();
-    const temCampos = dados.campos.filter((c) => c.valor.trim()).length > 0;
-    const temExtra = dados.campoExtra && dados.campoExtra.trim();
-    const linhasAbaixo = (temQtd ? 1 : 0) + (temCampos ? 1 : 0) + (temExtra ? 1 : 0);
-    const fNome = linhasAbaixo >= 3 ? "14pt" : linhasAbaixo >= 2 ? "16pt" : "18pt";
-
-    let qtdHTML = "";
-    if (temQtd) {
-      qtdHTML = `<div style="font-size:14pt;font-weight:bold;text-align:center;padding:1mm 0;text-transform:uppercase;">QTD: ${dados.quantidade}</div>`;
-    }
-    let camposHTML = "";
-    const camposAtivos = dados.campos.filter((c) => c.valor.trim());
-    if (camposAtivos.length > 0) {
-      camposHTML = camposAtivos.map((c) =>
-        `<div style="font-size:9pt;line-height:1.3;"><strong>${c.label}:</strong> ${c.valor}</div>`
-      ).join("");
-    }
-    let extraHTML = "";
-    if (temExtra) {
-      extraHTML = `<div style="font-size:8pt;font-style:italic;line-height:1.3;margin-top:0.5mm;color:#333;">${dados.campoExtra}</div>`;
-    }
-
-    return `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-      <div style="font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;overflow:hidden;">${dados.nome || "NOME"}</div>
-      ${qtdHTML}
-      <div style="display:flex;align-items:flex-start;margin-top:auto;">
-        <div style="flex:1;">${camposHTML}${extraHTML}</div>
-        <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
-          <img src="${logoUrl}" style="height:5mm;opacity:0.8;" />
-        </div>
-      </div>
-    </div>`;
-  }
+  // Layout de etiquetas: importado de @/lib/labelHtml (fonte de verdade)
 
   // --- Impressão ---
   async function imprimirTudo() {
@@ -436,15 +340,21 @@ export default function ImprimirWizard() {
       const prods = iniciaisProdutores(item.produtores);
 
       for (let i = 0; i < item.quantidade; i++) {
-        celulas.push(gerarCelulaEtiqueta(
-          item.item.name, fabricacao, validade,
-          item.lote, item.infoComplementar || "", prods, logoUrl
-        ));
+        celulas.push(gerarCelulaEtiqueta({
+          nome: item.item.name, fabricacao, validade,
+          lote: item.lote, info: item.infoComplementar || "", produtorIniciais: prods, logoUrl
+        }));
       }
       // Etiquetas complementares (mesma qtd)
       if (item.incluirComplementar && item.complementarDados) {
         for (let i = 0; i < item.quantidade; i++) {
-          celulas.push(gerarCelulaComplementar(item.complementarDados, logoUrl));
+          celulas.push(gerarCelulaAvulsa({
+            nome: item.complementarDados.nome,
+            quantidade: item.complementarDados.quantidade,
+            campos: item.complementarDados.campos,
+            campoExtra: item.complementarDados.campoExtra,
+            logoUrl
+          }));
         }
       }
     }
@@ -728,11 +638,11 @@ ${linhas}
                     ) : (
                       <div className="space-y-3">
                         {carrinho.map((c, idx) => {
-                          const previewHTML = gerarCelulaEtiqueta(
-                            c.item.name, dataHoje(), calcValidade(c.item.expiry_days),
-                            c.lote, c.infoComplementar || "", iniciaisProdutores(c.produtores),
-                            "/logo-mo.png"
-                          );
+                          const previewHTML = gerarCelulaEtiqueta({
+                            nome: c.item.name, fabricacao: dataHoje(), validade: calcValidade(c.item.expiry_days),
+                            lote: c.lote, info: c.infoComplementar || "", produtorIniciais: iniciaisProdutores(c.produtores),
+                            logoUrl: "/logo-mo.png"
+                          });
                           return (
                           <div key={idx} className="bg-[var(--bege)] rounded-xl p-3">
                             <div className="flex items-start justify-between gap-2">
@@ -745,7 +655,7 @@ ${linhas}
                                 <div style={{ transform: "scale(0.53)", transformOrigin: "top left", width: "50mm", height: "50mm" }} dangerouslySetInnerHTML={{ __html: previewHTML }} />
                               </div>
                               {c.incluirComplementar && c.complementarDados && (() => {
-                                const complHTML = gerarCelulaComplementar(c.complementarDados, "/logo-mo.png");
+                                const complHTML = gerarCelulaAvulsa({ nome: c.complementarDados.nome, quantidade: c.complementarDados.quantidade, campos: c.complementarDados.campos, campoExtra: c.complementarDados.campoExtra, logoUrl: "/logo-mo.png" });
                                 return (
                                   <div className="border border-purple-400 rounded bg-purple-50" style={{ width: "100px", height: "100px", overflow: "hidden" }}>
                                     <div style={{ transform: "scale(0.53)", transformOrigin: "top left", width: "50mm", height: "50mm" }} dangerouslySetInnerHTML={{ __html: complHTML }} />

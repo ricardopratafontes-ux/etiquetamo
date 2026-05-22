@@ -3,6 +3,8 @@
 import NavBar from "@/components/NavBar";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { dataHoje, dataCurta } from "@/lib/dateUtils";
+import { gerarCelulaEtiqueta, gerarCelulaAvulsa } from "@/lib/labelHtml";
 
 const ORG_SLUG = "gelateria";
 
@@ -51,98 +53,7 @@ function formatDateTime(dateStr: string): string {
   return d.toLocaleDateString("pt-BR") + " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
-function dataHoje(): string {
-  const d = new Date();
-  return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
-}
-
-function dataCurta(data: string): string {
-  return data.replace(/\/(\d{4})$/, (_, ano: string) => "/" + ano.slice(2));
-}
-
-// Gera HTML da etiqueta para reimpressão (mesmo layout do wizard)
-function gerarCelulaEtiqueta(
-  nome: string, fabricacao: string, validade: string,
-  lote: string, info: string, operadorIniciais: string, logoUrl: string
-): string {
-  const temInfo = !!info;
-  const len = nome.length;
-  const baseNome = temInfo ? 16 : 18;
-  const fNome =
-    len <= 15 ? `${baseNome}pt` :
-    len <= 22 ? `${baseNome - 2}pt` :
-    len <= 30 ? `${baseNome - 4}pt` :
-    len <= 40 ? `${baseNome - 6}pt` :
-    `${baseNome - 8}pt`;
-  const fLote = temInfo ? "9pt" : "10pt";
-  const fInfo = "7pt";
-
-  const operadorHTML = operadorIniciais
-    ? `<div style="position:absolute;right:0;width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;">${operadorIniciais}</div>`
-    : "";
-
-  const loteHTML = lote
-    ? `<div style="font-size:${fLote};font-weight:bold;line-height:1.4;">Lote: ${lote}</div>`
-    : "";
-
-  const infoHTML = temInfo
-    ? `<div style="font-size:${fInfo};font-style:italic;line-height:1.3;margin-top:0.5mm;">${info}</div>`
-    : "";
-
-  return `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;word-break:break-word;">${nome}</div>
-    <div style="display:flex;flex-direction:column;align-items:center;padding-top:0.5mm;padding-bottom:0.5mm;">
-      <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">FAB: ${dataCurta(fabricacao)}</div>
-      <div style="display:flex;align-items:center;width:100%;position:relative;">
-        <div style="width:100%;text-align:center;font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">VAL: ${dataCurta(validade)}</div>
-        ${operadorHTML}
-      </div>
-    </div>
-    <div style="display:flex;align-items:flex-start;">
-      <div style="flex:1;">${loteHTML}${infoHTML}</div>
-      <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
-        <div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>
-        <img src="${logoUrl}" style="height:5mm;opacity:0.8;margin-top:0.5mm;" />
-      </div>
-    </div>
-  </div>`;
-}
-
-// Gera HTML da etiqueta avulsa para reimpressão
-function gerarCelulaAvulsa(dados: AvulsaRecord["label_data"], logoUrl: string): string {
-  const temQtd = dados.quantidade && dados.quantidade.trim();
-  const temCampos = dados.campos.filter((c) => c.valor.trim()).length > 0;
-  const temExtra = dados.campoExtra && dados.campoExtra.trim();
-  const linhasAbaixo = (temQtd ? 1 : 0) + (temCampos ? 1 : 0) + (temExtra ? 1 : 0);
-  const fNome = linhasAbaixo >= 3 ? "14pt" : linhasAbaixo >= 2 ? "16pt" : "18pt";
-
-  let qtdHTML = "";
-  if (temQtd) {
-    qtdHTML = `<div style="font-size:14pt;font-weight:bold;text-align:center;padding:1mm 0;text-transform:uppercase;">QTD: ${dados.quantidade}</div>`;
-  }
-  let camposHTML = "";
-  const camposAtivos = dados.campos.filter((c) => c.valor.trim());
-  if (camposAtivos.length > 0) {
-    camposHTML = camposAtivos.map((c) =>
-      `<div style="font-size:9pt;line-height:1.3;"><strong>${c.label}:</strong> ${c.valor}</div>`
-    ).join("");
-  }
-  let extraHTML = "";
-  if (temExtra) {
-    extraHTML = `<div style="font-size:8pt;font-style:italic;line-height:1.3;margin-top:0.5mm;color:#333;">${dados.campoExtra}</div>`;
-  }
-
-  return `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;overflow:hidden;">${dados.nome || "NOME"}</div>
-    ${qtdHTML}
-    <div style="display:flex;align-items:flex-start;margin-top:auto;">
-      <div style="flex:1;">${camposHTML}${extraHTML}</div>
-      <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
-        <img src="${logoUrl}" style="height:5mm;opacity:0.8;" />
-      </div>
-    </div>
-  </div>`;
-}
+// dateUtils e labelHtml importados do módulo compartilhado
 
 function arredondarPar(n: number): number {
   return n % 2 === 0 ? n : n + 1;
@@ -239,10 +150,10 @@ export default function HistoricoPage() {
     const fab = formatDate(record.fabrication_date);
     const val = record.expiry_date ? formatDate(record.expiry_date) : "—";
 
-    const celula = gerarCelulaEtiqueta(
-      record.product_name, fab, val,
-      record.lot || "", record.additional_info || "", opIniciais, logoUrl
-    );
+    const celula = gerarCelulaEtiqueta({
+      nome: record.product_name, fabricacao: fab, validade: val,
+      lote: record.lot || "", info: record.additional_info || "", produtorIniciais: opIniciais, logoUrl
+    });
 
     const total = arredondarPar(record.quantity);
     const celulas: string[] = [];
@@ -287,7 +198,7 @@ export default function HistoricoPage() {
   async function reimprimirAvulsa(record: AvulsaRecord) {
     setReimprindo(record.id);
     const logoUrl = window.location.origin + "/logo-mo.png";
-    const celula = gerarCelulaAvulsa(record.label_data, logoUrl);
+    const celula = gerarCelulaAvulsa({ ...record.label_data, logoUrl });
 
     const total = arredondarPar(record.quantity_printed);
     const celulas: string[] = [];

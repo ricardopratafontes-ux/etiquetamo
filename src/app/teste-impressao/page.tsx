@@ -2,21 +2,8 @@
 
 import Link from "next/link";
 import { useState, useRef, useCallback, useEffect } from "react";
-
-function dataHoje(): string {
-  return new Date().toLocaleDateString("pt-BR");
-}
-
-function dataValidade(dias: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + dias);
-  return d.toLocaleDateString("pt-BR");
-}
-
-/** Encurta data de dd/mm/aaaa para dd/mm/aa */
-function dataCurta(data: string): string {
-  return data.replace(/\/(\d{4})$/, (_, ano: string) => "/" + ano.slice(2));
-}
+import { dataHoje, dataValidade, dataCurta } from "@/lib/dateUtils";
+import { gerarCelulaEtiqueta, gerarLinhaImpressao, gerarPaginaImpressao } from "@/lib/labelHtml";
 
 interface EtiquetaProps {
   nome: string;
@@ -185,69 +172,23 @@ function Etiqueta({ nome, fabricacao, validade, lote, info, operador }: Etiqueta
   );
 }
 
-/**
- * Gera HTML puro da linha de etiquetas (2 iguais lado a lado).
- * Usado tanto na impressao local (popup) quanto na remota (print server).
- */
-function gerarHTMLEtiqueta(dados: EtiquetaProps, logoUrl?: string): string {
-  const temInfo = !!dados.info;
-  const fNome = temInfo ? "16pt" : "18pt";
-  const fLote = temInfo ? "9pt" : "10pt";
-  const fInfo = "7pt";
-  const logo = logoUrl || "/logo-mo.png";
+// gerarHTMLEtiqueta e gerarPaginaImpressao removidos — agora importados de @/lib/labelHtml
 
-  const operadorHTML = dados.operador
-    ? `<div style="position:absolute;right:0;width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;">${dados.operador}</div>`
-    : "";
-
-  const loteHTML = dados.lote
-    ? `<div style="font-size:${fLote};font-weight:bold;line-height:1.4;">Lote: ${dados.lote}</div>`
-    : "";
-
-  const infoHTML = temInfo
-    ? `<div style="font-size:${fInfo};font-style:italic;line-height:1.3;margin-top:0.5mm;">${dados.info}</div>`
-    : "";
-
-  const cell = `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">${dados.nome}</div>
-    <div style="display:flex;flex-direction:column;align-items:center;padding-top:0.5mm;padding-bottom:0.5mm;">
-      <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">FAB: ${dataCurta(dados.fabricacao)}</div>
-      <div style="display:flex;align-items:center;width:100%;position:relative;">
-        <div style="width:100%;text-align:center;font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">VAL: ${dataCurta(dados.validade)}</div>
-        ${operadorHTML}
-      </div>
-    </div>
-    <div style="display:flex;align-items:flex-start;">
-      <div style="flex:1;">${loteHTML}${infoHTML}</div>
-      <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
-        <div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>
-        <img src="${logo}" style="height:5mm;opacity:0.8;margin-top:0.5mm;" />
-      </div>
-    </div>
-  </div>`;
-  return `<div style="width:107mm;display:flex;padding-left:2mm;padding-right:2mm;gap:3mm;">${cell}${cell}</div>`;
-}
-
-/**
- * Gera pagina HTML completa para impressao via popup.
- * Contem APENAS as etiquetas — sem nenhum outro elemento.
- * Isso elimina etiquetas em branco causadas por elementos ocultos.
- */
-function gerarPaginaImpressao(dados: EtiquetaProps): string {
-  const logoAbsoluta = typeof window !== "undefined" ? window.location.origin + "/logo-mo.png" : "/logo-mo.png";
-  const conteudo = gerarHTMLEtiqueta(dados, logoAbsoluta);
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Etiqueta</title>
-<style>
-  @page { margin: 0; size: 107mm 50mm; }
-  html, body { margin: 0; padding: 0; width: 107mm; height: 50mm; overflow: hidden; }
-</style>
-</head>
-<body>${conteudo}</body>
-</html>`;
+/** Helper local: gera HTML de impressão para um único EtiquetaProps */
+function montarHtmlTeste(dados: EtiquetaProps): string {
+  const logoUrl = typeof window !== "undefined" ? window.location.origin + "/logo-mo.png" : "/logo-mo.png";
+  const linha = gerarLinhaImpressao(
+    gerarCelulaEtiqueta({
+      nome: dados.nome,
+      fabricacao: dados.fabricacao,
+      validade: dados.validade,
+      lote: dados.lote,
+      info: dados.info,
+      produtorIniciais: dados.operador,
+      logoUrl,
+    })
+  );
+  return gerarPaginaImpressao([linha]);
 }
 
 type PrintMode = "local" | "remote";
@@ -324,7 +265,7 @@ export default function TesteImpressao() {
       return;
     }
     doc.open();
-    doc.write(gerarPaginaImpressao(etiquetaTeste));
+    doc.write(montarHtmlTeste(etiquetaTeste));
     doc.close();
 
     setTimeout(() => {
@@ -345,7 +286,18 @@ export default function TesteImpressao() {
       const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ html: gerarHTMLEtiqueta(etiquetaTeste), printer: selectedPrinter || undefined }),
+        body: JSON.stringify({
+          html: gerarLinhaImpressao(gerarCelulaEtiqueta({
+            nome: etiquetaTeste.nome,
+            fabricacao: etiquetaTeste.fabricacao,
+            validade: etiquetaTeste.validade,
+            lote: etiquetaTeste.lote,
+            info: etiquetaTeste.info,
+            produtorIniciais: etiquetaTeste.operador,
+            logoUrl: (typeof window !== "undefined" ? window.location.origin : "") + "/logo-mo.png",
+          })),
+          printer: selectedPrinter || undefined,
+        }),
       });
       const data = await res.json();
       if (data.success) {

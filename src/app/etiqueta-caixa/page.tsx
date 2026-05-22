@@ -3,16 +3,12 @@
 import NavBar from "@/components/NavBar";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { dataHoje, dataCurta } from "@/lib/dateUtils";
+import { gerarCelulaAvulsa } from "@/lib/labelHtml";
 
 const ORG_SLUG = "gelateria";
 
-function dataHoje(): string {
-  return new Date().toLocaleDateString("pt-BR");
-}
-
-function dataCurta(data: string): string {
-  return data.replace(/\/(\d{4})$/, (_, ano: string) => "/" + ano.slice(2));
-}
+// dateUtils e labelHtml importados do módulo compartilhado
 
 // --- Tipos ---
 interface CampoOpcional {
@@ -40,45 +36,7 @@ interface HistoricoItem {
   created_at: string;
 }
 
-// --- Layout da etiqueta avulsa ---
-function gerarCelulaAvulsa(dados: DadosEtiqueta, logoUrl: string): string {
-  const temQtd = dados.quantidade && dados.quantidade.trim();
-  const temCampos = dados.campos.filter((c) => c.valor.trim()).length > 0;
-  const temExtra = dados.campoExtra && dados.campoExtra.trim();
-
-  // Fonte do nome: ajusta baseado em quanta coisa tem embaixo
-  const linhasAbaixo = (temQtd ? 1 : 0) + (temCampos ? 1 : 0) + (temExtra ? 1 : 0);
-  const fNome = linhasAbaixo >= 3 ? "14pt" : linhasAbaixo >= 2 ? "16pt" : "18pt";
-
-  let qtdHTML = "";
-  if (temQtd) {
-    qtdHTML = `<div style="font-size:14pt;font-weight:bold;text-align:center;padding:1mm 0;text-transform:uppercase;">QTD: ${dados.quantidade}</div>`;
-  }
-
-  let camposHTML = "";
-  const camposAtivos = dados.campos.filter((c) => c.valor.trim());
-  if (camposAtivos.length > 0) {
-    camposHTML = camposAtivos.map((c) =>
-      `<div style="font-size:9pt;line-height:1.3;"><strong>${c.label}:</strong> ${c.valor}</div>`
-    ).join("");
-  }
-
-  let extraHTML = "";
-  if (temExtra) {
-    extraHTML = `<div style="font-size:8pt;font-style:italic;line-height:1.3;margin-top:0.5mm;color:#333;">${dados.campoExtra}</div>`;
-  }
-
-  return `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;overflow:hidden;">${dados.nome || "NOME"}</div>
-    ${qtdHTML}
-    <div style="display:flex;align-items:flex-start;margin-top:auto;">
-      <div style="flex:1;">${camposHTML}${extraHTML}</div>
-      <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
-        <img src="${logoUrl}" style="height:5mm;opacity:0.8;" />
-      </div>
-    </div>
-  </div>`;
-}
+// Layout da etiqueta avulsa: importado de @/lib/labelHtml
 
 // --- Componente React de preview ---
 function PreviewEtiqueta({ dados }: { dados: DadosEtiqueta }) {
@@ -241,7 +199,7 @@ export default function EtiquetasAvulsasPage() {
     const logoUrl = window.location.origin + "/logo-mo.png";
 
     // Gera as células
-    const celula = gerarCelulaAvulsa(dadosEtiqueta, logoUrl);
+    const celula = gerarCelulaAvulsa({ ...dadosEtiqueta, logoUrl });
     const totalCelulas: string[] = [];
     for (let i = 0; i < qtdEtiquetas; i++) totalCelulas.push(celula);
     // Arredondar para par

@@ -5,21 +5,8 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import type { ProductionOrder, ProductionOrderItem, Item } from "@/types/database";
 import { useParams, useRouter } from "next/navigation";
-
-/** Encurta data de dd/mm/aaaa para dd/mm/aa */
-function dataCurta(data: string): string {
-  return data.replace(/\/(\d{4})$/, (_, ano: string) => "/" + ano.slice(2));
-}
-
-function dataHoje(): string {
-  return new Date().toLocaleDateString("pt-BR");
-}
-
-function dataValidade(dias: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() + dias);
-  return d.toLocaleDateString("pt-BR");
-}
+import { dataCurta, dataHoje, dataValidade, parseDateBR, menorData } from "@/lib/dateUtils";
+import { gerarCelulaEtiqueta, gerarLinhaImpressao, gerarPaginaImpressao } from "@/lib/labelHtml";
 
 interface EtiquetaDados {
   nome: string;
@@ -41,79 +28,25 @@ interface ItemComDetalhes extends ProductionOrderItem {
 /** Categorias excluídas da regra de validade do pacote (DEC-021) */
 const CATEGORIAS_SEM_VALIDADE_PACOTE = ["food service", "producao", "produção"];
 
-function parseDateBR(str: string): Date | null {
-  const parts = str.split("/");
-  if (parts.length !== 3) return null;
-  const d = parseInt(parts[0]), m = parseInt(parts[1]);
-  let y = parseInt(parts[2]);
-  if (y < 100) y += 2000;
-  if (isNaN(d) || isNaN(m) || isNaN(y)) return null;
-  return new Date(y, m - 1, d);
-}
+// Funções locais removidas — agora importadas de @/lib/dateUtils e @/lib/labelHtml
 
-function menorData(dataCalcStr: string, dataPacoteStr: string): string {
-  const calc = parseDateBR(dataCalcStr);
-  const pacote = parseDateBR(dataPacoteStr);
-  if (!calc || !pacote) return dataCalcStr;
-  return pacote < calc ? dataPacoteStr : dataCalcStr;
-}
-
-function gerarHTMLEtiqueta(dados: EtiquetaDados, logoUrl?: string): string {
-  const temInfo = !!dados.info;
-  const fNome = temInfo ? "16pt" : "18pt";
-  const fLote = temInfo ? "9pt" : "10pt";
-  const fInfo = "7pt";
-  const logo = logoUrl || "/logo-mo.png";
-
-  const operadorHTML = dados.operador
-    ? `<div style="position:absolute;right:0;width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;">${dados.operador}</div>`
-    : "";
-
-  const loteHTML = dados.lote
-    ? `<div style="font-size:${fLote};font-weight:bold;line-height:1.4;">Lote: ${dados.lote}</div>`
-    : "";
-
-  const infoHTML = temInfo
-    ? `<div style="font-size:${fInfo};font-style:italic;line-height:1.3;margin-top:0.5mm;">${dados.info}</div>`
-    : "";
-
-  const cell = `<div style="width:50mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
-    <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;">${dados.nome}</div>
-    <div style="display:flex;flex-direction:column;align-items:center;padding-top:0.5mm;padding-bottom:0.5mm;">
-      <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">FAB: ${dataCurta(dados.fabricacao)}</div>
-      <div style="display:flex;align-items:center;width:100%;position:relative;">
-        <div style="width:100%;text-align:center;font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">VAL: ${dataCurta(dados.validade)}</div>
-        ${operadorHTML}
-      </div>
-    </div>
-    <div style="display:flex;align-items:flex-start;">
-      <div style="flex:1;">${loteHTML}${infoHTML}</div>
-      <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
-        <div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>
-        <img src="${logo}" style="height:5mm;opacity:0.8;margin-top:0.5mm;" />
-      </div>
-    </div>
-  </div>`;
-  return `<div style="width:107mm;display:flex;padding-left:2mm;padding-right:2mm;gap:3mm;">${cell}${cell}</div>`;
-}
-
-function gerarPaginaImpressao(etiquetas: EtiquetaDados[]): string {
-  const logoAbsoluta = typeof window !== "undefined" ? window.location.origin + "/logo-mo.png" : "/logo-mo.png";
-  const linhas = etiquetas.map((e) => gerarHTMLEtiqueta(e, logoAbsoluta)).join("");
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Etiquetas - Ordem de Produção</title>
-<style>
-  @page { margin: 0; size: 107mm 50mm; }
-  html, body { margin: 0; padding: 0; width: 107mm; }
-  body > div { page-break-after: always; }
-  body > div:last-child { page-break-after: auto; }
-</style>
-</head>
-<body>${linhas}</body>
-</html>`;
+/** Helper: monta HTML de impressão a partir do array de EtiquetaDados */
+function montarHtmlImpressao(etiquetas: EtiquetaDados[]): string {
+  const logoUrl = typeof window !== "undefined" ? window.location.origin + "/logo-mo.png" : "/logo-mo.png";
+  const linhas = etiquetas.map((e) =>
+    gerarLinhaImpressao(
+      gerarCelulaEtiqueta({
+        nome: e.nome,
+        fabricacao: e.fabricacao,
+        validade: e.validade,
+        lote: e.lote,
+        info: e.info,
+        produtorIniciais: e.operador,
+        logoUrl,
+      })
+    )
+  );
+  return gerarPaginaImpressao(linhas);
 }
 
 export default function ImprimirOrdem() {
@@ -285,7 +218,7 @@ export default function ImprimirOrdem() {
     }
 
     // Gerar HTML e abrir popup de impressão
-    const html = gerarPaginaImpressao(etiquetas);
+    const html = montarHtmlImpressao(etiquetas);
     const popup = window.open("", "_blank", "width=450,height=600");
     if (popup) {
       popup.document.write(html);
@@ -355,7 +288,7 @@ export default function ImprimirOrdem() {
       });
     }
 
-    const html = gerarPaginaImpressao(etiquetas);
+    const html = montarHtmlImpressao(etiquetas);
     const popup = window.open("", "_blank", "width=450,height=600");
     if (popup) {
       popup.document.write(html);

@@ -87,7 +87,9 @@ export async function POST() {
     // eslint-disable-next-line no-constant-condition
     while (true) {
       try {
+        console.log(`[OMIE Sync] Buscando página ${pagina}...`);
         const response = await listarProdutos(pagina, 50);
+        console.log(`[OMIE Sync] Página ${pagina}: ${response.produto_servico_cadastro?.length || 0} produtos, total_registros=${response.total_de_registros}, total_paginas=${response.total_de_paginas}`);
         allProducts.push(...response.produto_servico_cadastro);
         totalOmie = response.total_de_registros;
 
@@ -95,7 +97,13 @@ export async function POST() {
         pagina++;
       } catch (err) {
         errors++;
-        console.error(`Erro ao buscar página ${pagina}:`, err);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        console.error(`[OMIE Sync] Erro ao buscar página ${pagina}:`, errMsg);
+        // Incluir detalhe do erro no resultado
+        await supabase
+          .from("omie_sync_log")
+          .update({ details: { error_page: pagina, error_message: errMsg } })
+          .eq("id", syncLog.id);
         break;
       }
     }
@@ -181,6 +189,12 @@ export async function POST() {
         quarantined,
         updated,
         errors,
+      },
+      debug: {
+        pages_fetched: pagina,
+        products_received: allProducts.length,
+        omie_key_present: !!process.env.OMIE_APP_KEY,
+        omie_secret_present: !!process.env.OMIE_APP_SECRET,
       },
     });
   } catch (error) {
