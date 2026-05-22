@@ -221,27 +221,37 @@ export default function ImprimirWizard() {
 
   // --- QR codes no preview (carrega lib CDN e preenche placeholders) ---
   useEffect(() => {
-    // Carregar lib qrcode-generator se ainda não carregou
-    if (typeof window !== "undefined" && !(window as unknown as Record<string, unknown>).qrcode) {
-      const existing = document.querySelector("script[src*='qrcode-generator']");
-      if (!existing) {
-        const s = document.createElement("script");
-        s.src = "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js";
-        s.async = true;
-        s.onload = () => preencherQRPreviews();
-        document.head.appendChild(s);
-        return;
+    if (typeof window === "undefined") return;
+    const win = window as unknown as Record<string, unknown>;
+
+    function carregarEPreencher() {
+      if (!win.qrcode) {
+        const existing = document.querySelector("script[src*='qrcode-generator']");
+        if (!existing) {
+          const s = document.createElement("script");
+          s.src = "https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js";
+          s.async = true;
+          s.onload = () => requestAnimationFrame(() => preencherQRPreviews());
+          document.head.appendChild(s);
+          return;
+        }
       }
+      // Aguardar React renderizar o DOM antes de buscar .qr-placeholder
+      requestAnimationFrame(() => {
+        setTimeout(() => preencherQRPreviews(), 50);
+      });
     }
-    preencherQRPreviews();
+
+    carregarEPreencher();
   }, [carrinho]);
 
   function preencherQRPreviews() {
-    const qrFunc = (window as unknown as Record<string, unknown>).qrcode as ((typeNumber: number, errorCorrection: string) => { addData: (d: string) => void; make: () => void; createImgTag: (cellSize: number, margin: number) => string }) | undefined;
+    const win = window as unknown as Record<string, unknown>;
+    const qrFunc = win.qrcode as ((typeNumber: number, errorCorrection: string) => { addData: (d: string) => void; make: () => void; createImgTag: (cellSize: number, margin: number) => string }) | undefined;
     if (!qrFunc) return;
     const els = document.querySelectorAll(".qr-placeholder");
     els.forEach((el) => {
-      if (el.querySelector("img")) return; // já preenchido
+      if (el.querySelector("img")) return;
       const code = el.getAttribute("data-qr");
       if (!code) return;
       try {
@@ -251,7 +261,7 @@ export default function ImprimirWizard() {
         const img = qr.createImgTag(2, 0);
         el.innerHTML = img;
         const imgEl = el.querySelector("img");
-        if (imgEl) imgEl.style.cssText = "width:10mm;height:10mm;";
+        if (imgEl) imgEl.style.cssText = "width:100%;height:100%;";
       } catch (_) {
         el.innerHTML = `<div style="width:10mm;height:10mm;display:flex;align-items:center;justify-content:center;font-size:5pt;border:0.5pt solid #000;">${code}</div>`;
       }
@@ -535,10 +545,10 @@ export default function ImprimirWizard() {
       celulas.push(celulas[celulas.length - 1]);
     }
 
-    // Monta linhas de 2 etiquetas (107mm = 2mm + 50mm + 3mm + 50mm + 2mm)
+    // Monta linhas de 2 etiquetas (110mm = 1mm + 54mm + 1mm + 54mm)
     let linhas = "";
     for (let i = 0; i < celulas.length; i += 2) {
-      linhas += `<div style="width:107mm;display:flex;padding-left:2mm;padding-right:2mm;gap:3mm;page-break-after:always;">${celulas[i]}${celulas[i + 1]}</div>`;
+      linhas += `<div style="width:110mm;display:flex;padding-left:1mm;gap:1mm;page-break-after:always;">${celulas[i]}${celulas[i + 1]}</div>`;
     }
 
     const html = `<!DOCTYPE html>
@@ -547,8 +557,8 @@ export default function ImprimirWizard() {
 <meta charset="utf-8">
 <title>Impressão EtiquetaMO</title>
 <style>
-  @page { margin: 0; size: 107mm 50mm; }
-  @media print { html, body { margin: 0; padding: 0; width: 107mm; } .no-print { display: none !important; } }
+  @page { margin: 0; size: 110mm 50mm; }
+  @media print { html, body { margin: 0; padding: 0; width: 110mm; } .no-print { display: none !important; } }
   html, body { margin: 0; padding: 0; }
 </style>
 </head>
@@ -1015,7 +1025,8 @@ ${linhas}
                           const previewHTML = gerarCelulaEtiqueta({
                             nome: c.item.name, fabricacao: dataHoje(), validade: calcValidade(c.item.expiry_days),
                             lote: c.lote, info: c.infoComplementar || "", produtorIniciais: iniciaisProdutores(c.produtores),
-                            logoUrl: "/logo-preta.jpeg"
+                            logoUrl: "/logo-preta.jpeg",
+                            qrCode: c.item.code || "",
                           });
                           return (
                           <div key={idx} className="bg-[var(--bege)] rounded-xl p-3">
@@ -1029,13 +1040,13 @@ ${linhas}
                             {/* Preview miniatura da etiqueta */}
                             <div className="mt-2 flex justify-center gap-1.5">
                               <div className="border border-gray-300 rounded bg-white" style={{ width: "100px", height: "100px", overflow: "hidden" }}>
-                                <div style={{ transform: "scale(0.53)", transformOrigin: "top left", width: "50mm", height: "50mm" }} dangerouslySetInnerHTML={{ __html: previewHTML }} />
+                                <div style={{ transform: "scale(0.49)", transformOrigin: "top left", width: "54mm", height: "50mm" }} dangerouslySetInnerHTML={{ __html: previewHTML }} />
                               </div>
                               {c.incluirComplementar && c.complementarDados && (() => {
                                 const complHTML = gerarCelulaAvulsa({ nome: c.complementarDados.nome, quantidade: c.complementarDados.quantidade, campos: c.complementarDados.campos, campoExtra: c.complementarDados.campoExtra, logoUrl: "/logo-preta.jpeg" });
                                 return (
                                   <div className="border border-purple-400 rounded bg-purple-50" style={{ width: "100px", height: "100px", overflow: "hidden" }}>
-                                    <div style={{ transform: "scale(0.53)", transformOrigin: "top left", width: "50mm", height: "50mm" }} dangerouslySetInnerHTML={{ __html: complHTML }} />
+                                    <div style={{ transform: "scale(0.49)", transformOrigin: "top left", width: "54mm", height: "50mm" }} dangerouslySetInnerHTML={{ __html: complHTML }} />
                                   </div>
                                 );
                               })()}

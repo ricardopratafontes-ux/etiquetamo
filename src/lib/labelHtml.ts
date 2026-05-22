@@ -19,7 +19,7 @@ export interface DadosEtiquetaProduto {
   info: string;
   produtorIniciais: string;
   logoUrl: string;
-  qrCode?: string; // Código do produto para gerar QR code
+  qrCode?: string;
 }
 
 export interface CampoOpcionalAvulsa {
@@ -35,32 +35,50 @@ export interface DadosEtiquetaAvulsa {
   logoUrl: string;
 }
 
-// ─── Etiqueta de Produto (53mm × 50mm) ──────────────────────────────────────
+// ─── Etiqueta de Produto (54mm x 50mm) ──────────────────────────────────────
 
 /**
- * Gera o HTML de UMA célula de etiqueta de produto (53mm × 50mm).
- * Inclui fonte dinâmica que reduz o nome para caber no espaço.
+ * Gera o HTML de UMA célula de etiqueta de produto (54mm x 50mm).
+ * Fonte dinâmica bidirecional: aumenta para nomes curtos, reduz para longos.
+ * Considera que nomes podem quebrar em 2 linhas para melhor aproveitamento.
  */
 export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
   const { nome, fabricacao, validade, lote, info, produtorIniciais, logoUrl } = dados;
   const temInfo = !!info;
 
-  // Fonte dinâmica: cresce para nomes curtos, reduz para longos (espaço do nome fixo)
+  // Fonte dinâmica bidirecional com consideração de quebra em 2 linhas.
+  // Largura útil ~50mm = ~142pt. Nomes que cabem em 2 linhas podem usar fonte maior.
+  // Estimativa: chars por linha ≈ 142 / (fontSize * 0.6)
   const len = nome.length;
   const baseNome = temInfo ? 16 : 18;
-  const fNome =
-    len <= 5  ? `${baseNome + 6}pt` :
-    len <= 8  ? `${baseNome + 4}pt` :
-    len <= 12 ? `${baseNome + 2}pt` :
-    len <= 15 ? `${baseNome}pt` :
-    len <= 22 ? `${baseNome - 2}pt` :
-    len <= 30 ? `${baseNome - 4}pt` :
-    len <= 40 ? `${baseNome - 6}pt` :
-    `${baseNome - 8}pt`;
+  let fNomeVal: number;
+  if (len <= 4) {
+    fNomeVal = baseNome + 8;
+  } else if (len <= 7) {
+    fNomeVal = baseNome + 5;
+  } else if (len <= 10) {
+    fNomeVal = baseNome + 3;
+  } else if (len <= 14) {
+    fNomeVal = baseNome + 1;
+  } else if (len <= 18) {
+    // Cabe em 2 linhas com fonte maior
+    fNomeVal = baseNome;
+  } else if (len <= 24) {
+    // 2 linhas com fonte média
+    fNomeVal = baseNome - 1;
+  } else if (len <= 32) {
+    fNomeVal = baseNome - 3;
+  } else if (len <= 42) {
+    fNomeVal = baseNome - 5;
+  } else {
+    fNomeVal = baseNome - 7;
+  }
+  const fNome = `${fNomeVal}pt`;
   const fLote = temInfo ? "9pt" : "10pt";
 
+  // Operador: quadradinho posicionado ao lado esquerdo da logo (área inferior)
   const operadorHTML = produtorIniciais
-    ? `<div style="position:absolute;right:0;width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;">${produtorIniciais}</div>`
+    ? `<div style="width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;flex-shrink:0;">${produtorIniciais}</div>`
     : "";
 
   const loteHTML = lote
@@ -71,31 +89,29 @@ export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
     ? `<div style="font-size:8.5pt;font-weight:bold;line-height:1.2;margin-top:0.3mm;word-break:break-word;">${info}</div>`
     : "";
 
-  return `<div style="width:53mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
+  return `<div style="width:54mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
     <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;word-break:break-word;">${nome}</div>
     <div style="display:flex;flex-direction:column;align-items:center;padding-top:0.5mm;padding-bottom:0.5mm;">
       <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">FAB: ${dataCurta(fabricacao)}</div>
-      <div style="display:flex;align-items:center;width:100%;position:relative;">
-        <div style="width:100%;text-align:center;font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">VAL: ${dataCurta(validade)}</div>
-        ${operadorHTML}
-      </div>
+      <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">VAL: ${dataCurta(validade)}</div>
     </div>
-    <div style="display:flex;align-items:flex-start;">
+    <div style="display:flex;align-items:flex-end;">
       <div style="flex:1;">${loteHTML}${infoHTML}</div>
-      <div style="display:flex;flex-direction:column;align-items:center;margin-left:1mm;">
+      <div style="display:flex;align-items:center;gap:1mm;margin-left:1mm;">
+        ${operadorHTML}
         ${dados.qrCode
       ? `<div class="qr-placeholder" data-qr="${dados.qrCode}" style="width:10mm;height:10mm;"></div>`
       : `<div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>`}
-        <img src="${logoUrl}" style="height:5mm;margin-top:0.5mm;" />
+        <img src="${logoUrl}" style="height:5mm;" />
       </div>
     </div>
   </div>`;
 }
 
-// ─── Etiqueta Avulsa / Complementar (53mm × 50mm) ───────────────────────────
+// ─── Etiqueta Avulsa / Complementar (54mm x 50mm) ───────────────────────────
 
 /**
- * Gera o HTML de UMA célula de etiqueta avulsa/caixa (53mm × 50mm).
+ * Gera o HTML de UMA célula de etiqueta avulsa/caixa (54mm x 50mm).
  */
 export function gerarCelulaAvulsa(dados: DadosEtiquetaAvulsa): string {
   const { nome, quantidade, campos, campoExtra, logoUrl } = dados;
@@ -103,7 +119,6 @@ export function gerarCelulaAvulsa(dados: DadosEtiquetaAvulsa): string {
   const temCampos = campos.filter((c) => c.valor.trim()).length > 0;
   const temExtra = campoExtra && campoExtra.trim();
 
-  // Fonte do nome: ajusta baseado em quanta coisa tem embaixo
   const linhasAbaixo = (temQtd ? 1 : 0) + (temCampos ? 1 : 0) + (temExtra ? 1 : 0);
   const fNome = linhasAbaixo >= 3 ? "14pt" : linhasAbaixo >= 2 ? "16pt" : "18pt";
 
@@ -125,7 +140,7 @@ export function gerarCelulaAvulsa(dados: DadosEtiquetaAvulsa): string {
     extraHTML = `<div style="font-size:8pt;font-style:italic;line-height:1.3;margin-top:0.5mm;color:#333;">${campoExtra}</div>`;
   }
 
-  return `<div style="width:53mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
+  return `<div style="width:54mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
     <div style="font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;overflow:hidden;">${nome || "NOME"}</div>
     ${qtdHTML}
     <div style="display:flex;align-items:flex-start;margin-top:auto;">
@@ -137,19 +152,18 @@ export function gerarCelulaAvulsa(dados: DadosEtiquetaAvulsa): string {
   </div>`;
 }
 
-// ─── Helpers de página de impressão ──────────────────────────────────────────
+// ─── Helpers de pagina de impressao ──────────────────────────────────────────
 
 /**
- * Gera uma linha de impressão com 2 etiquetas lado a lado.
- * Layout calibrado Elgin L42 Pro: 2mm + 53mm + 2mm + 53mm = 110mm
- * Etiqueta direita deslocada 2mm para a direita vs layout anterior.
+ * Gera uma linha de impressao com 2 etiquetas lado a lado.
+ * Layout calibrado Elgin L42 Pro: 1mm + 54mm + 1mm + 54mm = 110mm
  */
 export function gerarLinhaImpressao(celula: string): string {
-  return `<div style="width:110mm;display:flex;padding-left:2mm;gap:2mm;">${celula}${celula}</div>`;
+  return `<div style="width:110mm;display:flex;padding-left:1mm;gap:1mm;">${celula}${celula}</div>`;
 }
 
 /**
- * Gera o HTML completo da página de impressão com @page configurado para 110mm × 50mm.
+ * Gera o HTML completo da pagina de impressao com @page configurado para 110mm x 50mm.
  */
 export function gerarPaginaImpressao(linhas: string[]): string {
   return `<!DOCTYPE html>

@@ -48,7 +48,7 @@ function PreviewEtiqueta({ dados }: { dados: DadosEtiqueta }) {
 
   return (
     <div style={{
-      width: "50mm", height: "50mm", padding: "2mm", boxSizing: "border-box",
+      width: "54mm", height: "50mm", padding: "2mm", boxSizing: "border-box",
       fontFamily: "Arial, sans-serif", display: "flex", flexDirection: "column", overflow: "hidden",
     }}>
       <div style={{
@@ -207,14 +207,14 @@ export default function EtiquetasAvulsasPage() {
 
     let linhas = "";
     for (let i = 0; i < totalCelulas.length; i += 2) {
-      linhas += `<div style="width:107mm;display:flex;padding-left:2mm;padding-right:2mm;gap:3mm;page-break-after:always;">${totalCelulas[i]}${totalCelulas[i + 1]}</div>`;
+      linhas += `<div style="width:110mm;display:flex;padding-left:1mm;gap:1mm;page-break-after:always;">${totalCelulas[i]}${totalCelulas[i + 1]}</div>`;
     }
 
     const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8"><title>Etiquetas Avulsas</title>
 <style>
-  @page { margin: 0; size: 107mm 50mm; }
-  @media print { html, body { margin: 0; padding: 0; width: 107mm; } .no-print { display: none !important; } }
+  @page { margin: 0; size: 110mm 50mm; }
+  @media print { html, body { margin: 0; padding: 0; width: 110mm; } .no-print { display: none !important; } }
   html, body { margin: 0; padding: 0; }
 </style></head><body>
 ${linhas}
@@ -457,7 +457,7 @@ ${linhas}
               <div className="bg-white rounded-2xl shadow-lg p-5 sticky top-4">
                 <h3 className="font-bold text-[var(--marrom)] text-sm mb-3">Preview</h3>
                 <div className="bg-gray-50 rounded-xl p-3 inline-block">
-                  <div style={{ width: "107mm", display: "flex", paddingLeft: "2mm", paddingRight: "2mm", gap: "3mm", transform: "scale(0.75)", transformOrigin: "top left" }}>
+                  <div style={{ width: "110mm", display: "flex", paddingLeft: "1mm", gap: "1mm", transform: "scale(0.75)", transformOrigin: "top left" }}>
                     <div style={{ border: "1px dashed #7c3aed" }}>
                       <PreviewEtiqueta dados={dadosEtiqueta} />
                     </div>
