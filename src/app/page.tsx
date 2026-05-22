@@ -60,14 +60,6 @@ const acoes = [
     cor: "bg-gradient-to-br from-[var(--vermelho)] to-[var(--marrom)]",
     corTexto: "text-white",
   },
-  {
-    href: "/omie",
-    icon: "\u{1F517}",
-    titulo: "Integração OMIE",
-    descricao: "Sincronize produtos e receba ordens de produção do OMIE",
-    cor: "bg-white border-2 border-[var(--marrom)]",
-    corTexto: "text-[var(--marrom)]",
-  },
 ];
 
 export default function Home() {
