@@ -31,6 +31,8 @@ interface Operador {
 
 type Periodo = "hoje" | "7dias" | "30dias" | "todos";
 
+const ORG_SLUG = "gelateria";
+
 export default function RelatoriosPage() {
   const [prints, setPrints] = useState<PrintRecord[]>([]);
   const [avulsas, setAvulsas] = useState<AvulsaRecord[]>([]);
@@ -38,29 +40,43 @@ export default function RelatoriosPage() {
   const [loading, setLoading] = useState(true);
   const [periodo, setPeriodo] = useState<Periodo>("30dias");
 
-  const ORG_ID = "org_gelateria_moderna";
-
   useEffect(() => {
     carregarDados();
   }, []);
 
   async function carregarDados() {
     setLoading(true);
+
+    // Resolver org_id real pelo slug (mesmo padrão de /imprimir)
+    const { data: org } = await supabase
+      .from("organizations")
+      .select("id")
+      .eq("slug", ORG_SLUG)
+      .single();
+
+    if (!org) {
+      console.error("[Relatórios] Organização não encontrada para slug:", ORG_SLUG);
+      setLoading(false);
+      return;
+    }
+
+    const orgId = org.id;
+
     const [printsRes, avulsasRes, opsRes] = await Promise.all([
       supabase
         .from("print_history")
         .select("id, product_name, operator_id, quantity, printed_at, reprint_of, lot")
-        .eq("organization_id", ORG_ID)
+        .eq("organization_id", orgId)
         .order("printed_at", { ascending: false }),
       supabase
         .from("avulsa_history")
         .select("id, organization_id, nome, quantidade, printed_at, operator_id")
-        .eq("organization_id", ORG_ID)
+        .eq("organization_id", orgId)
         .order("printed_at", { ascending: false }),
       supabase
         .from("operators")
         .select("id, name")
-        .eq("organization_id", ORG_ID)
+        .eq("organization_id", orgId)
         .eq("active", true),
     ]);
     setPrints((printsRes.data as PrintRecord[]) || []);
