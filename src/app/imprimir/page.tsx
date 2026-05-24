@@ -696,7 +696,7 @@ ${linhas}
                 <span className="text-sm text-gray-500 text-center">Etiquetas de identificação e contagem de estoque</span>
               </button>
               <button onClick={() => selecionarTipo("ordem_producao")} className="bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-[var(--vermelho)] p-8 flex flex-col items-center gap-4 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 relative">
-                <span className="text-6xl">📋🏭</span>
+                <span className="text-6xl">📥</span>
                 <span className="text-xl font-extrabold text-[var(--marrom)]">Ordem de Produção</span>
                 <span className="text-sm text-gray-500 text-center">Ordens recebidas automaticamente do OMIE</span>
                 {filaOP.length > 0 && (
@@ -906,15 +906,18 @@ ${linhas}
               "gelatos": { icon: "🍨", bg: "bg-pink-50", border: "border-pink-200 hover:border-pink-400" },
               "sorvetes": { icon: "🍦", bg: "bg-purple-50", border: "border-purple-200 hover:border-purple-400" },
               "picolés": { icon: "🧊", bg: "bg-cyan-50", border: "border-cyan-200 hover:border-cyan-400" },
-              "barra de gelatos": { icon: "🍫", bg: "bg-amber-50", border: "border-amber-200 hover:border-amber-400" },
-              "baldes": { icon: "🪣", bg: "bg-blue-50", border: "border-blue-200 hover:border-blue-400" },
+              "barra": { icon: "🍫", bg: "bg-amber-50", border: "border-amber-200 hover:border-amber-400" },
+              "baldes": { icon: "🧊", bg: "bg-blue-50", border: "border-blue-200 hover:border-blue-400" },
               "uso e consumo": { icon: "🏠", bg: "bg-green-50", border: "border-green-200 hover:border-green-400" },
-              "insumos": { icon: "🧪", bg: "bg-orange-50", border: "border-orange-200 hover:border-orange-400" },
+              "insumos": { icon: "🧪", bg: "bg-teal-50", border: "border-teal-200 hover:border-teal-400" },
               "coberturas": { icon: "🫕", bg: "bg-rose-50", border: "border-rose-200 hover:border-rose-400" },
               "tortas": { icon: "🎂", bg: "bg-fuchsia-50", border: "border-fuchsia-200 hover:border-fuchsia-400" },
               "bolos": { icon: "🍰", bg: "bg-yellow-50", border: "border-yellow-200 hover:border-yellow-400" },
               "açaí": { icon: "🫐", bg: "bg-violet-50", border: "border-violet-200 hover:border-violet-400" },
               "cafeteria": { icon: "☕", bg: "bg-stone-50", border: "border-stone-200 hover:border-stone-400" },
+              "producao": { icon: "⚙️", bg: "bg-gray-50", border: "border-gray-300 hover:border-gray-500" },
+              "sobremesa": { icon: "🍮", bg: "bg-orange-50", border: "border-orange-200 hover:border-orange-400" },
+              "varejo": { icon: "🛒", bg: "bg-emerald-50", border: "border-emerald-200 hover:border-emerald-400" },
             };
             const FALLBACK_ICONS = ["🏷️", "📦", "🧁", "🥄", "🍮", "✨"];
             function familiaVisual(nome: string, idx: number) {
