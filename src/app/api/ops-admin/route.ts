@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     const { data: updated, error: updateErr } = await supabase
       .from("omie_print_queue")
-      .update({ status: "completed" })
+      .update({ status: "skipped" })
       .eq("organization_id", org.id)
       .eq("status", "pending")
       .select("id");
