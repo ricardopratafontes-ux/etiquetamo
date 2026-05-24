@@ -26,7 +26,9 @@ export async function GET() {
 
   const allOps = ops || [];
   const pending = allOps.filter((o) => o.status === "pending");
-  const completed = allOps.filter((o) => o.status === "completed");
+  const completed = allOps.filter((o) => o.status !== "pending");
+  // Show all distinct statuses for debugging
+  const statuses = [...new Set(allOps.map((o) => o.status))];
 
   // Detectar duplicatas (mesmo omie_order_id com status pending)
   const orderIdCount: Record<string, number> = {};
@@ -51,6 +53,7 @@ export async function GET() {
       lot: o.lot,
       created_at: o.created_at,
     })),
+    statuses,
     using_service_key: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
   });
 }

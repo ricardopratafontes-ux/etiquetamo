@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
 
         if (existing && existing.status === "pending") {
           const { error: updateErr } = await supabase.from("omie_print_queue").update({
-            status: "completed",
+            status: "skipped",
             webhook_payload: payload,
           }).eq("id", existing.id);
 
