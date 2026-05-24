@@ -96,7 +96,14 @@ export async function POST(request: NextRequest) {
 
   // Encerrar todas as OPs pendentes (reset total)
   if (action === "complete_all") {
-    const { data: updated } = await supabase
+    // Debug: contar pendentes primeiro
+    const { data: pendingBefore, error: countErr } = await supabase
+      .from("omie_print_queue")
+      .select("id")
+      .eq("organization_id", org.id)
+      .eq("status", "pending");
+
+    const { data: updated, error: updateErr } = await supabase
       .from("omie_print_queue")
       .update({ status: "completed" })
       .eq("organization_id", org.id)
@@ -105,7 +112,27 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       action: "complete_all",
+      pending_before: pendingBefore?.length || 0,
       completed: updated?.length || 0,
+      count_error: countErr?.message || null,
+      update_error: updateErr?.message || null,
+      org_id: org.id,
+    });
+  }
+
+  // Deletar todas as OPs pendentes (reset total via delete)
+  if (action === "delete_all_pending") {
+    const { data: deleted, error: deleteErr } = await supabase
+      .from("omie_print_queue")
+      .delete()
+      .eq("organization_id", org.id)
+      .eq("status", "pending")
+      .select("id");
+
+    return NextResponse.json({
+      action: "delete_all_pending",
+      deleted: deleted?.length || 0,
+      error: deleteErr?.message || null,
     });
   }
 
