@@ -29,6 +29,22 @@ export function dataValidade(dias: number): string {
   return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
 }
 
+/** Converte YYYY-MM-DD → dd/mm/aaaa (data de fabricação vinda da catalogação). */
+export function isoParaBR(iso: string): string {
+  const p = iso.split("-");
+  return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : iso;
+}
+
+/** Validade A PARTIR de uma data de fabricação (YYYY-MM-DD) + dias → dd/mm/aaaa. */
+export function validadeDesde(fabIso: string, dias: number | null): string {
+  if (!dias) return "—";
+  const p = fabIso.split("-").map(Number);
+  if (p.length !== 3 || p.some(isNaN)) return "—";
+  const dt = new Date(p[0], p[1] - 1, p[2]);
+  dt.setDate(dt.getDate() + dias);
+  return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
+}
+
 /** Converte string dd/mm/aaaa (ou dd/mm/aa) para Date. Retorna null se inválido. */
 export function parseDateBR(str: string): Date | null {
   const parts = str.split("/");

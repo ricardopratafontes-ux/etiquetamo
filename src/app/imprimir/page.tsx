@@ -3,7 +3,7 @@
 import NavBar from "@/components/NavBar";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { dataHoje, calcValidade, dataCurta } from "@/lib/dateUtils";
+import { dataHoje, calcValidade, dataCurta, validadeDesde, isoParaBR } from "@/lib/dateUtils";
 import { gerarCelulaEtiqueta, gerarCelulaAvulsa, type DadosEtiquetaProduto, type DadosEtiquetaAvulsa } from "@/lib/labelHtml";
 
 const ORG_SLUG = "gelateria";
@@ -35,6 +35,9 @@ interface ItemCarrinho {
   quantidade: number;
   produtores: string[];
   lote: string;
+  /** Catalogação: data real de fabricação (YYYY-MM-DD) e QR = código do balde. */
+  fabricacaoOverride?: string | null;
+  qrOverride?: string | null;
   tipoEtiqueta: "normal" | "contagem";
   infoComplementar: string;
   incluirComplementar: boolean;
@@ -117,6 +120,8 @@ export default function ImprimirWizard() {
   const [modalProdutores, setModalProdutores] = useState<string[]>([]);
   const [modalQtd, setModalQtd] = useState(1);
   const [modalLote, setModalLote] = useState("");
+  const [modalFabOverride, setModalFabOverride] = useState<string | null>(null);
+  const [modalQrOverride, setModalQrOverride] = useState<string | null>(null);
   const [modalTipoEtiqueta, setModalTipoEtiqueta] = useState<"normal" | "contagem">("normal");
   const [modalInfoComplementar, setModalInfoComplementar] = useState("");
   const [modalIncluirComplementar, setModalIncluirComplementar] = useState(false);
@@ -351,6 +356,8 @@ export default function ImprimirWizard() {
     setModalProdutores([]);
     setModalQtd(1);
     setModalLote("");
+    setModalFabOverride(null);  // reset; catalogação preenche em abrirModalOP
+    setModalQrOverride(null);
     const armazInfo = textoArmazenagem(item.storage_type);
     const addInfo = item.additional_info || "";
     setModalInfoComplementar(addInfo ? `${armazInfo} | ${addInfo}` : armazInfo);
@@ -388,6 +395,7 @@ export default function ImprimirWizard() {
     } : null;
     const novoItem: ItemCarrinho = {
       item: modalItem, quantidade: modalQtd, produtores: modalProdutores, lote: modalLote,
+      fabricacaoOverride: modalFabOverride, qrOverride: modalQrOverride,
       tipoEtiqueta: modalTipoEtiqueta, infoComplementar: modalInfoComplementar,
       incluirComplementar: modalIncluirComplementar, complementarDados: complDados,
       pesoOverride: modalPeso, unidadeOverride: modalUnidade, incluirPeso: modalIncluirPeso,
@@ -426,6 +434,8 @@ export default function ImprimirWizard() {
     abrirModalItem(c.item);
     setModalQtd(c.quantidade);
     setModalLote(c.lote);
+    setModalFabOverride(c.fabricacaoOverride ?? null);
+    setModalQrOverride(c.qrOverride ?? null);
     setModalTipoEtiqueta(c.tipoEtiqueta);
     setModalInfoComplementar(c.infoComplementar);
     setModalIncluirComplementar(c.incluirComplementar);
@@ -479,6 +489,12 @@ export default function ImprimirWizard() {
     abrirModalItem(item);
     // Pré-preencher dados da OP
     if (op.lot) setModalLote(op.lot);
+    // Catalogação (Painel Moderna): usa a data real de fabricação e o QR = código do balde
+    const wp = (op.webhook_payload ?? {}) as Record<string, unknown>;
+    if (wp.origem === "catalogo_moderna") {
+      if (typeof wp.fabricacao === "string" && wp.fabricacao) setModalFabOverride(wp.fabricacao);
+      if (op.lot) setModalQrOverride(op.lot);
+    }
     // Quantidade: aplicar regra ÷10 para Bases e Xaropes
     if (op.quantity && op.quantity > 0) {
       const catNome = nomeCategoriaPorId(item.category_id).toLowerCase();
@@ -528,15 +544,19 @@ export default function ImprimirWizard() {
     if (carrinho.length === 0) return;
     setImprimindo(true);
 
-    const fabricacao = dataHoje();
+    const hoje = dataHoje();
     const logoUrl = window.location.origin + "/logo-preta.jpeg";
 
     // Gera células individuais de etiqueta
     const celulas: string[] = [];
     for (const item of carrinho) {
-      const validade = calcValidade(item.item.expiry_days);
+      // Catalogação: FAB = data real do balde; VAL calculada a partir dela; QR = código do balde.
+      const fabricacao = item.fabricacaoOverride ? isoParaBR(item.fabricacaoOverride) : hoje;
+      const validade = item.fabricacaoOverride
+        ? validadeDesde(item.fabricacaoOverride, item.item.expiry_days)
+        : calcValidade(item.item.expiry_days);
       const prods = iniciaisProdutores(item.produtores);
-      const qrCode = item.item.code || "";
+      const qrCode = item.qrOverride || item.item.code || "";
 
       for (let i = 0; i < item.quantidade; i++) {
         celulas.push(gerarCelulaEtiqueta({
@@ -1061,10 +1081,12 @@ ${linhas}
                       <div className="space-y-3">
                         {carrinho.map((c, idx) => {
                           const previewHTML = gerarCelulaEtiqueta({
-                            nome: c.item.name, fabricacao: dataHoje(), validade: calcValidade(c.item.expiry_days),
+                            nome: c.item.name,
+                            fabricacao: c.fabricacaoOverride ? isoParaBR(c.fabricacaoOverride) : dataHoje(),
+                            validade: c.fabricacaoOverride ? validadeDesde(c.fabricacaoOverride, c.item.expiry_days) : calcValidade(c.item.expiry_days),
                             lote: c.lote, info: c.infoComplementar || "", produtorIniciais: iniciaisProdutores(c.produtores),
                             logoUrl: "/logo-preta.jpeg",
-                            qrCode: c.item.code || "",
+                            qrCode: c.qrOverride || c.item.code || "",
                           });
                           return (
                           <div key={idx} className="bg-[var(--bege)] rounded-xl p-3">
