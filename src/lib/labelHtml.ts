@@ -77,8 +77,10 @@ export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
     ? `<div style="width:5mm;height:5mm;border:0.3pt solid #000;display:flex;align-items:center;justify-content:center;font-size:6pt;font-weight:bold;flex-shrink:0;">${produtorIniciais}</div>`
     : "";
 
-  const loteHTML = lote
-    ? `<div style="font-size:${fLote};font-weight:bold;line-height:1.3;">Lote: ${lote}</div>`
+  // Código do balde/lote: SEM a palavra "Lote", posicionado logo ACIMA do QR
+  // (fallback de digitação manual caso o QR não leia). Centralizado sobre o QR.
+  const codigoHTML = lote
+    ? `<div style="font-size:${fLote};font-weight:bold;line-height:1.1;text-align:center;letter-spacing:0.3pt;">${lote}</div>`
     : "";
 
   // Fonte dinâmica para observações: quanto menos texto, maior a fonte
@@ -97,8 +99,9 @@ export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
     : "";
 
   // Layout inferior:
-  // Esquerda: lote + observações (flex:1, área maior)
-  // Direita (coluna): QR em cima, [iniciais + logo] embaixo no canto inferior direito
+  // Esquerda: observações (flex:1, área maior)
+  // Direita (coluna): código LOGO ACIMA do QR (fallback p/ digitar à mão) + QR;
+  //                   [iniciais + logo] embaixo no canto inferior direito.
   return `<div style="width:54mm;height:50mm;padding:2mm;box-sizing:border-box;font-family:Arial,sans-serif;display:flex;flex-direction:column;overflow:hidden;">
     <div style="font-family:Arial,sans-serif;font-weight:bold;font-size:${fNome};text-align:center;text-transform:uppercase;border-bottom:0.5pt solid #000;padding-bottom:0.5mm;line-height:1.15;flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;word-break:break-word;">${nome}</div>
     <div style="display:flex;flex-direction:column;align-items:center;padding-top:0.5mm;padding-bottom:0.5mm;">
@@ -106,11 +109,14 @@ export function gerarCelulaEtiqueta(dados: DadosEtiquetaProduto): string {
       <div style="font-size:14pt;font-weight:bold;white-space:nowrap;line-height:1.2;text-transform:uppercase;">VAL: ${dataCurta(validade)}</div>
     </div>
     <div style="display:flex;align-items:flex-end;">
-      <div style="flex:1;padding-right:1mm;">${loteHTML}${infoHTML}</div>
+      <div style="flex:1;padding-right:1mm;">${infoHTML}</div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;">
-        ${dados.qrCode
+        <div style="display:flex;flex-direction:column;align-items:center;">
+          ${codigoHTML}
+          ${dados.qrCode
       ? `<div class="qr-placeholder" data-qr="${dados.qrCode}" style="width:10mm;height:10mm;"></div>`
       : `<div style="width:10mm;height:10mm;border:0.5pt solid #000;display:flex;align-items:center;justify-content:center;font-size:4pt;">QR</div>`}
+        </div>
         <div style="display:flex;align-items:center;gap:0.5mm;margin-top:0.5mm;">
           ${operadorHTML}
           <img src="${logoUrl}" style="height:5mm;" />
