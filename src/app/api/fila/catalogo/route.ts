@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: false, erro: "não autorizado" }, { status: 401 });
   }
 
-  let body: { itens?: Array<{ product_name?: string; lot?: string; fabricacao?: string; quantity?: number }> };
+  let body: { itens?: Array<{ product_name?: string; lot?: string; fabricacao?: string; quantity?: number; omie_produto_id?: number }> };
   try { body = await request.json(); } catch { body = {}; }
   const itens = Array.isArray(body.itens) ? body.itens : [];
   if (itens.length === 0) return NextResponse.json({ ok: false, erro: "sem itens" }, { status: 400 });
@@ -31,6 +31,24 @@ export async function POST(request: NextRequest) {
   const { data: org } = await supabase.from("organizations").select("id").eq("slug", ORG_SLUG).single();
   if (!org) return NextResponse.json({ ok: false, erro: "organização não encontrada" }, { status: 500 });
 
+  // De/para: resolve o item pelo CÓDIGO do Omie (produtos.omie_codigo_produto ==
+  // items.omie_product_id). É a chave fiel — casa por identidade, nunca por nome
+  // (evita "COCO SECO" virar "COCO SECO RALADO", gelato virar barra, etc.).
+  // Sem código ou sem item correspondente => item_id null (fica pendente pra
+  // vínculo manual no /imprimir; melhor perguntar do que adivinhar errado).
+  const codigos = [...new Set(
+    itens.map((i) => i.omie_produto_id).filter((x): x is number => typeof x === "number" && x > 0),
+  )];
+  const itemPorCodigo = new Map<number, string>();
+  if (codigos.length > 0) {
+    const { data: its } = await supabase
+      .from("items").select("id, omie_product_id")
+      .eq("organization_id", org.id).in("omie_product_id", codigos);
+    for (const it of (its ?? []) as Array<{ id: string; omie_product_id: number | null }>) {
+      if (it.omie_product_id != null) itemPorCodigo.set(Number(it.omie_product_id), it.id);
+    }
+  }
+
   const linhas = itens
     .filter((i) => i.product_name)
     .map((i) => ({
@@ -38,8 +56,9 @@ export async function POST(request: NextRequest) {
       product_name: String(i.product_name),
       quantity: Number(i.quantity) > 0 ? Math.round(Number(i.quantity)) : 1,
       lot: i.lot ?? null,
+      item_id: typeof i.omie_produto_id === "number" ? (itemPorCodigo.get(i.omie_produto_id) ?? null) : null,
       status: "pending" as const,
-      webhook_payload: { origem: "catalogo_moderna", fabricacao: i.fabricacao ?? null, lote: i.lot ?? null },
+      webhook_payload: { origem: "catalogo_moderna", fabricacao: i.fabricacao ?? null, lote: i.lot ?? null, omie_produto_id: i.omie_produto_id ?? null },
     }));
 
   // Substitui a remessa: apaga os pendentes de origem catálogo ainda não impressos

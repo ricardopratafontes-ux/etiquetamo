@@ -197,6 +197,10 @@ export default function ImprimirWizard() {
     // Auto-vincular OPs sem item_id usando match por nome
     for (const op of ops) {
       if (op.item_id) continue; // já vinculado
+      // Catalogação (Painel Moderna) casa por CÓDIGO Omie no endpoint. Se chegou
+      // sem item_id, NÃO adivinha por nome (gelato viraria barra/insumo) — fica
+      // pendente pra vínculo manual. Regra: melhor perguntar do que errar.
+      if ((op.webhook_payload as { origem?: string } | null)?.origem === "catalogo_moderna") continue;
       const nomeOP = normalizar(op.product_name);
       // Tentar match: nome do item contido no nome OMIE ou vice-versa
       const matches = itensLocal.filter((it: ItemDB) => {
