@@ -56,10 +56,6 @@ function iniciais(nome: string): string {
   return (p[0][0] + p[p.length - 1][0]).toUpperCase();
 }
 
-function arredondarPar(n: number): number {
-  return n % 2 === 0 ? n : n + 1;
-}
-
 function normalizar(s: string): string {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
@@ -549,8 +545,13 @@ export default function ImprimirWizard() {
     if (opVinculando === opId) { setOpVinculando(null); setOpBuscaVinc(""); }
   }
 
-  // Total de etiquetas (arredondado para par)
-  const totalEtiquetas = carrinho.reduce((acc, c) => acc + arredondarPar(c.quantidade), 0);
+  // Total de etiquetas = 1 por unidade (cada balde/etiqueta é única). A linha de
+  // impressão tem 2 colunas, mas são preenchidas com etiquetas SEGUINTES, não com
+  // cópias — então o total é a soma das quantidades (+ complementares, se houver).
+  const totalEtiquetas = carrinho.reduce(
+    (acc, c) => acc + c.quantidade + (c.incluirComplementar && c.complementarDados ? c.quantidade : 0),
+    0,
+  );
 
   // Nome da família selecionada
   function nomeFamilia(catId: string | null): string {
@@ -615,9 +616,10 @@ export default function ImprimirWizard() {
       }
     }
 
-    // Arredonda para par (duplica última se ímpar) — DEC-023
+    // A linha tem 2 colunas. Se o total for ímpar, completa a última linha com uma
+    // célula em BRANCO — NUNCA duplica a última etiqueta (cada etiqueta é única).
     if (celulas.length % 2 !== 0) {
-      celulas.push(celulas[celulas.length - 1]);
+      celulas.push('<div style="width:54mm;height:50mm;"></div>');
     }
 
     // Monta linhas de 2 etiquetas (110mm = 1mm + 54mm + 1mm + 54mm)
@@ -686,7 +688,7 @@ ${linhas}
           expiry_date: item.item.expiry_days ? (() => { const d = new Date(); d.setDate(d.getDate() + item.item.expiry_days!); return d.toISOString().split("T")[0]; })() : null,
           lot: item.lote || null,
           additional_info: item.item.additional_info || null,
-          quantity: arredondarPar(item.quantidade),
+          quantity: item.quantidade,
         });
       }
     }
@@ -967,7 +969,7 @@ ${linhas}
                                 <span className="text-sm font-extrabold text-[var(--marrom)] w-6 text-center">{c.quantidade}</span>
                                 <button onClick={() => ajustarQtd(idx, 1)} className="w-7 h-7 flex items-center justify-center bg-white rounded-lg text-[var(--marrom)] font-bold shadow-sm cursor-pointer hover:bg-gray-100">+</button>
                               </div>
-                              <span className="text-[10px] text-gray-500">→ {arredondarPar(c.quantidade)} etiq.</span>
+                              <span className="text-[10px] text-gray-500">→ {c.quantidade} etiq.</span>
                             </div>
                             {c.lote && <p className="text-[10px] text-gray-400 mt-1">Lote: {c.lote}</p>}
                           </div>
@@ -1175,7 +1177,7 @@ ${linhas}
                                 <button onClick={() => ajustarQtd(idx, 1)} className="w-7 h-7 flex items-center justify-center bg-white rounded-lg text-[var(--marrom)] font-bold shadow-sm cursor-pointer hover:bg-gray-100">+</button>
                               </div>
                               <span className="text-[10px] text-gray-500">
-                                → {arredondarPar(c.quantidade)} etiq.
+                                → {c.quantidade} etiq.
                               </span>
                             </div>
                             <p className="text-[10px] text-gray-400 mt-1">
@@ -1476,7 +1478,7 @@ ${linhas}
                       <button onClick={() => setModalQtd(Math.max(1, modalQtd - 1))} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg text-base font-bold text-[var(--marrom)] cursor-pointer hover:bg-gray-100 transition-all shadow-sm">−</button>
                       <span className="text-xl font-extrabold text-[var(--marrom)] w-8 text-center">{modalQtd}</span>
                       <button onClick={() => setModalQtd(modalQtd + 1)} className="w-8 h-8 flex items-center justify-center bg-white rounded-lg text-base font-bold text-[var(--marrom)] cursor-pointer hover:bg-gray-100 transition-all shadow-sm">+</button>
-                      <span className="text-[10px] text-gray-400 ml-1">→ {arredondarPar(modalQtd)} etiq.</span>
+                      <span className="text-[10px] text-gray-400 ml-1">→ {modalQtd} etiq.</span>
                     </div>
                   </div>
                 </div>
