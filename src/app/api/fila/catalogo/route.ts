@@ -42,6 +42,13 @@ export async function POST(request: NextRequest) {
       webhook_payload: { origem: "catalogo_moderna", fabricacao: i.fabricacao ?? null, lote: i.lot ?? null },
     }));
 
+  // Substitui a remessa: apaga os pendentes de origem catálogo ainda não impressos
+  // e insere a lista atual. Torna o reenvio idempotente (sem duplicar, sem código antigo).
+  await supabase.from("omie_print_queue").delete()
+    .eq("organization_id", org.id)
+    .eq("status", "pending")
+    .filter("webhook_payload->>origem", "eq", "catalogo_moderna");
+
   const { data, error } = await supabase.from("omie_print_queue").insert(linhas).select("id");
   if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
 
