@@ -38,6 +38,8 @@ interface ItemCarrinho {
   /** Catalogação: data real de fabricação (YYYY-MM-DD) e QR = código do balde. */
   fabricacaoOverride?: string | null;
   qrOverride?: string | null;
+  /** Id da linha da fila (omie_print_queue) que originou este item — só consumida ao imprimir. */
+  filaId?: string | null;
   tipoEtiqueta: "normal" | "contagem";
   infoComplementar: string;
   incluirComplementar: boolean;
@@ -427,6 +429,40 @@ export default function ImprimirWizard() {
     setCarrinho((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  // Catalogação: manda TODA a fila pro carrinho de uma vez. Cada balde vira uma
+  // etiqueta própria (código único → NÃO mescla por produto). Não consome a fila
+  // aqui — o consumo acontece só ao imprimir (evita "sumir sem imprimir").
+  function adicionarTodosAoCarrinho() {
+    const novos: ItemCarrinho[] = [];
+    for (const op of filaCatalogo) {
+      const item = op.item_id ? todosItens.find((i) => i.id === op.item_id) : null;
+      if (!item) continue; // pula não-vinculados (aparecem com aviso na lista)
+      if (carrinho.some((c) => c.filaId === op.id)) continue; // já adicionado
+      const wp = (op.webhook_payload ?? {}) as Record<string, unknown>;
+      const ehCat = wp.origem === "catalogo_moderna";
+      const armazInfo = textoArmazenagem(item.storage_type);
+      const addInfo = item.additional_info || "";
+      novos.push({
+        item,
+        quantidade: 1,
+        produtores: [],
+        lote: op.lot ?? "",
+        fabricacaoOverride: ehCat && typeof wp.fabricacao === "string" && wp.fabricacao ? wp.fabricacao : null,
+        qrOverride: ehCat && op.lot ? op.lot : (item.code ?? null),
+        filaId: op.id,
+        tipoEtiqueta: "normal",
+        infoComplementar: addInfo ? `${armazInfo} | ${addInfo}` : armazInfo,
+        incluirComplementar: false,
+        complementarDados: null,
+        pesoOverride: item.net_weight || "",
+        unidadeOverride: item.unit || "",
+        incluirPeso: false,
+      });
+    }
+    if (novos.length === 0) return;
+    setCarrinho((prev) => [...prev, ...novos]);
+  }
+
   function editarItemCarrinho(idx: number) {
     const c = carrinho[idx];
     if (!c) return;
@@ -655,6 +691,15 @@ ${linhas}
       }
     }
 
+    // Consome da fila só agora (na impressão) os itens adicionados em lote (com filaId):
+    // marca 'queued' e tira da lista pendente. Se você adicionou e NÃO imprimiu, eles
+    // continuam na fila pra próxima vez (não somem sem imprimir).
+    const filaIds = carrinho.map((c) => c.filaId).filter((x): x is string => !!x);
+    if (filaIds.length > 0) {
+      await supabase.from("omie_print_queue").update({ status: "queued" }).in("id", filaIds);
+      setFilaOP((prev) => prev.filter((p) => !filaIds.includes(p.id)));
+    }
+
     setCarrinho([]);
     setImprimindo(false);
   }
@@ -775,15 +820,26 @@ ${linhas}
           {step === 3 && tipoFila && (
             <div className="flex gap-6 mt-2">
               <div className="flex-1">
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-4 gap-3">
                   <h3 className="font-bold text-[var(--marrom)] text-lg">
                     {tipo === "catalogo" ? "Baldes catalogados (Painel)" : "Ordens de Produção Pendentes"}
                   </h3>
-                  {listaFila.length > 0 && (
-                    <span className="bg-[var(--vermelho)] text-white text-xs px-3 py-1 rounded-full font-bold">
-                      {listaFila.length} pendente{listaFila.length > 1 ? "s" : ""}
-                    </span>
-                  )}
+                  <div className="flex items-center gap-2 shrink-0">
+                    {tipo === "catalogo" && filaCatalogo.some((op) => op.item_id && !carrinho.some((c) => c.filaId === op.id)) && (
+                      <button
+                        onClick={adicionarTodosAoCarrinho}
+                        className="text-xs px-3 py-1.5 rounded-lg bg-[var(--marrom)] text-white hover:opacity-90 transition-opacity font-bold cursor-pointer whitespace-nowrap"
+                        title="Manda todos os baldes catalogados pro carrinho de uma vez"
+                      >
+                        🛒 Adicionar todos ao carrinho
+                      </button>
+                    )}
+                    {listaFila.length > 0 && (
+                      <span className="bg-[var(--vermelho)] text-white text-xs px-3 py-1 rounded-full font-bold">
+                        {listaFila.length} pendente{listaFila.length > 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {listaFila.length === 0 ? (
