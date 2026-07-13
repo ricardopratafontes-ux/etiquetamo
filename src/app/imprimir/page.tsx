@@ -88,7 +88,7 @@ function regrasProdutor(modo: StepTipo, categoriaNome: string): "obrigatorio" | 
 }
 
 // --- Steps ---
-type StepTipo = "producao" | "contagem" | "ordem_producao" | null;
+type StepTipo = "producao" | "contagem" | "ordem_producao" | "catalogo" | null;
 type Step = 1 | 2 | 3 | 4;
 
 const CAMPOS_PRESET_COMPL = [
@@ -454,14 +454,22 @@ export default function ImprimirWizard() {
   function voltar() {
     if (step === 2) { setStep(1); setTipo(null); }
     else if (step === 3) {
-      if (tipo === "ordem_producao") { setStep(1); setTipo(null); setEmitente(null); }
+      if (tipoFila) { setStep(1); setTipo(null); setEmitente(null); }
       else { setStep(2); setEmitente(null); }
     }
     else if (step === 4) {
-      if (tipo === "ordem_producao") { setStep(2); setEmitente(null); }
+      if (tipoFila) { setStep(2); setEmitente(null); }
       else { setStep(3); setFamiliaSelecionada(null); setBuscaItem(""); }
     }
   }
+
+  // Fila dividida: catalogação (empurrada pelo Painel Moderna) x OPs do OMIE.
+  const ehCatalogo = (op: PrintQueueItem) =>
+    (op.webhook_payload as Record<string, unknown> | undefined)?.origem === "catalogo_moderna";
+  const filaCatalogo = filaOP.filter(ehCatalogo);
+  const filaOrdens = filaOP.filter((op) => !ehCatalogo(op));
+  const tipoFila = tipo === "ordem_producao" || tipo === "catalogo";
+  const listaFila = tipo === "catalogo" ? filaCatalogo : filaOrdens;
 
   // Abrir modal de configuração para item de OP
   function abrirModalOP(op: PrintQueueItem, item: ItemDB) {
@@ -651,7 +659,7 @@ ${linhas}
                   <p className="text-base font-bold text-white mt-0.5">
                     {step === 1 && "👉 Escolha o tipo de etiqueta"}
                     {step === 2 && "👉 Quem está emitindo?"}
-                    {step === 3 && (tipo === "ordem_producao" ? "👉 Selecione as ordens de produção" : "👉 Escolha a família de produtos")}
+                    {step === 3 && (tipo === "catalogo" ? "👉 Selecione os baldes catalogados" : tipo === "ordem_producao" ? "👉 Selecione as ordens de produção" : "👉 Escolha a família de produtos")}
                     {step === 4 && `📦 ${nomeFamilia(familiaSelecionada)} — Adicione ao carrinho`}
                   </p>
                 </div>
@@ -662,8 +670,8 @@ ${linhas}
                 <span className="text-white/40">›</span>
                 <span className={step >= 2 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>2. Emitente</span>
                 <span className="text-white/40">›</span>
-                <span className={step >= 3 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>3. {tipo === "ordem_producao" ? "Ordens" : "Família"}</span>
-                {tipo !== "ordem_producao" && (
+                <span className={step >= 3 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>3. {tipo === "catalogo" ? "Baldes" : tipo === "ordem_producao" ? "Ordens" : "Família"}</span>
+                {!tipoFila && (
                   <>
                     <span className="text-white/40">›</span>
                     <span className={step >= 4 ? "bg-white px-2.5 py-1 rounded-lg font-extrabold text-[var(--marrom)]" : "bg-white/10 px-2.5 py-1 rounded-lg text-white/50"}>4. Produtos</span>
@@ -684,7 +692,7 @@ ${linhas}
 
           {/* ===== STEP 1: Tipo ===== */}
           {step === 1 && (
-            <div className="grid grid-cols-3 gap-6 max-w-3xl mx-auto mt-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto mt-8">
               <button onClick={() => selecionarTipo("producao")} className="bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-[var(--vermelho)] p-8 flex flex-col items-center gap-4 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1">
                 <span className="text-6xl">🏭</span>
                 <span className="text-xl font-extrabold text-[var(--marrom)]">Produção</span>
@@ -699,9 +707,19 @@ ${linhas}
                 <span className="text-6xl">📥</span>
                 <span className="text-xl font-extrabold text-[var(--marrom)]">Ordem de Produção</span>
                 <span className="text-sm text-gray-500 text-center">Ordens recebidas automaticamente do OMIE</span>
-                {filaOP.length > 0 && (
+                {filaOrdens.length > 0 && (
                   <span className="absolute top-3 right-3 bg-[var(--vermelho)] text-white text-xs px-2.5 py-1 rounded-full font-bold animate-pulse">
-                    {filaOP.length}
+                    {filaOrdens.length}
+                  </span>
+                )}
+              </button>
+              <button onClick={() => selecionarTipo("catalogo")} className="bg-white rounded-2xl shadow-lg border-2 border-transparent hover:border-[var(--vermelho)] p-8 flex flex-col items-center gap-4 cursor-pointer transition-all hover:shadow-xl hover:-translate-y-1 relative">
+                <span className="text-6xl">🏷️</span>
+                <span className="text-xl font-extrabold text-[var(--marrom)]">Catalogação</span>
+                <span className="text-sm text-gray-500 text-center">Baldes catalogados no Painel de Controle</span>
+                {filaCatalogo.length > 0 && (
+                  <span className="absolute top-3 right-3 bg-[var(--vermelho)] text-white text-xs px-2.5 py-1 rounded-full font-bold animate-pulse">
+                    {filaCatalogo.length}
                   </span>
                 )}
               </button>
@@ -733,28 +751,34 @@ ${linhas}
             </div>
           )}
 
-          {/* ===== STEP 3 (OP): Fila de Ordens de Produção ===== */}
-          {step === 3 && tipo === "ordem_producao" && (
+          {/* ===== STEP 3 (Fila): Ordens de Produção OU Catalogação ===== */}
+          {step === 3 && tipoFila && (
             <div className="flex gap-6 mt-2">
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-bold text-[var(--marrom)] text-lg">Ordens de Produção Pendentes</h3>
-                  {filaOP.length > 0 && (
+                  <h3 className="font-bold text-[var(--marrom)] text-lg">
+                    {tipo === "catalogo" ? "Baldes catalogados (Painel)" : "Ordens de Produção Pendentes"}
+                  </h3>
+                  {listaFila.length > 0 && (
                     <span className="bg-[var(--vermelho)] text-white text-xs px-3 py-1 rounded-full font-bold">
-                      {filaOP.length} pendente{filaOP.length > 1 ? "s" : ""}
+                      {listaFila.length} pendente{listaFila.length > 1 ? "s" : ""}
                     </span>
                   )}
                 </div>
 
-                {filaOP.length === 0 ? (
+                {listaFila.length === 0 ? (
                   <div className="bg-white rounded-2xl p-8 shadow-md text-center">
                     <span className="text-4xl block mb-2">✅</span>
-                    <p className="text-[var(--marrom)] font-semibold">Nenhuma ordem pendente</p>
-                    <p className="text-sm text-gray-500 mt-1">Quando o OMIE enviar novas ordens de produção, elas aparecerão aqui.</p>
+                    <p className="text-[var(--marrom)] font-semibold">Nada pendente</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {tipo === "catalogo"
+                        ? "Quando você catalogar baldes no Painel e clicar Enviar pra impressão, eles aparecem aqui."
+                        : "Quando o OMIE enviar novas ordens de produção, elas aparecerão aqui."}
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    {filaOP.map((op) => {
+                    {listaFila.map((op) => {
                       const itemVinculado = op.item_id ? todosItens.find((i) => i.id === op.item_id) : null;
                       const jaNoCarrinho = itemVinculado ? carrinho.some((c) => c.item.id === itemVinculado.id) : false;
                       const isVinculando = opVinculando === op.id;
@@ -900,7 +924,7 @@ ${linhas}
           )}
 
           {/* ===== STEP 3: Família ===== */}
-          {step === 3 && tipo !== "ordem_producao" && (() => {
+          {step === 3 && !tipoFila && (() => {
             // Ícones e cores por nome de família (case-insensitive)
             const FAMILIA_VISUAL: Record<string, { icon: string; bg: string; border: string }> = {
               "gelatos": { icon: "🍨", bg: "bg-pink-50", border: "border-pink-200 hover:border-pink-400" },
