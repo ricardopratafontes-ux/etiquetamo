@@ -702,7 +702,7 @@ ${linhas}
     // continuam na fila pra próxima vez (não somem sem imprimir).
     const filaIds = carrinho.map((c) => c.filaId).filter((x): x is string => !!x);
     if (filaIds.length > 0) {
-      await supabase.from("omie_print_queue").update({ status: "queued" }).in("id", filaIds);
+      await supabase.from("omie_print_queue").update({ status: "printed" }).in("id", filaIds);
       setFilaOP((prev) => prev.filter((p) => !filaIds.includes(p.id)));
     }
 
