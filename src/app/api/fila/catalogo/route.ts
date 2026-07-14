@@ -61,17 +61,28 @@ export async function POST(request: NextRequest) {
       webhook_payload: { origem: "catalogo_moderna", fabricacao: i.fabricacao ?? null, lote: i.lot ?? null, omie_produto_id: i.omie_produto_id ?? null },
     }));
 
-  // Substitui a remessa: apaga os pendentes de origem catálogo ainda não impressos
-  // e insere a lista atual. Torna o reenvio idempotente (sem duplicar, sem código antigo).
-  await supabase.from("omie_print_queue").delete()
-    .eq("organization_id", org.id)
-    .eq("status", "pending")
-    .filter("webhook_payload->>origem", "eq", "catalogo_moderna");
+  // Idempotente por LOTE (nunca reimprime): o painel manda o conjunto todo a cada
+  // catalogação, mas aqui só INSERIMOS lotes que ainda NÃO existem na fila (em
+  // qualquer status). Lote já impresso (status != 'pending') ou já pendente fica
+  // como está — reenviar não o ressuscita. Sem delete: nada do que já foi pra
+  // impressão é apagado/recriado. (Reimpressão intencional é fluxo à parte.)
+  const lotesIn = [...new Set(linhas.map((l) => l.lot).filter((x): x is string => !!x))];
+  const jaExiste = new Set<string>();
+  if (lotesIn.length > 0) {
+    const { data: existentes } = await supabase.from("omie_print_queue")
+      .select("lot")
+      .eq("organization_id", org.id)
+      .filter("webhook_payload->>origem", "eq", "catalogo_moderna")
+      .in("lot", lotesIn);
+    for (const r of (existentes ?? []) as Array<{ lot: string | null }>) if (r.lot) jaExiste.add(r.lot);
+  }
+  const novas = linhas.filter((l) => l.lot && !jaExiste.has(l.lot));
+  if (novas.length === 0) return NextResponse.json({ ok: true, inseridos: 0, ja_na_fila: jaExiste.size });
 
-  const { data, error } = await supabase.from("omie_print_queue").insert(linhas).select("id");
+  const { data, error } = await supabase.from("omie_print_queue").insert(novas).select("id");
   if (error) return NextResponse.json({ ok: false, erro: error.message }, { status: 500 });
 
-  return NextResponse.json({ ok: true, inseridos: data?.length ?? 0 });
+  return NextResponse.json({ ok: true, inseridos: data?.length ?? 0, ja_na_fila: jaExiste.size });
 }
 
 export async function GET() {
