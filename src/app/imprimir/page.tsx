@@ -183,15 +183,12 @@ export default function ImprimirWizard() {
     if (catRes.data) setCategorias(catRes.data);
     if (itensRes.data) setTodosItens(itensRes.data);
 
-    // Carregar fila de OP pendente
-    const { data: opData } = await supabase
-      .from("omie_print_queue")
-      .select("*")
-      .eq("organization_id", org.id)
-      .eq("status", "pending")
-      .order("created_at", { ascending: false });
-
-    const ops = (opData || []) as PrintQueueItem[];
+    // Carregar fila de OP pendente — via API route (service role).
+    // O navegador NÃO fala mais direto com a tabela: a chave anon é pública
+    // (viaja no bundle) e a fila ficaria aberta pra qualquer um com a URL do projeto.
+    const filaResp = await fetch("/api/fila/op", { cache: "no-store" });
+    const filaJson = await filaResp.json().catch(() => ({}));
+    const ops = ((filaJson?.fila ?? []) as PrintQueueItem[]);
     const itensLocal = itensRes.data || [];
 
     // Auto-vincular OPs sem item_id usando match por nome
@@ -215,9 +212,13 @@ export default function ImprimirWizard() {
         bestMatch = matches.sort((a: ItemDB, b: ItemDB) => b.name.length - a.name.length)[0] as ItemDB;
       }
       if (bestMatch) {
-        // Atualizar no banco e na memória
+        // Atualizar no banco (via servidor) e na memória
         op.item_id = bestMatch.id;
-        supabase.from("omie_print_queue").update({ item_id: bestMatch.id }).eq("id", op.id);
+        void fetch("/api/fila/op", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: op.id, item_id: bestMatch.id }),
+        });
       }
     }
 
@@ -416,9 +417,12 @@ export default function ImprimirWizard() {
         setCarrinho((prev) => [...prev, novoItem]);
       }
     }
-    // Se veio de uma OP, marcar como processada
+    // A OP sai da LISTA (estado local), mas NÃO muda de status no banco: ela só vira
+    // 'printed' quando a etiqueta é realmente impressa (ver imprimirTudo). Antes daqui
+    // saía um update para o status "queued" — que NÃO existe na CHECK constraint
+    // (pending|printed|skipped): o update falhava em silêncio e a OP voltava a aparecer
+    // no próximo carregamento. Adicionar ao carrinho não é imprimir.
     if (opSelecionada) {
-      supabase.from("omie_print_queue").update({ status: "queued" }).eq("id", opSelecionada.id);
       setFilaOP((prev) => prev.filter((p) => p.id !== opSelecionada.id));
       setOpSelecionada(null);
     }
@@ -544,7 +548,11 @@ export default function ImprimirWizard() {
   }
 
   function pularOP(opId: string) {
-    supabase.from("omie_print_queue").update({ status: "skipped" }).eq("id", opId);
+    void fetch("/api/fila/op", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: opId, status: "skipped" }),
+    });
     setFilaOP((prev) => prev.filter((p) => p.id !== opId));
     if (opVinculando === opId) { setOpVinculando(null); setOpBuscaVinc(""); }
   }
@@ -702,7 +710,11 @@ ${linhas}
     // continuam na fila pra próxima vez (não somem sem imprimir).
     const filaIds = carrinho.map((c) => c.filaId).filter((x): x is string => !!x);
     if (filaIds.length > 0) {
-      await supabase.from("omie_print_queue").update({ status: "printed" }).in("id", filaIds);
+      await fetch("/api/fila/op", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: filaIds, status: "printed" }),
+      });
       setFilaOP((prev) => prev.filter((p) => !filaIds.includes(p.id)));
     }
 
