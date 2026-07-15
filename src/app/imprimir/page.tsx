@@ -607,6 +607,29 @@ export default function ImprimirWizard() {
   // --- Impressão ---
   async function imprimirTudo() {
     if (carrinho.length === 0) return;
+
+    // ── ABRIR A JANELA AGORA, DENTRO DO GESTO DO CLIQUE ───────────────────────
+    // A geração das etiquetas faz `await` (cunhagem do lote no painel). Se
+    // window.open for chamado DEPOIS do await, o navegador já não enxerga um gesto
+    // do usuário e BLOQUEIA o popup — no Chrome do celular isso é a regra, não a
+    // exceção. Era esse o bug: a janela não abria, mas o código seguia limpando o
+    // carrinho e marcando a fila como impressa (nada impresso, carrinho perdido).
+    // Abrimos a janela síncrona aqui, seguramos a referência e só escrevemos nela
+    // no fim — ela sobrevive aos awaits. Popup bloqueado → aborta SEM tocar no
+    // carrinho nem na fila.
+    const win = window.open("", "_blank");
+    if (!win) {
+      alert(
+        "O navegador bloqueou a janela de impressão.\n\n" +
+        "Libere pop-ups/janelas para este site e toque em Imprimir de novo. " +
+        "Nada foi impresso e o carrinho foi mantido.",
+      );
+      return;
+    }
+    win.document.write(
+      '<!doctype html><html><body style="font-family:sans-serif;padding:40px;text-align:center;color:#98472d;">Gerando etiquetas…</body></html>',
+    );
+
     setImprimindo(true);
 
     const hoje = dataHoje();
@@ -656,6 +679,7 @@ export default function ImprimirWizard() {
             throw new Error(j?.erro || "resposta inesperada do painel");
           }
         } catch (e) {
+          win.close();
           setImprimindo(false);
           alert(`Não consegui gerar o lote de "${item.item.name}" no painel: ${String(e)}. Nada foi impresso — tente de novo.`);
           return;
@@ -679,6 +703,7 @@ export default function ImprimirWizard() {
         // SEMPRE tem code preenchido, então nunca é barrado; só cai aqui o que está
         // de fato sem identidade. Aborta a impressão inteira (nada pela metade).
         if (!String(loteFinal).trim() || !String(qrCode).trim()) {
+          win.close();
           setImprimindo(false);
           alert(
             `"${item.item.name}" está sem lote/identificação e NÃO pode ser impresso.\n\n` +
@@ -762,11 +787,11 @@ ${linhas}
 </body>
 </html>`;
 
-    const win = window.open("", "_blank");
-    if (win) {
-      win.document.write(html);
-      win.document.close();
-    }
+    // A janela já foi aberta no início (dentro do gesto do clique). Agora só
+    // trocamos o "Gerando etiquetas…" pelo conteúdo final.
+    win.document.open();
+    win.document.write(html);
+    win.document.close();
 
     // Salvar no histórico
     if (orgId && emitente) {
