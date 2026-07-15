@@ -403,13 +403,24 @@ export default function ImprimirWizard() {
       tipoEtiqueta: modalTipoEtiqueta, infoComplementar: modalInfoComplementar,
       incluirComplementar: modalIncluirComplementar, complementarDados: complDados,
       pesoOverride: modalPeso, unidadeOverride: modalUnidade, incluirPeso: modalIncluirPeso,
+      // filaId: sem isso o balde entrava no carrinho ANÔNIMO — o consumo da fila (que
+      // usa c.filaId) não removia a OP depois de imprimir, e a marcação "no carrinho"
+      // se perdia. Vem da OP que o modal está configurando.
+      filaId: opSelecionada?.id ?? null,
     };
     if (editandoIdx !== null) {
       // Modo edição: substituir item no índice
       setCarrinho((prev) => prev.map((c, i) => i === editandoIdx ? novoItem : c));
       setEditandoIdx(null);
     } else {
-      const existente = carrinho.findIndex((c) => c.item.id === modalItem.id && c.tipoEtiqueta === modalTipoEtiqueta);
+      // NÃO MESCLAR baldes que têm lote único. Cada balde (B0141, B0142, B0143) é uma
+      // ETIQUETA DISTINTA — mesclar por sabor (item.id) fundia os 3 lotes de MANGABA
+      // num só e imprimia o mesmo QR repetido, destruindo a identidade que a cunhagem
+      // criou. Só se mescla item avulso SEM lote e SEM OP (ex.: item genérico digitado).
+      const temIdentidadeUnica = !!novoItem.filaId || !!(modalLote && modalLote.trim());
+      const existente = temIdentidadeUnica
+        ? -1
+        : carrinho.findIndex((c) => c.item.id === modalItem.id && c.tipoEtiqueta === modalTipoEtiqueta && !c.filaId && !c.lote);
       if (existente >= 0) {
         setCarrinho((prev) => prev.map((c, i) =>
           i === existente ? { ...novoItem, quantidade: c.quantidade + modalQtd } : c
@@ -923,7 +934,10 @@ ${linhas}
                   <div className="space-y-2">
                     {listaFila.map((op) => {
                       const itemVinculado = op.item_id ? todosItens.find((i) => i.id === op.item_id) : null;
-                      const jaNoCarrinho = itemVinculado ? carrinho.some((c) => c.item.id === itemVinculado.id) : false;
+                      // "No carrinho" por BALDE (filaId), não por sabor. Antes usava item.id:
+                      // com 3 MANGABA (mesmo item), pôr UMA no carrinho pintava as TRÊS de
+                      // verde — parecia que já estavam todas lá quando só uma estava.
+                      const jaNoCarrinho = carrinho.some((c) => c.filaId === op.id);
                       const isVinculando = opVinculando === op.id;
                       const itensVincBusca = isVinculando ? todosItens.filter((i) =>
                         opBuscaVinc.trim() ? i.name.toLowerCase().includes(opBuscaVinc.trim().toLowerCase()) : true
