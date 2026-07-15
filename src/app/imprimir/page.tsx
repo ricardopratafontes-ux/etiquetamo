@@ -445,12 +445,12 @@ export default function ImprimirWizard() {
     setCarrinho((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  // Catalogação: manda TODA a fila pro carrinho de uma vez. Cada balde vira uma
-  // etiqueta própria (código único → NÃO mescla por produto). Não consome a fila
-  // aqui — o consumo acontece só ao imprimir (evita "sumir sem imprimir").
+  // Manda TODA a fila ATIVA (catálogo OU ordens de produção) pro carrinho de uma vez.
+  // Cada balde vira uma etiqueta própria (código único → NÃO mescla por produto). Não
+  // consome a fila aqui — o consumo acontece só ao imprimir (evita "sumir sem imprimir").
   function adicionarTodosAoCarrinho() {
     const novos: ItemCarrinho[] = [];
-    for (const op of filaCatalogo) {
+    for (const op of listaFila) {
       const item = op.item_id ? todosItens.find((i) => i.id === op.item_id) : null;
       if (!item) continue; // pula não-vinculados (aparecem com aviso na lista)
       if (carrinho.some((c) => c.filaId === op.id)) continue; // já adicionado
@@ -464,11 +464,12 @@ export default function ImprimirWizard() {
         produtores: [],
         lote: op.lot ?? "",
         fabricacaoOverride: ehCat && typeof wp.fabricacao === "string" && wp.fabricacao ? wp.fabricacao : null,
-        // O QR carrega o LOTE ÚNICO sempre que houver — não só na catalogação.
-        // O painel cunha um lote por balde (B0135, B0136…); é ele que dá identidade ao
-        // balde e faz o bipe funcionar depois. Sem lote, cai no código do produto (o
-        // comportamento antigo, pra insumo/casquinha que não têm controle individual).
-        qrOverride: op.lot ? op.lot : (item.code ?? null),
+        // Já tem lote na fila → é ele no QR (não re-cunha). SEM lote → qrOverride null,
+        // pra a cunhagem rodar na impressão e nascer o B#### único do balde. NÃO cair no
+        // item.code aqui: senão um balde sem lote (ex.: BROWNIE em produção) sairia com o
+        // CÓDIGO DO PRODUTO no QR, sem identidade única — furando a regra. A impressão já
+        // decide: balde → cunha; não-balde (insumo/casquinha) → código do produto.
+        qrOverride: op.lot ?? null,
         filaId: op.id,
         tipoEtiqueta: "normal",
         infoComplementar: addInfo ? `${armazInfo} | ${addInfo}` : armazInfo,
@@ -954,11 +955,11 @@ ${linhas}
                     {tipo === "catalogo" ? "Baldes catalogados (Painel)" : "Ordens de Produção Pendentes"}
                   </h3>
                   <div className="flex items-center gap-2 shrink-0">
-                    {tipo === "catalogo" && filaCatalogo.some((op) => op.item_id && !carrinho.some((c) => c.filaId === op.id)) && (
+                    {tipoFila && listaFila.some((op) => op.item_id && !carrinho.some((c) => c.filaId === op.id)) && (
                       <button
                         onClick={adicionarTodosAoCarrinho}
                         className="text-xs px-3 py-1.5 rounded-lg bg-[var(--marrom)] text-white hover:opacity-90 transition-opacity font-bold cursor-pointer whitespace-nowrap"
-                        title="Manda todos os baldes catalogados pro carrinho de uma vez"
+                        title="Manda todos os baldes vinculados pro carrinho de uma vez"
                       >
                         🛒 Adicionar todos ao carrinho
                       </button>
