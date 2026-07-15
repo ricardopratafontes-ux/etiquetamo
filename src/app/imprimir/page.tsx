@@ -452,7 +452,11 @@ export default function ImprimirWizard() {
         produtores: [],
         lote: op.lot ?? "",
         fabricacaoOverride: ehCat && typeof wp.fabricacao === "string" && wp.fabricacao ? wp.fabricacao : null,
-        qrOverride: ehCat && op.lot ? op.lot : (item.code ?? null),
+        // O QR carrega o LOTE ÚNICO sempre que houver — não só na catalogação.
+        // O painel cunha um lote por balde (B0135, B0136…); é ele que dá identidade ao
+        // balde e faz o bipe funcionar depois. Sem lote, cai no código do produto (o
+        // comportamento antigo, pra insumo/casquinha que não têm controle individual).
+        qrOverride: op.lot ? op.lot : (item.code ?? null),
         filaId: op.id,
         tipoEtiqueta: "normal",
         infoComplementar: addInfo ? `${armazInfo} | ${addInfo}` : armazInfo,
