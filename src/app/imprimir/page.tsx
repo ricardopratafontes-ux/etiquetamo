@@ -545,11 +545,17 @@ export default function ImprimirWizard() {
     abrirModalItem(item);
     // Pré-preencher dados da OP
     if (op.lot) setModalLote(op.lot);
-    // Catalogação (Painel Moderna): usa a data real de fabricação e o QR = código do balde
+    // Se a OP JÁ tem lote na fila, é ele que vai pra etiqueta — NÃO re-cunhar na
+    // impressão. Isso vale pra qualquer origem: um balde de ordem de produção que já
+    // recebeu lote antes (pré-cunhado) estava caindo na cunhagem de novo e gerando um
+    // lote DUPLICADO a cada impressão (B0141 já existia e nascia um B0149 fantasma).
+    // Sem lote na fila (ordem de produção nova) → qrOverride fica null e a cunhagem
+    // roda na impressão, como deve.
+    if (op.lot) setModalQrOverride(op.lot);
+    // Catalogação (Painel Moderna): a data real de fabricação vem do balde catalogado.
     const wp = (op.webhook_payload ?? {}) as Record<string, unknown>;
     if (wp.origem === "catalogo_moderna") {
       if (typeof wp.fabricacao === "string" && wp.fabricacao) setModalFabOverride(wp.fabricacao);
-      if (op.lot) setModalQrOverride(op.lot);
     }
     // Quantidade: aplicar regra ÷10 para Bases e Xaropes
     if (op.quantity && op.quantity > 0) {
