@@ -95,3 +95,37 @@ export async function consultarProduto(codigoProduto: number): Promise<OmieProdu
   });
   return result;
 }
+
+// --- Ordem de Producao ---
+
+/**
+ * Retorno do ConsultarOrdemProducao. A quantidade a produzir mora em
+ * `identificacao.nQtde` (confirmado na doc oficial da API produtos/op).
+ */
+export interface OmieOrdemProducao {
+  identificacao?: {
+    nCodOP?: number;
+    cCodIntOP?: string;
+    cNumOP?: string;
+    nCodProduto?: number;
+    dDtPrevisao?: string;
+    nQtde?: number;
+  };
+  [k: string]: unknown;
+}
+
+/**
+ * Consulta uma Ordem de Producao pelo codigo interno do Omie (nCodOP).
+ *
+ * POR QUE ISSO EXISTE: o webhook do Omie (OrdemProducao.*) NAO manda a quantidade
+ * de baldes no payload — so nCodOP/nCodProd/cEtapa. Sem isso, toda OP de N baldes
+ * virava 1 etiqueta. Aqui buscamos a quantidade REAL (identificacao.nQtde) direto
+ * na OP pra enfileirar as N etiquetas certas.
+ */
+export async function consultarOrdemProducao(nCodOP: number): Promise<OmieOrdemProducao> {
+  return omieCall<OmieOrdemProducao>({
+    endpoint: "/produtos/op/",
+    method: "ConsultarOrdemProducao",
+    params: [{ nCodOP }],
+  });
+}

@@ -445,6 +445,17 @@ export default function ImprimirWizard() {
     setCarrinho((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  // Quantidade de etiquetas de uma OP. A fila guarda a qtd BRUTA da OP (o webhook agora
+  // busca a nQtde real no Omie). Bases/Xaropes vêm em kg → cada balde = 10kg (÷10 + 1 de
+  // segurança); o resto é 1 etiqueta por unidade. Um único ponto pra o modal e o
+  // "adicionar todos" concordarem — antes o "adicionar todos" fixava 1 e furava OPs de N.
+  function qtdDaOP(op: PrintQueueItem, item: ItemDB): number {
+    if (!op.quantity || op.quantity <= 0) return 1;
+    const catNome = nomeCategoriaPorId(item.category_id).toLowerCase();
+    if (catNome === FAMILIA_BASES_XAROPES) return Math.ceil(op.quantity / 10) + 1;
+    return op.quantity;
+  }
+
   // Manda TODA a fila ATIVA (catálogo OU ordens de produção) pro carrinho de uma vez.
   // Cada balde vira uma etiqueta própria (código único → NÃO mescla por produto). Não
   // consome a fila aqui — o consumo acontece só ao imprimir (evita "sumir sem imprimir").
@@ -460,7 +471,7 @@ export default function ImprimirWizard() {
       const addInfo = item.additional_info || "";
       novos.push({
         item,
-        quantidade: 1,
+        quantidade: qtdDaOP(op, item),
         produtores: [],
         lote: op.lot ?? "",
         fabricacaoOverride: ehCat && typeof wp.fabricacao === "string" && wp.fabricacao ? wp.fabricacao : null,
@@ -558,16 +569,8 @@ export default function ImprimirWizard() {
     if (wp.origem === "catalogo_moderna") {
       if (typeof wp.fabricacao === "string" && wp.fabricacao) setModalFabOverride(wp.fabricacao);
     }
-    // Quantidade: aplicar regra ÷10 para Bases e Xaropes
-    if (op.quantity && op.quantity > 0) {
-      const catNome = nomeCategoriaPorId(item.category_id).toLowerCase();
-      if (catNome === FAMILIA_BASES_XAROPES) {
-        // Bases e Xaropes: quantidade OMIE é em kg, cada balde = 10kg → ÷10 + 1 segurança
-        setModalQtd(Math.ceil(op.quantity / 10) + 1);
-      } else {
-        setModalQtd(op.quantity);
-      }
-    }
+    // Quantidade da OP (com a regra ÷10 de Bases/Xaropes) — mesma fonte do "adicionar todos".
+    if (op.quantity && op.quantity > 0) setModalQtd(qtdDaOP(op, item));
   }
 
   function pularOP(opId: string) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-import { consultarProduto } from "@/lib/omie";
+import { consultarProduto, consultarOrdemProducao } from "@/lib/omie";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 // Usar service_role para bypass de RLS (server-side webhook)
@@ -129,7 +129,23 @@ export async function POST(request: NextRequest) {
       const cNumOP = event.cNumOP || event.cNumOrdemProducao || event.numero_op || null;
       const cEtapa = event.cEtapa || event.etapa || event.cEtapaOP || "";
       const cLote = extrairLote(event);
-      const quantidade = extrairQuantidade(event);
+      let quantidade = extrairQuantidade(event);
+
+      // O payload do webhook NÃO traz a quantidade de baldes (só nCodOP/nCodProd/
+      // cEtapa) — extrairQuantidade cai no default 1, e uma OP de 3 baldes virava 1
+      // etiqueta. A quantidade REAL mora na OP (identificacao.nQtde): buscamos direto
+      // no Omie. Se a consulta falhar, seguimos com o fallback (não trava a fila).
+      if (nCodOP) {
+        try {
+          const op = await consultarOrdemProducao(Number(nCodOP));
+          const nQtde = op.identificacao?.nQtde;
+          if (typeof nQtde === "number" && nQtde > 0) {
+            quantidade = Math.max(1, Math.round(nQtde));
+          }
+        } catch (err) {
+          console.error("[OMIE Webhook] Erro ao consultar OP p/ quantidade:", nCodOP, err);
+        }
+      }
 
       console.log("[OMIE Webhook] Dados extraidos:", {
         nCodProd, nCodOP, cNumOP, cEtapa, cLote, quantidade,
