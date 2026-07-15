@@ -966,7 +966,14 @@ ${linhas}
                         <div key={op.id} className={"bg-white rounded-xl p-4 shadow-sm border-l-4 " + (jaNoCarrinho ? "border-green-400 bg-green-50" : "border-[var(--vermelho)]")}>
                           <div className="flex items-center justify-between">
                             <div>
-                              <p className="font-semibold text-[var(--marrom)]">{op.product_name}</p>
+                              {/* Nome curto do catálogo é a fonte de verdade (é o que sai na
+                                  etiqueta). O nome do Omie varia ("gelato 10l balde chocolate"
+                                  vs "10l chocolate") e vira ruído; quando vinculado, mostramos o
+                                  curto e deixamos o do Omie só como referência discreta. */}
+                              <p className="font-semibold text-[var(--marrom)]">{itemVinculado?.name || op.product_name}</p>
+                              {itemVinculado && itemVinculado.name !== op.product_name && (
+                                <p className="text-[10px] text-gray-400">Omie: {op.product_name}</p>
+                              )}
                               <p className="text-xs text-gray-500">
                                 {op.omie_order_number && `OP #${op.omie_order_number} · `}
                                 Qtd: {op.quantity}
