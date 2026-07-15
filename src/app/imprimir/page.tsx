@@ -19,6 +19,7 @@ interface ItemDB {
   net_weight: string | null; unit: string | null;
   uses_complementary_label: boolean | null; complementary_label_text: string | null;
   is_portioned: boolean | null;
+  omie_product_id: number | null;
 }
 interface CampoOpcional {
   label: string;
@@ -609,12 +610,56 @@ export default function ImprimirWizard() {
         ? validadeDesde(item.fabricacaoOverride, item.item.expiry_days)
         : calcValidade(item.item.expiry_days);
       const prods = iniciaisProdutores(item.produtores);
-      const qrCode = item.qrOverride || item.item.code || "";
+
+      // ── LOTE ÚNICO POR BALDE ──────────────────────────────────────────────
+      // O painel é a autoridade da identidade: cada balde recebe um código B####
+      // DISTINTO, e é ele que faz o bipe funcionar depois na câmara e na loja.
+      //
+      // codigos[i] = o QR da i-ésima cópia. Regras:
+      //   · Já tem lote (qrOverride: pré-cunhado ou catalogação) → usa pra todas as
+      //     cópias (na prática esses vêm com quantidade 1).
+      //   · Sem lote e tem código Omie → CUNHA no painel: N baldes = N lotes distintos.
+      //     Se o painel disser "não é balde" (insumo/base/casquinha) → código do produto.
+      //   · Falha de rede ao cunhar → ABORTA a impressão. Melhor não imprimir do que
+      //     imprimir balde sem identidade única (era esse o problema que resolvemos).
+      let codigos: string[] = [];
+      if (item.qrOverride) {
+        codigos = Array(item.quantidade).fill(item.qrOverride);
+      } else if (item.item.omie_product_id) {
+        try {
+          const r = await fetch("/api/fila/cunhar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              omie_codigo_produto: item.item.omie_product_id,
+              quantidade: item.quantidade,
+              omie_op: item.filaId ?? null,
+            }),
+          });
+          const j = await r.json();
+          if (j?.ok && j?.e_balde && Array.isArray(j.lotes)) {
+            codigos = j.lotes.map((l: { codigo: string }) => l.codigo);
+          } else if (j?.ok && j?.e_balde === false) {
+            codigos = Array(item.quantidade).fill(item.item.code ?? "");
+          } else {
+            throw new Error(j?.erro || "resposta inesperada do painel");
+          }
+        } catch (e) {
+          setImprimindo(false);
+          alert(`Não consegui gerar o lote de "${item.item.name}" no painel: ${String(e)}. Nada foi impresso — tente de novo.`);
+          return;
+        }
+      } else {
+        codigos = Array(item.quantidade).fill(item.item.code ?? "");
+      }
 
       for (let i = 0; i < item.quantidade; i++) {
+        const qrCode = codigos[i] || codigos[0] || item.item.code || "";
         celulas.push(gerarCelulaEtiqueta({
           nome: item.item.name, fabricacao, validade,
-          lote: item.lote, info: item.infoComplementar || "", produtorIniciais: prods, logoUrl,
+          // o código legível acima do QR também é o lote único (o colaborador digita
+          // esse se o QR não ler).
+          lote: codigos[i] || item.lote, info: item.infoComplementar || "", produtorIniciais: prods, logoUrl,
           qrCode,
         }));
       }

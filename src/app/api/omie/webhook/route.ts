@@ -138,8 +138,20 @@ export async function POST(request: NextRequest) {
         raw_event: JSON.stringify(event).slice(0, 600),
       });
 
-      // === AUTO-ENCERRAR OP FINALIZADA ===
-      if (isEtapaFinalizada(cEtapa) && nCodOP) {
+      // === CANCELAMENTO/EXCLUSÃO: sai da fila ===
+      //
+      // BUG CORRIGIDO (Ricardo, 14/07): a lógica antiga tratava TODA "etapa finalizada"
+      // (40/50/60/produzida/encerrada) como "não precisa mais imprimir" e IGNORAVA a OP.
+      // Mas no fluxo da Moderna, "Pronto no Freezer" (= OP concluída) é EXATAMENTE quando
+      // o balde acabou de existir e PRECISA de etiqueta. A regra estava invertida: OPs
+      // concluídas de balde (ex.: MANGABA 00623) sumiam sem nunca entrar na fila.
+      //
+      // Agora só o CANCELAMENTO REAL (topic .excluida / .cancelada) tira da fila.
+      // Concluída e Alterada seguem para o fluxo de inserir/atualizar como pending.
+      const isCancelamento = topic.toLowerCase().includes("excluida") ||
+                             topic.toLowerCase().includes("cancelada");
+
+      if (isCancelamento && nCodOP) {
         const { data: existing } = await supabase
           .from("omie_print_queue")
           .select("id, status")
@@ -148,26 +160,15 @@ export async function POST(request: NextRequest) {
           .single();
 
         if (existing && existing.status === "pending") {
-          const { error: updateErr } = await supabase.from("omie_print_queue").update({
-            status: "skipped",
-            webhook_payload: payload,
+          await supabase.from("omie_print_queue").update({
+            status: "skipped", webhook_payload: payload,
           }).eq("id", existing.id);
-
-          console.log("[OMIE Webhook] OP auto-encerrada:", nCodOP, cEtapa,
-            updateErr ? `ERRO: ${updateErr.message}` : "OK");
-          return NextResponse.json({
-            received: true, processed: true, action: "auto_completed",
-            topic, etapa: cEtapa,
-          });
+          console.log("[OMIE Webhook] OP cancelada — saiu da fila:", nCodOP, topic);
         }
-
-        if (!existing) {
-          console.log("[OMIE Webhook] OP finalizada ignorada (nao existia na fila):", nCodOP);
-          return NextResponse.json({
-            received: true, processed: false, action: "ignored",
-            topic, etapa: cEtapa, reason: "etapa_finalizada_sem_fila",
-          });
-        }
+        return NextResponse.json({
+          received: true, processed: true, action: "cancelada",
+          topic, etapa: cEtapa,
+        });
       }
 
       // Buscar dados do produto via API OMIE para obter o CODIGO
