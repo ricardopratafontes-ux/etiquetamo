@@ -666,11 +666,31 @@ export default function ImprimirWizard() {
 
       for (let i = 0; i < item.quantidade; i++) {
         const qrCode = codigos[i] || codigos[0] || item.item.code || "";
+        // o código legível acima do QR também é o lote único (o colaborador digita
+        // esse se o QR não ler).
+        const loteFinal = codigos[i] || item.lote || "";
+
+        // ── TRAVA: nenhum balde/produto imprime sem identificação de lote ──────
+        // Regra do Ricardo (15/07/2026): "não podemos imprimir nenhum balde sem
+        // identificação de lote mais". O caminho `else` acima (item sem código Omie,
+        // não catalogado) e qualquer resposta vazia da cunhagem cairiam aqui com
+        // lote/QR em branco e imprimiriam uma etiqueta ANÔNIMA — o exato problema
+        // que essa etapa existe pra evitar. Um não-balde legítimo (casquinha, base)
+        // SEMPRE tem code preenchido, então nunca é barrado; só cai aqui o que está
+        // de fato sem identidade. Aborta a impressão inteira (nada pela metade).
+        if (!String(loteFinal).trim() || !String(qrCode).trim()) {
+          setImprimindo(false);
+          alert(
+            `"${item.item.name}" está sem lote/identificação e NÃO pode ser impresso.\n\n` +
+            `Catalogue o balde no Painel (ou vincule o produto ao código Omie) antes de imprimir. ` +
+            `Nada foi impresso.`,
+          );
+          return;
+        }
+
         celulas.push(gerarCelulaEtiqueta({
           nome: item.item.name, fabricacao, validade,
-          // o código legível acima do QR também é o lote único (o colaborador digita
-          // esse se o QR não ler).
-          lote: codigos[i] || item.lote, info: item.infoComplementar || "", produtorIniciais: prods, logoUrl,
+          lote: loteFinal, info: item.infoComplementar || "", produtorIniciais: prods, logoUrl,
           qrCode,
         }));
       }
@@ -954,6 +974,14 @@ ${linhas}
                                 {" · "}
                                 {new Date(op.created_at).toLocaleString("pt-BR")}
                               </p>
+                              {/* Sem lote ainda? O painel cunha um B#### único por balde NA
+                                  impressão (e a trava impede imprimir sem ele). Deixar isso
+                                  explícito pra não parecer que o balde está "sem identidade". */}
+                              {!op.lot && (
+                                <p className="text-[11px] text-blue-600 font-medium mt-0.5">
+                                  🏷️ Lote único gerado ao imprimir
+                                </p>
+                              )}
                               {!itemVinculado && !isVinculando && (
                                 <p className="text-xs text-orange-600 font-medium mt-1">⚠️ Item não vinculado — clique em Vincular para associar</p>
                               )}
