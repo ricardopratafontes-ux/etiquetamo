@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
       // === VINCULAR ITEM (APENAS POR CODIGO, NUNCA POR NOME) ===
       const { data: allItems } = await supabase
         .from("items")
-        .select("id, name, code, omie_product_id")
+        .select("id, name, code, omie_product_id, uses_label")
         .eq("organization_id", orgId)
         .eq("active", true);
 
@@ -257,6 +257,21 @@ export async function POST(request: NextRequest) {
             .from("items")
             .update({ omie_product_id: nCodProd })
             .eq("id", itemId);
+        }
+      }
+
+      // ITEM QUE NAO LEVA ETIQUETA nao entra na fila (Ricardo, 17/07): a familia
+      // MODERNA ACAI (1L/2L) e produzida mas nao recebe etiqueta de producao — as OPs
+      // dela so poluiam a fila da fabrica. `uses_label = false` e o campo que ja diz
+      // isso no catalogo; aqui ele passa a valer tambem na entrada da fila.
+      if (itemId) {
+        const matchedItem = items.find((i) => i.id === itemId);
+        if (matchedItem && matchedItem.uses_label === false) {
+          console.log("[OMIE Webhook] OP ignorada — item nao usa etiqueta:", matchedItem.name);
+          return NextResponse.json({
+            received: true, processed: true, action: "ignored_no_label",
+            topic, item: matchedItem.name,
+          });
         }
       }
 
