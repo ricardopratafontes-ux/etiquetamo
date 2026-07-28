@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { SUPABASE_SCHEMA } from "@/lib/supabaseSchema";
 
 /**
  * FILA DE OP — acesso server-side com service role.
@@ -35,7 +36,10 @@ type Status = (typeof STATUS_VALIDOS)[number];
 
 function admin() {
   if (!SERVICE_KEY) throw new Error("SUPABASE_SERVICE_ROLE_KEY ausente no servidor.");
-  return createClient(SUPABASE_URL, SERVICE_KEY, { auth: { persistSession: false } });
+  return createClient(SUPABASE_URL, SERVICE_KEY, {
+    auth: { persistSession: false },
+    db: { schema: SUPABASE_SCHEMA },
+  });
 }
 
 async function orgId(supabase: ReturnType<typeof admin>) {

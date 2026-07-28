@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { consultarProduto, consultarOrdemProducao } from "@/lib/omie";
+import { SUPABASE_SCHEMA } from "@/lib/supabaseSchema";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 // Usar service_role para bypass de RLS (server-side webhook)
@@ -102,7 +103,7 @@ export async function POST(request: NextRequest) {
     const payload = await request.json();
     console.log("[OMIE Webhook] Payload recebido:", JSON.stringify(payload).slice(0, 1200));
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createClient(supabaseUrl, supabaseKey, { db: { schema: SUPABASE_SCHEMA } });
 
     const { data: org } = await supabase
       .from("organizations")

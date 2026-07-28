@@ -647,6 +647,9 @@ export default function ImprimirWizard() {
 
     // Gera células individuais de etiqueta
     const celulas: string[] = [];
+    // Códigos que a cunhagem entregou nesta rodada. Viram "impressos de verdade" só
+    // depois que o HTML final for pro papel — ver confirmarImpressao() lá embaixo.
+    const lotesCunhados: string[] = [];
     for (const item of carrinho) {
       // Catalogação: FAB = data real do balde; VAL calculada a partir dela; QR = código do balde.
       const fabricacao = item.fabricacaoOverride ? isoParaBR(item.fabricacaoOverride) : hoje;
@@ -683,6 +686,7 @@ export default function ImprimirWizard() {
           const j = await r.json();
           if (j?.ok && j?.e_balde && Array.isArray(j.lotes)) {
             codigos = j.lotes.map((l: { codigo: string }) => l.codigo);
+            lotesCunhados.push(...codigos);
           } else if (j?.ok && j?.e_balde === false) {
             codigos = Array(item.quantidade).fill(item.item.code ?? "");
           } else {
@@ -802,6 +806,28 @@ ${linhas}
     win.document.open();
     win.document.write(html);
     win.document.close();
+
+    // ── CONFIRMA A IMPRESSÃO NO PAINEL ────────────────────────────────────────
+    // A cunhagem grava o lote ANTES de imprimir — e o gatilho do painel já reserva
+    // uma vaga na câmara pra ele na mesma hora. Se a impressão morre no caminho,
+    // aquela vaga fica ocupada por um balde que não existe.
+    //
+    // Este aviso é o que separa "código que virou etiqueta de papel" de "código que
+    // ficou pra trás". Só o segundo pode ser reaproveitado numa nova tentativa.
+    // Falhar aqui não desfaz a impressão (o papel já saiu) — o pior caso é o código
+    // não ser reaproveitável, que é exatamente o comportamento antigo. Por isso não
+    // aborta nem alarma o operador.
+    if (lotesCunhados.length > 0) {
+      try {
+        await fetch("/api/fila/confirmar-impressao", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ codigos: lotesCunhados }),
+        });
+      } catch {
+        /* silencioso de propósito: a etiqueta já está no papel */
+      }
+    }
 
     // Salvar no histórico
     if (orgId && emitente) {

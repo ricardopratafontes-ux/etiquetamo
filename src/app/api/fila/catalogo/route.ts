@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { SUPABASE_SCHEMA } from "@/lib/supabaseSchema";
 
 /**
  * Ponte Painel Moderna → EtiquetaMO.
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
   const itens = Array.isArray(body.itens) ? body.itens : [];
   if (itens.length === 0) return NextResponse.json({ ok: false, erro: "sem itens" }, { status: 400 });
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = createClient(supabaseUrl, supabaseKey, { db: { schema: SUPABASE_SCHEMA } });
   const { data: org } = await supabase.from("organizations").select("id").eq("slug", ORG_SLUG).single();
   if (!org) return NextResponse.json({ ok: false, erro: "organização não encontrada" }, { status: 500 });
 

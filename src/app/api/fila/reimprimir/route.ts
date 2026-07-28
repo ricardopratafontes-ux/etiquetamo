@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { SUPABASE_SCHEMA } from "@/lib/supabaseSchema";
 
 /**
  * REIMPRESSÃO DE ETIQUETA (fluxo à parte da catalogação).
@@ -30,7 +31,7 @@ export async function POST(request: NextRequest) {
   const lot = body.lot?.trim();
   if (!lot) return NextResponse.json({ ok: false, erro: "informe o código do balde (lot)" }, { status: 400 });
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = createClient(supabaseUrl, supabaseKey, { db: { schema: SUPABASE_SCHEMA } });
   const { data: org } = await supabase.from("organizations").select("id").eq("slug", ORG_SLUG).single();
   if (!org) return NextResponse.json({ ok: false, erro: "organização não encontrada" }, { status: 500 });
 
