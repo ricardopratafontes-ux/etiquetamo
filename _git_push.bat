@@ -1,5 +1,5 @@
 @echo off
-cd /d "C:\App da Moderna\EtiquetaMO\EtiquetaMO"
+cd /d "C:\App da Moderna\etiquetamo\EtiquetaMO"
 "C:\Program Files\Git\cmd\git.exe" add -A 2>&1
 "C:\Program Files\Git\cmd\git.exe" commit -m "feat: Sprint 5 - Integração OMIE (sync manual, webhook, quarentena, fila) v0.8.0" 2>&1
 "C:\Program Files\Git\cmd\git.exe" push origin main 2>&1
