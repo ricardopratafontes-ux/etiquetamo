@@ -5,8 +5,13 @@ Data | Mudança | Motivo | Impacto
 
 ---
 
+### 2026-12-02 — Sprint 1b: Autenticação SSO com Intranet + mudança de domínio
+- **Mudança**: (1) Novo domínio de produção: `https://etiqueta.gelateriamoderna.com.br/` (antes: etiquetamo.vercel.app). (2) Middleware (`middleware.ts`) agora redireciona sem cookie pra `/login`. (3) Páginas convertidas de client-side pra server-side com validação via `requerAutenticacao()`. (4) Libs de auth: `intranet-auth.ts` (HMAC-SHA256, cópia do Painel), `perfil.ts` (validação + permissões), `api-auth.ts` (proteção de endpoints). (5) Nova página `/login` que linka pra intranet. (6) Endpoint `/api/auth/logout` com botão na NavBar. (7) Perfis autorizados: master, gerente, supervisor, producao, atendente. TTL: 30 dias. (8) APIs protegidas: `/api/fila/op`, `/api/fila/cunhar`, `/api/fila/confirmar-impressao`. APIs abertas (máquina↔máquina): `/api/omie/webhook`, `/api/fila/catalogo`, `/api/fila/reimprimir`. (9) DEC-035, DEC-036, DEC-037 registradas.
+- **Motivo**: Ricardo solicitou usar auth compartilhada com Painel/Comercial via Intranet. Segurança + operação unificada.
+- **Impacto**: Produção agora exige login Intranet. PC da cozinha (e qualquer acesso) redireciona pra intranet.gelateriamoderna.com.br/intranet. Bridge (`etiquetamo.vercel.app`) continua vivo para OMIE webhook e pontes.
+
 ### 2026-05-21 — Deploy automático via Vercel + GitHub
-- **Mudança**: (1) Repositório Git inicializado e pushado para GitHub (ricardopratafontes-ux/etiquetamo). (2) Vercel conectada ao repositório com deploy automático a cada push. (3) Variáveis de ambiente configuradas na Vercel. (4) URL de produção: https://etiquetamo.vercel.app/
+- **Mudança**: (1) Repositório Git inicializado e pushado para GitHub (ricardopratafontes-ux/etiquetamo). (2) Vercel conectada ao repositório com deploy automático a cada push. (3) Variáveis de ambiente configuradas na Vercel. (4) URL de produção: https://etiquetamo.vercel.app/ (mudou 02/12 pra etiqueta.gelateriamoderna.com.br)
 - **Motivo**: Deploy manual é frágil. CI/CD automático garante que a versão em produção está sempre sincronizada com o código.
 - **Impacto**: Todo git push faz deploy automático em ~1 min. Ricardo pode testar em produção a qualquer momento.
 

@@ -5,7 +5,8 @@
 - **Tipo**: Sistema web para impressão de etiquetas térmicas em gelateria artesanal
 - **Stack**: Next.js App Router, TypeScript (strict), Tailwind CSS, Supabase, Vercel
 - **Impressora**: Elgin L42 Pro (térmica, etiquetas 50mm × 50mm, 2 por linha na bobina)
-- **Produção**: https://etiquetamo.vercel.app/
+- **Produção**: https://etiqueta.gelateriamoderna.com.br/ (SSO com Intranet)
+- **Bridge (máquina↔máquina)**: https://etiquetamo.vercel.app/ (APIs internas, OMIE webhook)
 - **Repositório**: https://github.com/ricardopratafontes-ux/etiquetamo
 
 ## Regras de Conduta
@@ -19,6 +20,17 @@
 8. **OMIE é referência, não dependência**: sistema funciona sem OMIE.
 9. **Lote nunca é automático global**: sempre informado por item/produção.
 10. **Sincronização OMIE nunca sobrescreve campos operacionais** definidos manualmente.
+
+## Autenticação (Sprint 1b — Dez 2025)
+
+O EtiquetaMO usa **SSO com a Intranet** (Gelateria Moderna):
+- **Cookie compartilhado**: `intranet_sessao` (HMAC-SHA256, domínio `.gelateriamoderna.com.br`, 30 dias)
+- **Login**: redireciona pra `https://gelateriamoderna.com.br/intranet`
+- **Perfis que entram**: `master`, `gerente`, `supervisor`, `producao`, `atendente` (mapa em `lib/perfil.ts`)
+- **Middleware**: `middleware.ts` (edge) valida presença; `lib/perfil.ts` (server) valida HMAC + perfil
+- **Logout**: endpoint `/api/auth/logout` + botão na NavBar
+- **APIs protegidas**: `/api/fila/op` (GET, PATCH), `/api/fila/cunhar` (POST), `/api/fila/confirmar-impressao` (POST)
+- **APIs abertas** (máquina↔máquina): `/api/omie/webhook`, `/api/fila/catalogo`, `/api/fila/reimprimir`
 
 ## Paleta de Cores
 - Vermelho: #f31c40

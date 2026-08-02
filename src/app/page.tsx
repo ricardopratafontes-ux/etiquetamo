@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import NavBar from "@/components/NavBar";
 import PatternStrip from "@/components/PatternStrip";
+import { requerAutenticacao } from "@/lib/perfil";
 
 const acoes = [
   {
@@ -62,7 +63,9 @@ const acoes = [
   },
 ];
 
-export default function Home() {
+export default async function Home() {
+  await requerAutenticacao();
+
   return (
     <>
       <NavBar />

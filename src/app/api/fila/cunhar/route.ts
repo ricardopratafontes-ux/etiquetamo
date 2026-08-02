@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verificarSessaoAPI, responderNaoAutenticado } from "@/lib/api-auth";
 
 /**
  * CUNHAR LOTE ÚNICO na hora de imprimir um balde.
@@ -18,6 +19,7 @@ const PAINEL_URL = process.env.PAINEL_CUNHAGEM_URL;
 const PAINEL_KEY = process.env.PAINEL_CUNHAGEM_KEY;
 
 export async function POST(request: NextRequest) {
+  if (!verificarSessaoAPI(request)) return responderNaoAutenticado();
   if (!PAINEL_URL || !PAINEL_KEY) {
     return NextResponse.json(
       { ok: false, erro: "Ponte com o painel não configurada (PAINEL_CUNHAGEM_URL/KEY)." },

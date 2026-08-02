@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { SUPABASE_SCHEMA } from "@/lib/supabaseSchema";
+import { verificarSessaoAPI, responderNaoAutenticado } from "@/lib/api-auth";
 
 /**
  * FILA DE OP — acesso server-side com service role.
@@ -52,7 +53,9 @@ async function orgId(supabase: ReturnType<typeof admin>) {
 }
 
 /** Lista as OPs pendentes da fila. */
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!verificarSessaoAPI(request)) return responderNaoAutenticado();
+
   try {
     const supabase = admin();
     const org = await orgId(supabase);
@@ -82,6 +85,8 @@ export async function GET() {
  * Aqui um status inválido devolve erro, em vez de fingir que deu certo.
  */
 export async function PATCH(request: NextRequest) {
+  if (!verificarSessaoAPI(request)) return responderNaoAutenticado();
+
   try {
     const body = await request.json().catch(() => ({}));
     const supabase = admin();

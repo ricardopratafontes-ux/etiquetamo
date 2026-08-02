@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verificarSessaoAPI, responderNaoAutenticado } from "@/lib/api-auth";
 import { createClient } from "@supabase/supabase-js";
 
 /**
@@ -25,6 +26,7 @@ const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(request: NextRequest) {
+  if (!verificarSessaoAPI(request)) return responderNaoAutenticado();
   if (!SERVICE_KEY) {
     return NextResponse.json(
       { ok: false, erro: "SUPABASE_SERVICE_ROLE_KEY ausente no servidor." },

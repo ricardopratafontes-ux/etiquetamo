@@ -238,3 +238,21 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 - **Decisão**: O webhook OMIE dispara quando uma ordem de produção entra na etapa "Produzindo" (4ª no kanban). O sistema salva na fila de impressão (`omie_print_queue`) e mostra notificação para o operador decidir quando imprimir.
 - **Motivo**: Ricardo definiu: "a etapa de produção que faz sentido ser o gatilho é Produzindo". Notificação + fila, não impressão automática.
 - **Alternativas descartadas**: Impressão automática no webhook (operador precisa controlar o timing).
+
+### DEC-035 — SSO com Intranet + 30 dias de sessão
+- **Data**: 2026-12-02
+- **Decisão**: EtiquetaMO usa Single Sign-On via cookie compartilhado `intranet_sessao` da Intranet (gelateriamoderna.com.br/intranet). Perfis autorizados: master, gerente, supervisor, producao, atendente. TTL: 30 dias. Login redireciona pra Intranet. Logout limpa o cookie e redireciona pra /login.
+- **Motivo**: Ricardo solicitou usar a mesma auth dos outros apps (Painel, Comercial). Domínio: `etiqueta.gelateriamoderna.com.br`. Bridge e webhook OMIE continuam em `etiquetamo.vercel.app` (máquina↔máquina, fora do SSO).
+- **Alternativas descartadas**: Path `/intranet/etiquetamo` (mais trabalhoso, sem benefício); JWT customizado (duplicaria lógica de auth).
+
+### DEC-036 — Páginas convertidas de client-side pra server-side
+- **Data**: 2026-12-02
+- **Decisão**: Todas as 11 páginas client-side (`"use client"`) foram convertidas pra server components com validação de autenticação. Pattern: `page.tsx` (server) chama `requerAutenticacao()`, depois renderiza `ComponentClient.tsx` (client) passando `perfil` como prop.
+- **Motivo**: Necessário pra proteger o acesso via middleware. Pages sem middleware poderiam ser acessadas sem cookie.
+- **Alternativas descartadas**: Middleware + código de proteção duplicado (violaria DRY).
+
+### DEC-037 — APIs de fila protegidas por sessão
+- **Data**: 2026-12-02
+- **Decisão**: Endpoints `/api/fila/op`, `/api/fila/cunhar`, `/api/fila/confirmar-impressao` agora verificam `intranet_sessao` no início da requisição. Retornam 401 se sem sessão válida. Endpoints `/api/omie/webhook`, `/api/fila/catalogo`, `/api/fila/reimprimir` continuam abertos (máquina↔máquina).
+- **Motivo**: APIs de fila são chamadas pelo browser (imprimir.tsx, histórico.tsx), precisam de autenticação. Webhook e pontes são chamadas por servidores externos.
+- **Alternativas descartadas**: RLS no Supabase (já existe mas nenhuma policy pra anon; auth adicional é redundante, não mais seguro).

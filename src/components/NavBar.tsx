@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import PatternStrip from "./PatternStrip";
+import { useState } from "react";
 
 const links = [
   { href: "/", label: "Início", icon: "\u{1F3E0}" },
@@ -17,6 +18,18 @@ const links = [
 
 export default function NavBar() {
   const pathname = usePathname();
+  const [desconectando, setDesconectando] = useState(false);
+
+  async function handleLogout() {
+    setDesconectando(true);
+    try {
+      const res = await fetch('/api/auth/logout', { method: 'POST' });
+      if (res.ok) window.location.href = '/login';
+    } catch (err) {
+      console.error('Erro ao desconectar:', err);
+      setDesconectando(false);
+    }
+  }
 
   return (
     <>
@@ -42,9 +55,10 @@ export default function NavBar() {
           </div>
         </Link>
 
-        {/* Links */}
-        <div className="flex gap-1">
-          {links.map((link) => {
+        {/* Links + Logout */}
+        <div className="flex items-center gap-1">
+          <div className="flex gap-1">
+            {links.map((link) => {
             const isActive = pathname === link.href ||
               (link.href !== "/" && pathname.startsWith(link.href) && link.href === "/itens" && pathname === "/itens") ||
               (pathname === link.href);
@@ -64,6 +78,16 @@ export default function NavBar() {
               </Link>
             );
           })}
+          </div>
+
+          <button
+            onClick={handleLogout}
+            disabled={desconectando}
+            className="ml-2 px-3 py-2 text-sm font-semibold text-white/75 hover:text-white hover:bg-red-500/20 transition-all rounded-lg cursor-pointer disabled:opacity-50"
+            title="Desconectar"
+          >
+            {desconectando ? '⏳' : '🚪'}
+          </button>
         </div>
       </div>
     </nav>
