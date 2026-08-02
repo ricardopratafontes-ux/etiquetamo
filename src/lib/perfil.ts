@@ -23,8 +23,8 @@ export interface PerfilEtiquetaMO {
 /**
  * Extrai a sessão do cookie sem validação de banco.
  */
-export function sessaoDoCookie(): SessaoIntranet | null {
-  const c = cookies().get(COOKIE)?.value;
+export async function sessaoDoCookie(): Promise<SessaoIntranet | null> {
+  const c = (await cookies()).get(COOKIE)?.value;
   return verifySession(c);
 }
 
@@ -37,7 +37,7 @@ export async function requerAutenticacao(): Promise<{
   sessao: SessaoIntranet;
   perfil: PerfilEtiquetaMO;
 }> {
-  const sessao = sessaoDoCookie();
+  const sessao = await sessaoDoCookie();
 
   if (!sessao) {
     redirect('/login');
