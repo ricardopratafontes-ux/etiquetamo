@@ -6,7 +6,7 @@ const COOKIE = 'intranet_sessao';
 const rotasPublicas = new Set(['/login', '/favicon.ico']);
 
 // Prefixos públicos.
-const prefixosPublicos = ['/api/omie', '/api/fila/catalogo', '/api/fila/reimprimir', '/_next', '/assets'];
+const prefixosPublicos = ['/api/omie', '/api/fila/catalogo', '/api/fila/reimprimir', '/api/fila/producao', '/_next', '/assets'];
 
 /**
  * Middleware no edge: verifica presença do cookie. Não valida assinatura (caro).

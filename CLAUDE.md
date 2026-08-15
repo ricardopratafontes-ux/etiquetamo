@@ -30,7 +30,7 @@ O EtiquetaMO usa **SSO com a Intranet** (Gelateria Moderna):
 - **Middleware**: `middleware.ts` (edge) valida presença; `lib/perfil.ts` (server) valida HMAC + perfil
 - **Logout**: endpoint `/api/auth/logout` + botão na NavBar
 - **APIs protegidas**: `/api/fila/op` (GET, PATCH), `/api/fila/cunhar` (POST), `/api/fila/confirmar-impressao` (POST)
-- **APIs abertas** (máquina↔máquina): `/api/omie/webhook`, `/api/fila/catalogo`, `/api/fila/reimprimir`
+- **APIs abertas** (máquina↔máquina): `/api/omie/webhook`, `/api/fila/catalogo`, `/api/fila/reimprimir`, `/api/fila/producao` (PCP → fila, token `x-mo-token`; DEC-042)
 - **APIs com auth própria**: `/api/omie/sync` — o middleware libera o prefixo `/api/omie`, então a rota valida sozinha: POST aceita sessão da Intranet (botão da tela `/omie`), GET aceita só `Authorization: Bearer $CRON_SECRET` (cron da Vercel, diário às 6h)
 
 ## Sincronização OMIE (Ago 2026)

@@ -55,6 +55,16 @@ Cada dúvida segue: ID | Pergunta | Suposição atual | Status
 - **Suposição atual**: Será configurado pelo admin no painel. Implementar no Sprint 6.
 - **Status**: TODO VALIDAR (Sprint 6)
 
+### OQ-011 — Bipagem da câmara fria × código de lote do PCP
+- **Pergunta**: Os leitores da câmara fria/logística (Painel) resolvem códigos `B####`/`M####` de `moderna.lotes.codigo_etiqueta`. As etiquetas de OPs concluídas no PCP saem com o lote do PCP (`YYMMDD-NNNN`, `public.lotes`), que o Painel NÃO reconhece no bipe. Os produtos acabados do PCP entram no fluxo de bipagem da câmara?
+- **Resposta do Ricardo (2026-08-15)**: Por ora **não entram** (fluxos separados; rastreabilidade do lote do PCP fica no dossiê do próprio PCP) — mas isso **precisa ser definido em breve**. Quando definir, as opções mapeadas são: Painel aprender a resolver códigos do PCP, ou PCP cunhar via Painel na conclusão.
+- **Status**: PARCIALMENTE VALIDADO — decisão provisória registrada; definição final em breve (DEC-042 / ADR-005 do PCP)
+
+### OQ-012 — Uma produção física nasce em UM app só
+- **Pergunta**: A mesma produção registrada no PCP (conclusão de OP) E na catalogação do Painel geraria dois lotes e duas etiquetas para o mesmo balde físico — o dedupe por lote não alcança códigos diferentes. Qual é a regra operacional de fronteira entre PCP e catalogação?
+- **Resposta do Ricardo (2026-08-15)**: A regra só será definida **quando o PCP entrar em produção de verdade** — que ainda não é agora. Até lá, a catalogação do Painel segue sendo o caminho da operação real.
+- **Status**: TODO VALIDAR — adiado até o PCP entrar em produção
+
 ### OQ-010 — Etiqueta complementar: layout e regras
 - **Pergunta**: Ricardo mencionou "etiquetas complementares" no wizard de impressão. Qual é o layout de uma etiqueta complementar? É diferente da normal (com campos específicos)?
 - **Resolução temporária (DEC-029)**: Etiqueta complementar usa o mesmo layout/campos da Etiqueta Avulsa (nome, quantidade toggle, campos opcionais múltiplos, campo extra). Será diferenciada quando houver spec própria.

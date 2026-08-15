@@ -280,12 +280,29 @@ export async function POST(request: NextRequest) {
       if (nCodOP) {
         const { data: existing } = await supabase
           .from("omie_print_queue")
-          .select("id, status")
+          .select("id, status, item_id, webhook_payload")
           .eq("organization_id", orgId)
           .eq("omie_order_id", nCodOP)
           .single();
 
         if (existing) {
+          // Linha que NASCEU NO PCP (ponte /api/fila/producao): o lote, a fabricação e a
+          // quantidade de lá são a identidade do lote FÍSICO já concluído — o evento do
+          // Omie não sobrescreve nada disso (sobrescrever o lot com cLote null fazia a
+          // cunhagem criar uma SEGUNDA identidade na impressão). Só completa o item_id
+          // se o PCP não tinha conseguido vincular.
+          const origemExistente = (existing.webhook_payload as { origem?: string } | null)?.origem;
+          if (origemExistente === "pcp_moderna") {
+            if (!existing.item_id && itemId) {
+              await supabase.from("omie_print_queue").update({ item_id: itemId }).eq("id", existing.id);
+            }
+            console.log("[OMIE Webhook] OP do PCP preservada (kept_pcp):", nCodOP);
+            return NextResponse.json({
+              received: true, processed: true, action: "kept_pcp",
+              topic, matchMethod, quantidade, lote: cLote,
+            });
+          }
+
           const { error: updateErr } = await supabase.from("omie_print_queue").update({
             product_name: productName,
             item_id: itemId,

@@ -196,10 +196,11 @@ export default function ImprimirWizard({ perfil }: { perfil: PerfilEtiquetaMO })
     // Auto-vincular OPs sem item_id usando match por nome
     for (const op of ops) {
       if (op.item_id) continue; // já vinculado
-      // Catalogação (Painel Moderna) casa por CÓDIGO Omie no endpoint. Se chegou
-      // sem item_id, NÃO adivinha por nome (gelato viraria barra/insumo) — fica
-      // pendente pra vínculo manual. Regra: melhor perguntar do que errar.
-      if ((op.webhook_payload as { origem?: string } | null)?.origem === "catalogo_moderna") continue;
+      // Catalogação (Painel Moderna) e OPs do PCP casam por CÓDIGO Omie no endpoint.
+      // Se chegou sem item_id, NÃO adivinha por nome (gelato viraria barra/insumo) —
+      // fica pendente pra vínculo manual. Regra: melhor perguntar do que errar.
+      const origemOp = (op.webhook_payload as { origem?: string } | null)?.origem;
+      if (origemOp === "catalogo_moderna" || origemOp === "pcp_moderna") continue;
       const nomeOP = normalizar(op.product_name);
       // Tentar match: nome do item contido no nome OMIE ou vice-versa
       const matches = itensLocal.filter((it: ItemDB) => {
@@ -467,7 +468,9 @@ export default function ImprimirWizard({ perfil }: { perfil: PerfilEtiquetaMO })
       if (!item) continue; // pula não-vinculados (aparecem com aviso na lista)
       if (carrinho.some((c) => c.filaId === op.id)) continue; // já adicionado
       const wp = (op.webhook_payload ?? {}) as Record<string, unknown>;
-      const ehCat = wp.origem === "catalogo_moderna";
+      // Origem "de ponte" (catalogação do Painel OU OP concluída no PCP): a data REAL
+      // de fabricação do lote viaja no payload e vale mais que a data de hoje.
+      const ehPonte = wp.origem === "catalogo_moderna" || wp.origem === "pcp_moderna";
       const armazInfo = textoArmazenagem(item.storage_type);
       const addInfo = item.additional_info || "";
       novos.push({
@@ -475,7 +478,7 @@ export default function ImprimirWizard({ perfil }: { perfil: PerfilEtiquetaMO })
         quantidade: qtdDaOP(op, item),
         produtores: [],
         lote: op.lot ?? "",
-        fabricacaoOverride: ehCat && typeof wp.fabricacao === "string" && wp.fabricacao ? wp.fabricacao : null,
+        fabricacaoOverride: ehPonte && typeof wp.fabricacao === "string" && wp.fabricacao ? wp.fabricacao : null,
         // Já tem lote na fila → é ele no QR (não re-cunha). SEM lote → qrOverride null,
         // pra a cunhagem rodar na impressão e nascer o B#### único do balde. NÃO cair no
         // item.code aqui: senão um balde sem lote (ex.: BROWNIE em produção) sairia com o
@@ -565,9 +568,10 @@ export default function ImprimirWizard({ perfil }: { perfil: PerfilEtiquetaMO })
     // Sem lote na fila (ordem de produção nova) → qrOverride fica null e a cunhagem
     // roda na impressão, como deve.
     if (op.lot) setModalQrOverride(op.lot);
-    // Catalogação (Painel Moderna): a data real de fabricação vem do balde catalogado.
+    // Catalogação (Painel Moderna) e OP do PCP: a data real de fabricação vem do lote,
+    // não de hoje (a VAL é calculada a partir dela: fabricação + expiry_days do item).
     const wp = (op.webhook_payload ?? {}) as Record<string, unknown>;
-    if (wp.origem === "catalogo_moderna") {
+    if (wp.origem === "catalogo_moderna" || wp.origem === "pcp_moderna") {
       if (typeof wp.fabricacao === "string" && wp.fabricacao) setModalFabOverride(wp.fabricacao);
     }
     // Quantidade da OP (com a regra ÷10 de Bases/Xaropes) — mesma fonte do "adicionar todos".
@@ -1009,7 +1013,7 @@ ${linhas}
                     <p className="text-sm text-gray-500 mt-1">
                       {tipo === "catalogo"
                         ? "Quando você catalogar baldes no Painel e clicar Enviar pra impressão, eles aparecem aqui."
-                        : "Quando o OMIE enviar novas ordens de produção, elas aparecerão aqui."}
+                        : "Quando o OMIE ou o PCP enviarem novas ordens de produção, elas aparecerão aqui."}
                     </p>
                   </div>
                 ) : (
@@ -1037,6 +1041,9 @@ ${linhas}
                                 <p className="text-[10px] text-gray-400">Omie: {op.product_name}</p>
                               )}
                               <p className="text-xs text-gray-500">
+                                {(op.webhook_payload as { origem?: string } | undefined)?.origem === "pcp_moderna" && (
+                                  <span className="mr-1 rounded bg-purple-100 px-1.5 py-0.5 text-[10px] font-bold text-purple-700">PCP</span>
+                                )}
                                 {op.omie_order_number && `OP #${op.omie_order_number} · `}
                                 Qtd: {op.quantity}
                                 {op.lot && ` · Lote: ${op.lot}`}
