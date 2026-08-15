@@ -15,6 +15,11 @@ Data | Mudança | Motivo | Impacto
 - **Motivo**: Um produto novo (GELATO 5L BALDE SNICKERS) foi produzido e a impressão travou porque o EtiquetaMO não conhecia o item. Investigando: `omie_sync_log` tinha 11 execuções, todas de 22/05/2026, todas com `total_omie = 0` e `errors = 0`. A função "concluía com sucesso" trazendo zero produtos e ninguém via.
 - **Impacto**: 105 itens que estavam sem `omie_product_id` foram vinculados (agora são **zero** sem vínculo); 5 códigos corrigidos. Nenhum `expiry_days` e nenhum `name` alterado (verificado contra snapshot). Quem **cria** item continua sendo o Painel de Controle — esta varredura é o cinto de segurança, não a criadora, senão os dois escritores duplicariam o catálogo. Requer `CRON_SECRET` configurado na Vercel.
 
+### 2026-08-15 — Prova física: etiqueta do 5L SNICKERS impressa e conferida
+- **Mudança**: Nenhuma no código. Registro de verificação física, conforme a regra 5 do CLAUDE.md.
+- **Motivo**: A OP 2026/00839 (GELATO 5L BALDE SNICKERS) — a mesma que travou a produção de manhã com "Item não vinculado" — foi impressa na Elgin L42 Pro e Ricardo confirmou que a etiqueta saiu correta.
+- **Impacto**: Fecha a cadeia de ponta a ponta num caso real: produto novo cadastrado no OMIE → item criado pelo Painel (trigger em `moderna.omie_produtos`) → OP recebida pelo webhook → religação automática da fila por código OMIE → etiqueta física correta na bobina. Os consertos de 15/08 estão validados em produção, não só em banco.
+
 ### 2026-08-15 — Fila de OP religa sozinha por código Omie
 - **Mudança**: (1) `GET /api/fila/op` religa linha pendente sem `item_id` casando `webhook_payload.event.nCodProd` com `items.omie_product_id`, e grava o vínculo (guarda `.is("item_id", null)` pra não sobrescrever vínculo manual). (2) O sync corrige os `product_name` genéricos `"Produto OMIE #..."` da fila usando o catálogo já carregado, sem chamada extra ao Omie. (3) DEC-041 registrada.
 - **Motivo**: A OP do 5L SNICKERS chegou às 14:03 e o item só nasceu às 14:12 — a linha ficou órfã com "Item não vinculado" travando a impressão. O auto-vincular existente casava por NOME e o nome era o genérico, então não achava nada, apesar do código Omie estar guardado na própria linha.
