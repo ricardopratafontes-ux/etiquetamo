@@ -60,12 +60,33 @@ type LinhaFila = {
   [k: string]: unknown;
 };
 
-/** Código do produto no Omie, de dentro do payload cru do webhook. */
-function codigoOmieDaLinha(linha: LinhaFila): number | null {
-  const payload = linha.webhook_payload as { event?: { nCodProd?: unknown } } | null;
-  const bruto = payload?.event?.nCodProd;
+function numeroValido(bruto: unknown): number | null {
   const n = typeof bruto === "number" ? bruto : Number(bruto);
   return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/**
+ * Código do produto no Omie, de dentro do payload cru da linha.
+ *
+ * A fila tem TRÊS emissores e cada um guarda o código num lugar diferente:
+ *   - webhook do Omie  → `event.nCodProd`
+ *   - PCP (DEC-042)    → `omie_produto_id`, na raiz
+ *   - catalogação      → sem código; cai fora e fica pro vínculo manual
+ *
+ * Ler só o formato do webhook deixava toda linha vinda do PCP de fora — e como o
+ * /imprimir (com razão) não passa `pcp_moderna` pelo auto-vínculo por nome, um lote
+ * do PCP que chegasse antes do item existir ficaria órfão pra sempre. É o mesmo
+ * buraco do GELATO 5L SNICKERS, entrando pela porta nova.
+ *
+ * Quando o PCP completa uma linha que o webhook já criou, os dois campos convivem no
+ * payload mesclado — aí vale o do Omie, que é a fonte da verdade do ERP.
+ */
+function codigoOmieDaLinha(linha: LinhaFila): number | null {
+  const payload = linha.webhook_payload as
+    | { event?: { nCodProd?: unknown }; omie_produto_id?: unknown }
+    | null;
+
+  return numeroValido(payload?.event?.nCodProd) ?? numeroValido(payload?.omie_produto_id);
 }
 
 /**

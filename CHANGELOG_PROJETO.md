@@ -18,6 +18,7 @@ Data | Mudança | Motivo | Impacto
 ### 2026-08-15 — Fila de OP religa sozinha por código Omie
 - **Mudança**: (1) `GET /api/fila/op` religa linha pendente sem `item_id` casando `webhook_payload.event.nCodProd` com `items.omie_product_id`, e grava o vínculo (guarda `.is("item_id", null)` pra não sobrescrever vínculo manual). (2) O sync corrige os `product_name` genéricos `"Produto OMIE #..."` da fila usando o catálogo já carregado, sem chamada extra ao Omie. (3) DEC-041 registrada.
 - **Motivo**: A OP do 5L SNICKERS chegou às 14:03 e o item só nasceu às 14:12 — a linha ficou órfã com "Item não vinculado" travando a impressão. O auto-vincular existente casava por NOME e o nome era o genérico, então não achava nada, apesar do código Omie estar guardado na própria linha.
+- **Complemento (após DEC-042)**: a religação passou a ler também `omie_produto_id` na raiz do payload, formato que a ponte do PCP usa. Sem isso, lote do PCP que chegasse antes do item existir ficaria órfão pra sempre, já que `/imprimir` não passa `pcp_moderna` pelo auto-vínculo por nome. Testado com linha PCP sintética: religou ao item certo, e a linha de teste foi removida.
 - **Impacto**: A linha travada foi religada ao item certo (verificado: `nCodProd` bate com `omie_product_id`, 0 vínculos divergentes em 626 linhas). 43 nomes genéricos corrigidos; sobram 2, que são eventos malformados (`nCodProd = 0`) já descartados. Fila pendente sem vínculo: 1 → 0.
 
 ### 2026-12-02 — Sprint 1b: Autenticação SSO com Intranet + mudança de domínio
