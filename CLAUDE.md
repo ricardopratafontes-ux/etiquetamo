@@ -31,7 +31,7 @@ O EtiquetaMO usa **SSO com a Intranet** (Gelateria Moderna):
 - **Logout**: endpoint `/api/auth/logout` + botão na NavBar
 - **APIs protegidas**: `/api/fila/op` (GET, PATCH), `/api/fila/cunhar` (POST), `/api/fila/confirmar-impressao` (POST)
 - **APIs abertas** (máquina↔máquina): `/api/omie/webhook`, `/api/fila/catalogo`, `/api/fila/reimprimir`, `/api/fila/producao` (PCP → fila, token `x-mo-token`; DEC-042)
-- **APIs com auth própria**: `/api/omie/sync` — o middleware libera o prefixo `/api/omie`, então a rota valida sozinha: POST aceita sessão da Intranet (botão da tela `/omie`), GET aceita só `Authorization: Bearer $CRON_SECRET` (cron da Vercel, diário às 6h)
+- **APIs com auth própria**: `/api/omie/sync` — o middleware libera o prefixo `/api/omie`, então a rota valida sozinha: POST aceita sessão da Intranet (botão da tela `/omie`), GET aceita só `Authorization: Bearer $CRON_SECRET` (cron da Vercel, `0 9 * * *` — o schedule da Vercel é sempre **UTC**, e 09:00 UTC = **06:00 de Brasília**. O Brasil não tem mais horário de verão desde 2019, então essa conta não muda ao longo do ano)
 
 ## Sincronização OMIE (Ago 2026)
 

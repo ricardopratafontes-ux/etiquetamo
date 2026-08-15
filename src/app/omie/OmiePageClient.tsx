@@ -136,7 +136,7 @@ export default function OmiePageClient({
                 A última leitura boa foi há {diasAtras(ultimaOk.started_at)} dias
               </p>
               <p className="text-sm text-amber-900/80 mt-1">
-                A varredura roda todo dia às 6h. Se está parada há dias, alguma coisa a
+                A varredura roda todo dia às 6h da manhã. Se está parada há dias, alguma coisa a
                 impede de rodar.
               </p>
             </div>
