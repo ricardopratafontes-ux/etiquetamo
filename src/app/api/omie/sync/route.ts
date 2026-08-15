@@ -271,6 +271,13 @@ async function executarSync(gatilho: string) {
     // seria mandar pra um buraco negro, porque o EtiquetaMO nao tem tela pra ela.
     const semItem = produtos.filter((p) => !omieIdsUsados.has(p.codigo_produto));
 
+    // (5) Conserta os "Produto OMIE #123456" da fila de impressao.
+    // O webhook chama ConsultarProduto pra pegar a descricao; quando essa chamada
+    // falha (~7% das OPs, erro transitorio do Omie) sobra o nome generico na tela.
+    // Aqui sai de graca: o catalogo inteiro ja esta em `porOmieId`, entao e so
+    // reescrever o texto — zero chamada extra ao ERP.
+    const nomesCorrigidos = await corrigirNomesGenericos(supabase, orgId, porOmieId);
+
     await fechar(
       "ok",
       null,
@@ -293,6 +300,7 @@ async function executarSync(gatilho: string) {
           descricao: p.descricao,
         })),
         criacao_de_item: "responsabilidade do Painel (moderna.etiqueta_pendencias)",
+        nomes_genericos_corrigidos: nomesCorrigidos,
         erros_de_escrita: errosDeEscrita,
       }
     );
@@ -307,6 +315,7 @@ async function executarSync(gatilho: string) {
         atualizados: updated,
         ambiguos: ambiguos.length,
         produtos_omie_sem_item: semItem.length,
+        nomes_genericos_corrigidos: nomesCorrigidos,
         errors,
       },
     });
@@ -354,6 +363,47 @@ function diagnosticar(
     }
   }
   return null;
+}
+
+/**
+ * Troca "Produto OMIE #123456" pela descricao real na `omie_print_queue`.
+ *
+ * O codigo do produto mora em `webhook_payload.event.nCodProd`, e a descricao ja
+ * veio na varredura — nenhuma chamada nova ao Omie. Mexe SO no texto de referencia
+ * da fila: `item_id`, `quantity` e `lot` nao sao tocados aqui, e o que sai impresso
+ * na etiqueta vem do nome do ITEM, nunca deste campo.
+ */
+async function corrigirNomesGenericos(
+  supabase: Supabase,
+  orgId: string,
+  porOmieId: Map<number, OmieProduto>
+): Promise<number> {
+  const { data } = await supabase
+    .from("omie_print_queue")
+    .select("id, product_name, webhook_payload")
+    .eq("organization_id", orgId)
+    .like("product_name", "Produto OMIE #%");
+
+  const linhas = (data ?? []) as { id: string; product_name: string; webhook_payload: unknown }[];
+  let corrigidos = 0;
+
+  for (const linha of linhas) {
+    const payload = linha.webhook_payload as { event?: { nCodProd?: unknown } } | null;
+    const bruto = payload?.event?.nCodProd;
+    const codigo = typeof bruto === "number" ? bruto : Number(bruto);
+    if (!Number.isFinite(codigo) || codigo <= 0) continue;
+
+    const descricao = porOmieId.get(codigo)?.descricao?.trim();
+    if (!descricao || descricao === linha.product_name) continue;
+
+    const { error } = await supabase
+      .from("omie_print_queue")
+      .update({ product_name: descricao })
+      .eq("id", linha.id);
+
+    if (!error) corrigidos++;
+  }
+  return corrigidos;
 }
 
 /** `total_omie` da ultima execucao que terminou saudavel. Null se nao houver. */

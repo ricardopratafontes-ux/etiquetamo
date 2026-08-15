@@ -52,6 +52,81 @@ async function orgId(supabase: ReturnType<typeof admin>) {
   return data?.id ?? null;
 }
 
+/** Linha da fila, no que interessa pra religação. */
+type LinhaFila = {
+  id: string;
+  item_id: string | null;
+  webhook_payload: unknown;
+  [k: string]: unknown;
+};
+
+/** Código do produto no Omie, de dentro do payload cru do webhook. */
+function codigoOmieDaLinha(linha: LinhaFila): number | null {
+  const payload = linha.webhook_payload as { event?: { nCodProd?: unknown } } | null;
+  const bruto = payload?.event?.nCodProd;
+  const n = typeof bruto === "number" ? bruto : Number(bruto);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/**
+ * Religa OPs que chegaram antes do item existir.
+ *
+ * POR QUE ISSO EXISTE: a fila é um retrato do momento. O webhook grava `item_id`
+ * quando a OP chega; se o item ainda não existia, fica nulo — e nunca mais ninguém
+ * voltava pra religar. Foi o que travou a produção do GELATO 5L SNICKERS em
+ * 15/08/2026: a OP chegou 14:03, o item nasceu 14:12, e a linha ficou órfã na tela
+ * com "Item não vinculado".
+ *
+ * O casamento é por `nCodProd` do payload contra `items.omie_product_id` — IDENTIDADE
+ * EXATA, a mesma primeira tentativa que o webhook usa. Nada de adivinhar por nome:
+ * nome parecido faz gelato virar barra, e etiqueta errada é problema sanitário.
+ *
+ * Falha aqui nunca derruba a listagem: sem religar, a linha aparece como antes e o
+ * operador vincula na mão. Melhor uma fila crua do que uma fila que não abre.
+ */
+async function religarPorCodigoOmie(
+  supabase: ReturnType<typeof admin>,
+  org: string,
+  linhas: LinhaFila[]
+): Promise<number> {
+  const orfas = linhas.filter((l) => !l.item_id && codigoOmieDaLinha(l) !== null);
+  if (orfas.length === 0) return 0;
+
+  const codigos = [...new Set(orfas.map((l) => codigoOmieDaLinha(l) as number))];
+
+  const { data: itens } = await supabase
+    .from("items")
+    .select("id, omie_product_id")
+    .eq("organization_id", org)
+    .eq("active", true)
+    .in("omie_product_id", codigos);
+
+  if (!itens?.length) return 0;
+
+  const porCodigo = new Map<number, string>();
+  for (const it of itens as { id: string; omie_product_id: number | null }[]) {
+    if (it.omie_product_id != null) porCodigo.set(it.omie_product_id, it.id);
+  }
+
+  let religadas = 0;
+  for (const linha of orfas) {
+    const itemId = porCodigo.get(codigoOmieDaLinha(linha) as number);
+    if (!itemId) continue;
+
+    const { error } = await supabase
+      .from("omie_print_queue")
+      .update({ item_id: itemId })
+      .eq("id", linha.id)
+      .is("item_id", null); // não pisa em vínculo que alguém acabou de fazer na mão
+
+    if (!error) {
+      linha.item_id = itemId; // a tela já recebe a linha vinculada nesta mesma resposta
+      religadas++;
+    }
+  }
+  return religadas;
+}
+
 /** Lista as OPs pendentes da fila. */
 export async function GET(request: NextRequest) {
   if (!verificarSessaoAPI(request)) return responderNaoAutenticado();
@@ -69,7 +144,17 @@ export async function GET(request: NextRequest) {
       .order("created_at", { ascending: false });
 
     if (error) return NextResponse.json({ erro: error.message }, { status: 500 });
-    return NextResponse.json({ ok: true, fila: data ?? [] });
+
+    const fila = (data ?? []) as LinhaFila[];
+
+    let religadas = 0;
+    try {
+      religadas = await religarPorCodigoOmie(supabase, org, fila);
+    } catch (e) {
+      console.error("[fila/op] religação por código Omie falhou:", e);
+    }
+
+    return NextResponse.json({ ok: true, fila, religadas });
   } catch (e) {
     return NextResponse.json({ erro: String(e) }, { status: 500 });
   }
