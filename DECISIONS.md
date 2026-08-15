@@ -256,3 +256,21 @@ Cada decisão segue: Data | Decisão | Motivo | Alternativas descartadas
 - **Decisão**: Endpoints `/api/fila/op`, `/api/fila/cunhar`, `/api/fila/confirmar-impressao` agora verificam `intranet_sessao` no início da requisição. Retornam 401 se sem sessão válida. Endpoints `/api/omie/webhook`, `/api/fila/catalogo`, `/api/fila/reimprimir` continuam abertos (máquina↔máquina).
 - **Motivo**: APIs de fila são chamadas pelo browser (imprimir.tsx, histórico.tsx), precisam de autenticação. Webhook e pontes são chamadas por servidores externos.
 - **Alternativas descartadas**: RLS no Supabase (já existe mas nenhuma policy pra anon; auth adicional é redundante, não mais seguro).
+
+### DEC-038 — Painel cria item, EtiquetaMO só atualiza (dois escritores, um dono)
+- **Data**: 2026-08-15
+- **Decisão**: A criação de item no EtiquetaMO pertence ao **Painel de Controle**, via trigger `omie_produto_novo_etiqueta` em `moderna.omie_produtos` (commit 12be607 do painel-de-controle-mo). O sync do EtiquetaMO (`/api/omie/sync`) **nunca faz INSERT em `items`** — ele só (1) preenche `omie_product_id` nulo casando por `code` sem ambiguidade, (2) corrige `code` e `barcode` de item existente, (3) preenche `unit` quando está nulo. Nunca toca `name` (DEC-032), `expiry_days`, `uses_*`, `active`, `additional_info` nem `category_id`.
+- **Motivo**: Desde 15/08/2026 existem **dois escritores** em `etiqueta.items`. O Painel já tem o espelho do Omie em dia (webhook em menos de 1 segundo) e a tela de pendências funcionando. Se os dois criassem, o mesmo produto viraria dois itens e o catálogo duplicaria — foi assim que o problema começou.
+- **Alternativas descartadas**: (a) EtiquetaMO reassume e o Painel recua — exigiria remover trigger e varredura do outro lado no mesmo deploy, com produção parada no meio; (c) convivência com lock por `omie_product_id` — duplica a lógica de criação nos dois repositórios, que é exatamente o custo que (b) evita.
+
+### DEC-039 — `omie_quarantine` fica vazia de propósito; triagem é no /painel
+- **Data**: 2026-08-15
+- **Decisão**: O sync do EtiquetaMO **não grava** em `etiqueta.omie_quarantine`. Produto do Omie sem item aqui é contado e amostrado em `omie_sync_log.details` (`produtos_omie_sem_item`), e a triagem acontece em `moderna.etiqueta_pendencias`, no card do /painel. A tabela `omie_quarantine` permanece no schema, vazia, sem escritor.
+- **Motivo**: A aba de Quarentena da UI foi removida no commit 9a26437 e nunca voltou. Mandar linha pra uma tabela sem tela é mandar pra um buraco negro — a tabela existe desde a Sprint 5 e nunca recebeu uma única linha. Hoje são 332 produtos do Omie sem item aqui (matéria-prima, embalagem, revenda): despejar isso numa fila que ninguém abre não é triagem, é aterro.
+- **Alternativas descartadas**: Construir tela de quarentena no EtiquetaMO (duplicaria a tela de pendências do Painel, que já funciona); manter DEC-033 como está (pressupõe uma tela que não existe mais).
+
+### DEC-040 — Varredura vazia é FALHA, não sucesso
+- **Data**: 2026-08-15
+- **Decisão**: `/api/omie/sync` recusa a varredura e responde **HTTP 500**, gravando o motivo em `omie_sync_log.details.motivo`, quando: catálogo vem vazio, chegam menos produtos do que o Omie declarou, a varredura aborta por erros repetidos, ou o total encolhe mais de 20% em relação à última execução boa. Nesses casos **nada é gravado em `items`**. Toda execução fecha `completed_at` e grava `details` — `details = {}` deixa de existir.
+- **Motivo**: Entre 22/05/2026 e 15/08/2026 o sync rodou 11 vezes, trouxe zero produtos toda vez e gravou `errors = 0`, `details = {}`. Passou por sucesso e o defeito ficou três meses invisível, até a produção travar na tela /imprimir com o GELATO 5L SNICKERS. Um catálogo vazio nunca é resposta boa: com o payload certo são 888 produtos.
+- **Alternativas descartadas**: Só logar warning (foi o silêncio que custou três meses); aplicar os updates mesmo com catálogo parcial (uma varredura incompleta apagaria vínculos bons).

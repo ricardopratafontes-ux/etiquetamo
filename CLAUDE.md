@@ -31,6 +31,25 @@ O EtiquetaMO usa **SSO com a Intranet** (Gelateria Moderna):
 - **Logout**: endpoint `/api/auth/logout` + botão na NavBar
 - **APIs protegidas**: `/api/fila/op` (GET, PATCH), `/api/fila/cunhar` (POST), `/api/fila/confirmar-impressao` (POST)
 - **APIs abertas** (máquina↔máquina): `/api/omie/webhook`, `/api/fila/catalogo`, `/api/fila/reimprimir`
+- **APIs com auth própria**: `/api/omie/sync` — o middleware libera o prefixo `/api/omie`, então a rota valida sozinha: POST aceita sessão da Intranet (botão da tela `/omie`), GET aceita só `Authorization: Bearer $CRON_SECRET` (cron da Vercel, diário às 6h)
+
+## Sincronização OMIE (Ago 2026)
+
+Quem **cria** item no EtiquetaMO é o **Painel de Controle**, por trigger em
+`moderna.omie_produtos` — o item nasce segundos depois do cadastro no Omie, e o que
+não casa com padrão conhecido vira pendência no /painel. O sync daqui
+(`/api/omie/sync`) **nunca faz INSERT em `items`**: ele só religa `omie_product_id`
+nulo e corrige `code`/`barcode`/`unit`. Ver DEC-038.
+
+Duas regras que não se negociam:
+- **`ListarProdutos` exige `filtrar_apenas_omiepdv: "N"`.** Sem esse campo o Omie
+  responde 200 com lista VAZIA em vez de erro. Foi o que manteve o sync quebrado de
+  22/05 a 15/08/2026 sem ninguém perceber.
+- **Varredura vazia é falha, não sucesso** (DEC-040). Responde HTTP 500, escreve o
+  motivo em `omie_sync_log.details` e não grava nada em `items`.
+
+`etiqueta.omie_quarantine` está vazia de propósito e não tem escritor (DEC-039): a
+triagem de produto desconhecido acontece no /painel, que tem tela pra isso.
 
 ## Paleta de Cores
 - Vermelho: #f31c40
