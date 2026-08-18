@@ -45,6 +45,25 @@ export function validadeDesde(fabIso: string, dias: number | null): string {
   return `${String(dt.getDate()).padStart(2, "0")}/${String(dt.getMonth() + 1).padStart(2, "0")}/${dt.getFullYear()}`;
 }
 
+/**
+ * Validade em ISO (YYYY-MM-DD) a partir da fabricação ISO + dias — é o que a
+ * cunhagem manda pro Painel carimbar em moderna.lotes.data_validade (ADR-0006
+ * ação 5). Sem fabricação → conta a partir de hoje. Sem dias → null.
+ */
+export function validadeDesdeISO(fabIso: string | null, dias: number | null): string | null {
+  if (!dias) return null;
+  let dt: Date;
+  if (fabIso) {
+    const p = fabIso.split("-").map(Number);
+    if (p.length !== 3 || p.some(isNaN)) return null;
+    dt = new Date(p[0], p[1] - 1, p[2]);
+  } else {
+    dt = new Date();
+  }
+  dt.setDate(dt.getDate() + dias);
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}-${String(dt.getDate()).padStart(2, "0")}`;
+}
+
 /** Converte string dd/mm/aaaa (ou dd/mm/aa) para Date. Retorna null se inválido. */
 export function parseDateBR(str: string): Date | null {
   const parts = str.split("/");

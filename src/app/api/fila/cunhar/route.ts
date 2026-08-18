@@ -43,7 +43,16 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
         Authorization: `Bearer ${PAINEL_KEY}`,
       },
-      body: JSON.stringify({ omie_codigo_produto: codigoOmie, quantidade, omie_op: omieOp }),
+      // data_producao/data_validade/lote_pcp (ADR-0006 ação 5): o balde nasce no
+      // Painel com FAB real, VAL calculada aqui e o vínculo com o batch do PCP.
+      body: JSON.stringify({
+        omie_codigo_produto: codigoOmie,
+        quantidade,
+        omie_op: omieOp,
+        data_producao: body?.data_producao ?? null,
+        data_validade: body?.data_validade ?? null,
+        lote_pcp: body?.lote_pcp ?? null,
+      }),
     });
 
     const data = await resp.json().catch(() => null);

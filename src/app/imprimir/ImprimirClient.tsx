@@ -4,7 +4,7 @@ import type { PerfilEtiquetaMO } from "@/lib/perfil";
 import NavBar from "@/components/NavBar";
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { dataHoje, calcValidade, dataCurta, validadeDesde, isoParaBR } from "@/lib/dateUtils";
+import { dataHoje, calcValidade, dataCurta, validadeDesde, validadeDesdeISO, isoParaBR } from "@/lib/dateUtils";
 import { gerarCelulaEtiqueta, gerarCelulaAvulsa, type DadosEtiquetaProduto, type DadosEtiquetaAvulsa } from "@/lib/labelHtml";
 
 const ORG_SLUG = "gelateria";
@@ -40,6 +40,8 @@ interface ItemCarrinho {
   /** Catalogação: data real de fabricação (YYYY-MM-DD) e QR = código do balde. */
   fabricacaoOverride?: string | null;
   qrOverride?: string | null;
+  /** OP do PCP: código do lote de BATCH (DDMMAA-NNNN) — vira lote_pcp na cunhagem. */
+  lotePcp?: string | null;
   /** Id da linha da fila (omie_print_queue) que originou este item — só consumida ao imprimir. */
   filaId?: string | null;
   tipoEtiqueta: "normal" | "contagem";
@@ -122,6 +124,7 @@ export default function ImprimirWizard({ perfil }: { perfil: PerfilEtiquetaMO })
   const [modalLote, setModalLote] = useState("");
   const [modalFabOverride, setModalFabOverride] = useState<string | null>(null);
   const [modalQrOverride, setModalQrOverride] = useState<string | null>(null);
+  const [modalLotePcp, setModalLotePcp] = useState<string | null>(null);
   const [modalTipoEtiqueta, setModalTipoEtiqueta] = useState<"normal" | "contagem">("normal");
   const [modalInfoComplementar, setModalInfoComplementar] = useState("");
   const [modalIncluirComplementar, setModalIncluirComplementar] = useState(false);
@@ -364,6 +367,7 @@ export default function ImprimirWizard({ perfil }: { perfil: PerfilEtiquetaMO })
     setModalLote("");
     setModalFabOverride(null);  // reset; catalogação preenche em abrirModalOP
     setModalQrOverride(null);
+    setModalLotePcp(null);
     const armazInfo = textoArmazenagem(item.storage_type);
     const addInfo = item.additional_info || "";
     setModalInfoComplementar(addInfo ? `${armazInfo} | ${addInfo}` : armazInfo);
@@ -401,7 +405,7 @@ export default function ImprimirWizard({ perfil }: { perfil: PerfilEtiquetaMO })
     } : null;
     const novoItem: ItemCarrinho = {
       item: modalItem, quantidade: modalQtd, produtores: modalProdutores, lote: modalLote,
-      fabricacaoOverride: modalFabOverride, qrOverride: modalQrOverride,
+      fabricacaoOverride: modalFabOverride, qrOverride: modalQrOverride, lotePcp: modalLotePcp,
       tipoEtiqueta: modalTipoEtiqueta, infoComplementar: modalInfoComplementar,
       incluirComplementar: modalIncluirComplementar, complementarDados: complDados,
       pesoOverride: modalPeso, unidadeOverride: modalUnidade, incluirPeso: modalIncluirPeso,
@@ -484,7 +488,10 @@ export default function ImprimirWizard({ perfil }: { perfil: PerfilEtiquetaMO })
         // item.code aqui: senão um balde sem lote (ex.: BROWNIE em produção) sairia com o
         // CÓDIGO DO PRODUTO no QR, sem identidade única — furando a regra. A impressão já
         // decide: balde → cunha; não-balde (insumo/casquinha) → código do produto.
-        qrOverride: op.lot ?? null,
+        // EXCEÇÃO (ADR-0006 ação 5): lote de OP do PCP é BATCH, não identidade — cunha
+        // na impressão (qrOverride null) e o batch viaja como lote_pcp.
+        qrOverride: wp.origem === "pcp_moderna" ? null : (op.lot ?? null),
+        lotePcp: wp.origem === "pcp_moderna" ? (op.lot ?? null) : null,
         filaId: op.id,
         tipoEtiqueta: "normal",
         infoComplementar: addInfo ? `${armazInfo} | ${addInfo}` : armazInfo,
@@ -508,6 +515,7 @@ export default function ImprimirWizard({ perfil }: { perfil: PerfilEtiquetaMO })
     setModalLote(c.lote);
     setModalFabOverride(c.fabricacaoOverride ?? null);
     setModalQrOverride(c.qrOverride ?? null);
+    setModalLotePcp(c.lotePcp ?? null);
     setModalTipoEtiqueta(c.tipoEtiqueta);
     setModalInfoComplementar(c.infoComplementar);
     setModalIncluirComplementar(c.incluirComplementar);
@@ -560,17 +568,22 @@ export default function ImprimirWizard({ perfil }: { perfil: PerfilEtiquetaMO })
     setOpBuscaVinc("");
     abrirModalItem(item);
     // Pré-preencher dados da OP
+    const wp = (op.webhook_payload ?? {}) as Record<string, unknown>;
+    // OP do PCP: o `lot` é o código do BATCH (DDMMAA-NNNN), não identidade de balde.
+    // A cunhagem RODA na impressão e cada balde nasce com B#### próprio — a bipagem
+    // da câmara continua lendo o que sempre leu (ADR-0006 ação 5). O batch viaja
+    // como lote_pcp e fica gravado no lote do Painel (rastreabilidade PCP ↔ balde).
+    const ehPcp = wp.origem === "pcp_moderna";
     if (op.lot) setModalLote(op.lot);
-    // Se a OP JÁ tem lote na fila, é ele que vai pra etiqueta — NÃO re-cunhar na
-    // impressão. Isso vale pra qualquer origem: um balde de ordem de produção que já
-    // recebeu lote antes (pré-cunhado) estava caindo na cunhagem de novo e gerando um
-    // lote DUPLICADO a cada impressão (B0141 já existia e nascia um B0149 fantasma).
+    // Demais origens com lote na fila: é ele que vai pra etiqueta — NÃO re-cunhar na
+    // impressão. Um balde pré-cunhado que caía na cunhagem de novo gerava um lote
+    // DUPLICADO a cada impressão (B0141 já existia e nascia um B0149 fantasma).
     // Sem lote na fila (ordem de produção nova) → qrOverride fica null e a cunhagem
     // roda na impressão, como deve.
-    if (op.lot) setModalQrOverride(op.lot);
+    if (op.lot && !ehPcp) setModalQrOverride(op.lot);
+    setModalLotePcp(ehPcp ? (op.lot ?? null) : null);
     // Catalogação (Painel Moderna) e OP do PCP: a data real de fabricação vem do lote,
     // não de hoje (a VAL é calculada a partir dela: fabricação + expiry_days do item).
-    const wp = (op.webhook_payload ?? {}) as Record<string, unknown>;
     if (wp.origem === "catalogo_moderna" || wp.origem === "pcp_moderna") {
       if (typeof wp.fabricacao === "string" && wp.fabricacao) setModalFabOverride(wp.fabricacao);
     }
@@ -686,6 +699,11 @@ export default function ImprimirWizard({ perfil }: { perfil: PerfilEtiquetaMO })
               omie_codigo_produto: item.item.omie_product_id,
               quantidade: item.quantidade,
               omie_op: item.filaId ?? null,
+              // ADR-0006 ação 5: o balde nasce no Painel já com FAB real, VAL calculada
+              // (a autoridade da validade é daqui) e o vínculo com o batch do PCP.
+              data_producao: item.fabricacaoOverride ?? null,
+              data_validade: validadeDesdeISO(item.fabricacaoOverride ?? null, item.item.expiry_days),
+              lote_pcp: item.lotePcp ?? null,
             }),
           });
           const j = await r.json();
