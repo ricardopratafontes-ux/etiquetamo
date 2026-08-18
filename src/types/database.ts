@@ -151,70 +151,8 @@ export interface Database {
           active?: boolean;
         };
       };
-      production_orders: {
-        Row: {
-          id: string;
-          organization_id: string;
-          title: string;
-          status: "planejado" | "em_producao" | "concluido" | "cancelado";
-          created_by: string;
-          started_at: string | null;
-          completed_at: string | null;
-          notes: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          organization_id: string;
-          title: string;
-          status?: "planejado" | "em_producao" | "concluido" | "cancelado";
-          created_by: string;
-          started_at?: string | null;
-          completed_at?: string | null;
-          notes?: string | null;
-        };
-        Update: {
-          title?: string;
-          status?: "planejado" | "em_producao" | "concluido" | "cancelado";
-          started_at?: string | null;
-          completed_at?: string | null;
-          notes?: string | null;
-        };
-      };
-      production_order_items: {
-        Row: {
-          id: string;
-          order_id: string;
-          item_id: string;
-          quantity: number;
-          lot: string | null;
-          operator_initials: string | null;
-          printed: boolean;
-          printed_at: string | null;
-          notes: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          order_id: string;
-          item_id: string;
-          quantity?: number;
-          lot?: string | null;
-          operator_initials?: string | null;
-          printed?: boolean;
-          printed_at?: string | null;
-          notes?: string | null;
-        };
-        Update: {
-          quantity?: number;
-          lot?: string | null;
-          operator_initials?: string | null;
-          printed?: boolean;
-          printed_at?: string | null;
-          notes?: string | null;
-        };
-      };
+      // production_orders / production_order_items: esboço de mini-PCP removido
+      // em 18/08/2026 (ADR-0006 ação 2) — as OPs reais moram no PCP.
       omie_quarantine: {
         Row: {
           id: string;
@@ -360,12 +298,6 @@ export type ItemInsert = Database["public"]["Tables"]["items"]["Insert"];
 export type ItemUpdate = Database["public"]["Tables"]["items"]["Update"];
 export type Operator = Database["public"]["Tables"]["operators"]["Row"];
 export type PrintRecord = Database["public"]["Tables"]["print_history"]["Row"];
-export type ProductionOrder = Database["public"]["Tables"]["production_orders"]["Row"];
-export type ProductionOrderInsert = Database["public"]["Tables"]["production_orders"]["Insert"];
-export type ProductionOrderUpdate = Database["public"]["Tables"]["production_orders"]["Update"];
-export type ProductionOrderItem = Database["public"]["Tables"]["production_order_items"]["Row"];
-export type ProductionOrderItemInsert = Database["public"]["Tables"]["production_order_items"]["Insert"];
-export type ProductionOrderItemUpdate = Database["public"]["Tables"]["production_order_items"]["Update"];
 export type OmieQuarantine = Database["public"]["Tables"]["omie_quarantine"]["Row"];
 export type OmieQuarantineInsert = Database["public"]["Tables"]["omie_quarantine"]["Insert"];
 export type OmiePrintQueue = Database["public"]["Tables"]["omie_print_queue"]["Row"];
